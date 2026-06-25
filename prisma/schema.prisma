@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  supabase_id  String   @unique
+  name         String
+  email        String   @unique
+  avatar_url   String?
+  household_id String
+  household    Household @relation(fields: [household_id], references: [id])
+  created_at   DateTime @default(now())
+
+  transactions     Transaction[]
+  recurringBills   RecurringBill[]
+  budgetGoals      BudgetGoal[]
+  financialGoals   FinancialGoal[]
+}
+
+model Household {
+  id         String   @id @default(uuid())
+  name       String   @default("Nossa Casa")
+  created_at DateTime @default(now())
+
+  users            User[]
+  transactions     Transaction[]
+  recurringBills   RecurringBill[]
+  budgets          Budget[]
+  financialGoals   FinancialGoal[]
+  categories       Category[]
+}
+
+model Category {
+  id           String       @id @default(uuid())
+  household_id String?
+  household    Household?   @relation(fields: [household_id], references: [id])
+  name         String
+  icon         String
+  color        String
+  type         CategoryType @default(EXPENSE)
+  is_default   Boolean      @default(false)
+
+  transactions  Transaction[]
+  budgetItems   BudgetItem[]
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+  BOTH
+}
+
+model Transaction {
+  id                String          @id @default(uuid())
+  household_id      String
+  household         Household       @relation(fields: [household_id], references: [id])
+  user_id           String
+  user              User            @relation(fields: [user_id], references: [id])
+  category_id       String
+  category          Category        @relation(fields: [category_id], references: [id])
+  type              TransactionType
+  amount            Decimal         @db.Decimal(10, 2)
+  description       String
+  date              DateTime        @db.Date
+  payment_method    PaymentMethod   @default(PIX)
+  notes             String?
+  recurring_bill_id String?
+  recurring_bill    RecurringBill?  @relation(fields: [recurring_bill_id], references: [id])
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+  CASH
+  BANK_TRANSFER
+  BOLETO
+}
+
+model RecurringBill {
+  id           String      @id @default(uuid())
+  household_id String
+  household    Household   @relation(fields: [household_id], references: [id])
+  user_id      String
+  user         User        @relation(fields: [user_id], references: [id])
+  name         String
+  amount       Decimal     @db.Decimal(10, 2)
+  due_day      Int
+  recurrence   Recurrence  @default(MONTHLY)
+  is_active    Boolean     @default(true)
+  created_at   DateTime    @default(now())
+
+  monthlyStatus BillMonthlyStatus[]
+  transactions  Transaction[]
+}
+
+enum Recurrence {
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+model BillMonthlyStatus {
+  id                String        @id @default(uuid())
+  recurring_bill_id String
+  recurring_bill    RecurringBill @relation(fields: [recurring_bill_id], references: [id])
+  month             Int
+  year              Int
+  status            BillStatus    @default(PENDING)
+  paid_at           DateTime?
+  paid_amount       Decimal?      @db.Decimal(10, 2)
+
+  @@unique([recurring_bill_id, month, year])
+}
+
+enum BillStatus {
+  PENDING
+  PAID
+  OVERDUE
+  SKIPPED
+}
+
+model Budget {
+  id           String   @id @default(uuid())
+  household_id String
+  household    Household @relation(fields: [household_id], references: [id])
+  month        Int
+  year         Int
+  total_income Decimal  @db.Decimal(10, 2) @default(0)
+  created_at   DateTime @default(now())
+
+  items BudgetItem[]
+
+  @@unique([household_id, month, year])
+}
+
+model BudgetItem {
+  id          String   @id @default(uuid())
+  budget_id   String
+  budget      Budget   @relation(fields: [budget_id], references: [id])
+  category_id String
+  category    Category @relation(fields: [category_id], references: [id])
+  planned     Decimal  @db.Decimal(10, 2)
+
+  @@unique([budget_id, category_id])
+}
+
+model FinancialGoal {
+  id             String     @id @default(uuid())
+  household_id   String
+  household      Household  @relation(fields: [household_id], references: [id])
+  user_id        String
+  user           User       @relation(fields: [user_id], references: [id])
+  name           String
+  description    String?
+  target_amount  Decimal    @db.Decimal(10, 2)
+  current_amount Decimal    @db.Decimal(10, 2) @default(0)
+  deadline       DateTime?  @db.Date
+  status         GoalStatus @default(IN_PROGRESS)
+  icon           String?
+  color          String?
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+}
+
+enum GoalStatus {
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+model BudgetGoal {
+  id             String   @id @default(uuid())
+  user_id        String   @unique
+  user           User     @relation(fields: [user_id], references: [id])
+  monthly_income Decimal  @db.Decimal(10, 2)
+  updated_at     DateTime @updatedAt
+}
