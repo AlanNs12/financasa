@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { formatCurrency, getMonthName } from '@/lib/format'
-import { useMonthStore } from '@/store/month-store'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend } from 'recharts'
 
 const COLORS = ['#6366f1', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6b7280']
@@ -35,7 +35,18 @@ const budgetVsActual = [
 type Tab = 'categories' | 'evolution' | 'budget'
 
 export default function RelatoriosPage() {
-  const { month, year } = useMonthStore()
+  return (
+    <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
+      <RelatoriosContent />
+    </Suspense>
+  )
+}
+
+function RelatoriosContent() {
+  const searchParams = useSearchParams()
+  const now = new Date()
+  const month = Number(searchParams.get('month')) || now.getMonth() + 1
+  const year = Number(searchParams.get('year')) || now.getFullYear()
   const [activeTab, setActiveTab] = useState<Tab>('categories')
   const monthName = getMonthName(month)
 

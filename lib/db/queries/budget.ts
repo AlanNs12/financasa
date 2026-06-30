@@ -1,5 +1,72 @@
 import { prisma } from '@/lib/db/prisma'
 
+export async function getPlanejamentoData(
+  householdId: string,
+  month: number,
+  year: number
+) {
+  const startDate = new Date(year, month - 1, 1)
+  const endDate = new Date(year, month, 0, 23, 59, 59)
+
+  const [transactions, categories, budget] = await Promise.all([
+    prisma.transaction.findMany({
+      where: {
+        household_id: householdId,
+        date: { gte: startDate, lte: endDate },
+      },
+    }),
+    prisma.category.findMany({
+      where: {
+        household_id: householdId,
+        type: { in: ['EXPENSE', 'BOTH'] },
+      },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.budget.findUnique({
+      where: {
+        household_id_month_year: { household_id: householdId, month, year },
+      },
+      include: { items: true },
+    }),
+  ])
+
+  const actualIncome = transactions
+    .filter((t) => t.type === 'INCOME')
+    .reduce((sum, t) => sum + Number(t.amount), 0)
+
+  const items = categories.map((cat) => {
+    const spent = transactions
+      .filter((t) => t.type === 'EXPENSE' && t.category_id === cat.id)
+      .reduce((sum, t) => sum + Number(t.amount), 0)
+
+    const budgetItem = budget?.items.find((i) => i.category_id === cat.id)
+    const planned = budgetItem ? Number(budgetItem.planned) : 0
+
+    return {
+      id: cat.id,
+      budget_item_id: budgetItem?.id ?? null,
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+      planned,
+      spent,
+      percentage: planned > 0 ? Math.round((spent / planned) * 100) : (spent > 0 ? 100 : 0),
+    }
+  })
+
+  const totalPlanned = items.reduce((sum, i) => sum + i.planned, 0)
+  const totalSpent = items.reduce((sum, i) => sum + i.spent, 0)
+
+  return {
+    total_income: budget ? Number(budget.total_income) : actualIncome,
+    actual_income: actualIncome,
+    budget_id: budget?.id ?? null,
+    total_planned: totalPlanned,
+    total_spent: totalSpent,
+    items,
+  }
+}
+
 export async function getBudgetWithProgress(
   householdId: string,
   month: number,

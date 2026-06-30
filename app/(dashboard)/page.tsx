@@ -3,59 +3,115 @@ import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { UpcomingBills } from '@/components/dashboard/upcoming-bills'
 import { getMonthAbbr } from '@/lib/format'
+import { getCurrentUserHousehold } from '@/lib/db/queries/user'
+import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
+import { getRecurringBills } from '@/lib/db/queries/bills'
+import { getBudgetWithProgress } from '@/lib/db/queries/budget'
 
 const now = new Date()
-const currentMonth = now.getMonth() + 1
-const monthAbbr = getMonthAbbr(currentMonth)
 
-const mockTransactions = [
-  { id: '1', description: 'Mercado Assaí', amount: 189.43, type: 'EXPENSE' as const, date: '2026-06-13', category: { name: 'Alimentação', icon: '🛒', color: '#f59e0b' } },
-  { id: '2', description: 'Uber', amount: 24.90, type: 'EXPENSE' as const, date: '2026-06-13', category: { name: 'Transporte', icon: '🚗', color: '#3b82f6' } },
-  { id: '3', description: 'Salário', amount: 5000.00, type: 'INCOME' as const, date: '2026-06-12', category: { name: 'Salário', icon: '💰', color: '#22c55e' } },
-  { id: '4', description: 'Farmácia', amount: 87.50, type: 'EXPENSE' as const, date: '2026-06-12', category: { name: 'Saúde', icon: '💊', color: '#ef4444' } },
-  { id: '5', description: 'Spotify', amount: 21.90, type: 'EXPENSE' as const, date: '2026-06-10', category: { name: 'Assinaturas', icon: '📱', color: '#14b8a6' } },
-]
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string; year?: string }>
+}) {
+  const params = await searchParams
+  const currentMonth = params.month ? Number(params.month) : now.getMonth() + 1
+  const currentYear = params.year ? Number(params.year) : now.getFullYear()
+  const monthAbbr = getMonthAbbr(currentMonth)
 
-const mockBills = [
-  { id: '1', name: 'Aluguel', amount: 1800.00, due_day: 1, status: 'overdue' as const },
-  { id: '2', name: 'Internet', amount: 119.90, due_day: 5, status: 'paid' as const },
-  { id: '3', name: 'Energia', amount: 85.00, due_day: 15, status: 'pending' as const },
-]
+  const current = await getCurrentUserHousehold()
 
-export default function DashboardPage() {
-  const income = mockTransactions
-    .filter((t) => t.type === 'INCOME')
-    .reduce((sum, t) => sum + t.amount, 0)
-  const expenses = mockTransactions
-    .filter((t) => t.type === 'EXPENSE')
-    .reduce((sum, t) => sum + t.amount, 0)
-  const balance = income - expenses
-  const totalBudget = 8500
-  const spent = expenses
-  const percentage = Math.round((spent / totalBudget) * 100)
-  const pendingBills = mockBills.filter((b) => b.status !== 'paid').reduce((sum, b) => sum + b.amount, 0)
-
-  return (
-    <div className="space-y-6">
-      <MonthlyBudgetCard
-        month={monthAbbr}
-        balance={balance}
-        spent={spent}
-        totalBudget={totalBudget}
-        percentage={percentage}
-      />
-
-      <SummaryCards
-        income={income}
-        expenses={expenses}
-        balance={balance}
-        pendingBills={pendingBills}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentTransactions transactions={mockTransactions} />
-        <UpcomingBills bills={mockBills} month={currentMonth} />
+  if (!current) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+          <p className="text-gray-500">Faça login para acessar o dashboard</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  try {
+    const [transactions, bills, budget] = await Promise.all([
+      getTransactionsByMonth(current.householdId, currentMonth, currentYear),
+      getRecurringBills(current.householdId, currentMonth, currentYear),
+      getBudgetWithProgress(current.householdId, currentMonth, currentYear),
+    ])
+
+    const income = transactions
+      .filter((t) => t.type === 'INCOME')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const expenses = transactions
+      .filter((t) => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const balance = income - expenses
+    const totalBudget = budget ? budget.total_income : income
+    const percentage = totalBudget > 0 ? Math.round((expenses / totalBudget) * 100) : 0
+
+    const pendingBillsAmount = bills
+      .filter((b) => {
+        const status = b.monthlyStatus?.[0]
+        return !status || status.status !== 'PAID'
+      })
+      .reduce((sum, b) => sum + b.amount, 0)
+
+    const recentTransactions = transactions.slice(0, 5).map((t) => ({
+      id: t.id,
+      description: t.description,
+      amount: t.amount,
+      type: t.type as 'INCOME' | 'EXPENSE',
+      date: t.date,
+      category: t.category as { name: string; icon: string; color: string } | null,
+    }))
+
+    const upcomingBills = bills.slice(0, 3).map((b) => {
+      const status = b.monthlyStatus?.[0]
+      let billStatus: 'paid' | 'pending' | 'overdue' = 'pending'
+      if (status?.status === 'PAID') billStatus = 'paid'
+      else if (status?.status === 'OVERDUE') billStatus = 'overdue'
+
+      return {
+        id: b.id,
+        name: b.name,
+        amount: b.amount,
+        due_day: b.due_day,
+        status: billStatus,
+      }
+    })
+
+    return (
+      <div className="space-y-6">
+        <MonthlyBudgetCard
+          month={monthAbbr}
+          balance={balance}
+          spent={expenses}
+          totalBudget={totalBudget}
+          percentage={percentage}
+        />
+
+        <SummaryCards
+          income={income}
+          expenses={expenses}
+          balance={balance}
+          pendingBills={pendingBillsAmount}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RecentTransactions transactions={recentTransactions} />
+          <UpcomingBills bills={upcomingBills} month={currentMonth} />
+        </div>
+      </div>
+    )
+  } catch {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+          <p className="text-gray-500">Nenhum dado disponível. Comece adicionando transações.</p>
+        </div>
+      </div>
+    )
+  }
 }

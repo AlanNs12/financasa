@@ -6,12 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
 import { signUp } from '@/app/actions/auth'
 import Link from 'next/link'
-import { Eye, EyeOff, Wallet } from 'lucide-react'
+import { Eye, EyeOff, Wallet, Users, UserPlus } from 'lucide-react'
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [isJoining, setIsJoining] = useState(false)
 
   const {
     register,
@@ -27,6 +28,9 @@ export default function RegisterPage() {
     formData.append('name', data.name)
     formData.append('email', data.email)
     formData.append('password', data.password)
+    if (isJoining && data.invite_code) {
+      formData.append('invite_code', data.invite_code)
+    }
     startTransition(() => {
       signUp(formData).then((result) => {
         if (result?.error) setError(result.error)
@@ -49,6 +53,29 @@ export default function RegisterPage() {
           {error}
         </div>
       )}
+
+      <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+        <button
+          type="button"
+          onClick={() => setIsJoining(false)}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+            !isJoining ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+          }`}
+        >
+          <UserPlus className="w-4 h-4" />
+          Nova casa
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsJoining(true)}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isJoining ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Entrar em casa
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
@@ -119,6 +146,24 @@ export default function RegisterPage() {
             <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>
           )}
         </div>
+
+        {isJoining && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Código de convite
+            </label>
+            <input
+              {...register('invite_code')}
+              type="text"
+              placeholder="Ex: A4K9M2"
+              maxLength={6}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition-colors text-sm uppercase tracking-widest text-center font-mono"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Peça o código para quem já está na casa
+            </p>
+          </div>
+        )}
 
         <button
           type="submit"

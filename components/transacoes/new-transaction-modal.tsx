@@ -1,29 +1,20 @@
-'use client'
+﻿'use client'
 
-import { useState } from 'react'
-import { X, Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { X, ArrowUpCircle, ArrowDownCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { transactionSchema, type TransactionInput } from '@/lib/validations/transaction'
+import { transactionSchema, type TransactionOutput } from '@/lib/validations/transaction'
+import { createTransactionAction } from '@/app/actions/transactions'
+import { toast } from 'sonner'
 
-const CATEGORIES = {
-  INCOME: [
-    { id: 'cat-salary', name: 'Salário', icon: '💰', color: '#22c55e' },
-    { id: 'cat-freelance', name: 'Freelance', icon: '💻', color: '#10b981' },
-    { id: 'cat-investment', name: 'Investimentos', icon: '📈', color: '#06b6d4' },
-  ],
-  EXPENSE: [
-    { id: 'cat-housing', name: 'Moradia', icon: '🏠', color: '#6366f1' },
-    { id: 'cat-food', name: 'Alimentação', icon: '🛒', color: '#f59e0b' },
-    { id: 'cat-transport', name: 'Transporte', icon: '🚗', color: '#3b82f6' },
-    { id: 'cat-health', name: 'Saúde', icon: '💊', color: '#ef4444' },
-    { id: 'cat-education', name: 'Educação', icon: '📚', color: '#8b5cf6' },
-    { id: 'cat-leisure', name: 'Lazer', icon: '🎮', color: '#ec4899' },
-    { id: 'cat-subscriptions', name: 'Assinaturas', icon: '📱', color: '#14b8a6' },
-    { id: 'cat-shopping', name: 'Compras', icon: '🛍️', color: '#f97316' },
-    { id: 'cat-other', name: 'Outros', icon: '💼', color: '#6b7280' },
-  ],
+interface Category {
+  id: string
+  name: string
+  icon: string
+  color: string
+  type: string
 }
 
 const PAYMENT_METHODS = [
@@ -38,11 +29,17 @@ const PAYMENT_METHODS = [
 interface NewTransactionModalProps {
   isOpen: boolean
   onClose: () => void
+  categories: Category[]
 }
 
-export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProps) {
+export function NewTransactionModal({ isOpen, onClose, categories }: NewTransactionModalProps) {
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
   const [showNotes, setShowNotes] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  const filteredCategories = categories.filter(
+    (c) => c.type === type || c.type === 'BOTH'
+  )
 
   const {
     register,
@@ -50,8 +47,9 @@ export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProp
     setValue,
     watch,
     reset,
-    formState: { errors, isSubmitting },
-  } = useForm<TransactionInput>({
+    getValues,
+    formState: { errors },
+  } = useForm<TransactionOutput>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(transactionSchema) as any,
     defaultValues: {
@@ -63,11 +61,28 @@ export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProp
 
   const categoryId = watch('category_id')
 
-  function onSubmit() {
-    const data = { type, amount: 0, description: '', date: '', category_id: '', payment_method: 'PIX' as const }
-    console.log('New transaction:', data)
-    reset()
-    onClose()
+  function handleFormSubmit() {
+    const values = getValues()
+    startTransition(async () => {
+      const result = await createTransactionAction({
+        type,
+        description: values.description,
+        amount: Number(values.amount) || 0,
+        date: values.date,
+        category_id: values.category_id,
+        payment_method: values.payment_method,
+        notes: values.notes || undefined,
+      })
+
+      if (result?.error) {
+        toast.error('Erro ao salvar. Verifique os campos.')
+        return
+      }
+
+      toast.success('Transação criada com sucesso!')
+      reset()
+      onClose()
+    })
   }
 
   if (!isOpen) return null
@@ -84,7 +99,7 @@ export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProp
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-5">
           <div className="flex bg-gray-100 rounded-xl p-1">
             {(['EXPENSE', 'INCOME'] as const).map((t) => (
               <button
@@ -93,6 +108,7 @@ export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProp
                 onClick={() => {
                   setType(t)
                   setValue('type', t)
+                  setValue('category_id', '')
                 }}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all',
@@ -174,26 +190,30 @@ export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProp
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-            <div className="grid grid-cols-4 gap-2">
-              {CATEGORIES[type].map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setValue('category_id', cat.id)}
-                  className={cn(
-                    'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all',
-                    categoryId === cat.id
-                      ? 'border-gray-900 bg-gray-50'
-                      : 'border-gray-100 hover:border-gray-200'
-                  )}
-                >
-                  <span className="text-xl">{cat.icon}</span>
-                  <span className="text-[10px] text-gray-600 text-center leading-tight">
-                    {cat.name}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {filteredCategories.length === 0 ? (
+              <p className="text-sm text-gray-400">Nenhuma categoria disponível</p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {filteredCategories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setValue('category_id', cat.id)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all',
+                      categoryId === cat.id
+                        ? 'border-gray-900 bg-gray-50'
+                        : 'border-gray-100 hover:border-gray-200'
+                    )}
+                  >
+                    <span className="text-xl">{cat.icon}</span>
+                    <span className="text-[10px] text-gray-600 text-center leading-tight">
+                      {cat.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {errors.category_id && (
               <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>
             )}
@@ -227,9 +247,10 @@ export function NewTransactionModal({ isOpen, onClose }: NewTransactionModalProp
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+              disabled={isPending}
+              className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
+              {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Salvar
             </button>
           </div>

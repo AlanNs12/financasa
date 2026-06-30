@@ -3,7 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -23,9 +25,10 @@ model User {
 }
 
 model Household {
-  id         String   @id @default(uuid())
-  name       String   @default("Nossa Casa")
-  created_at DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String   @default("Nossa Casa")
+  invite_code String   @unique
+  created_at  DateTime @default(now())
 
   users            User[]
   transactions     Transaction[]
@@ -90,17 +93,19 @@ enum PaymentMethod {
 }
 
 model RecurringBill {
-  id           String      @id @default(uuid())
-  household_id String
-  household    Household   @relation(fields: [household_id], references: [id])
-  user_id      String
-  user         User        @relation(fields: [user_id], references: [id])
-  name         String
-  amount       Decimal     @db.Decimal(10, 2)
-  due_day      Int
-  recurrence   Recurrence  @default(MONTHLY)
-  is_active    Boolean     @default(true)
-  created_at   DateTime    @default(now())
+  id                 String      @id @default(uuid())
+  household_id       String
+  household          Household   @relation(fields: [household_id], references: [id])
+  user_id            String
+  user               User        @relation(fields: [user_id], references: [id])
+  name               String
+  amount             Decimal     @db.Decimal(10, 2)
+  due_day            Int
+  recurrence         Recurrence  @default(MONTHLY)
+  is_active          Boolean     @default(true)
+  installment_total  Int?
+  installment_current Int?
+  created_at         DateTime    @default(now())
 
   monthlyStatus BillMonthlyStatus[]
   transactions  Transaction[]

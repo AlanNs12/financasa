@@ -1,0 +1,273 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { formatCurrency, getMonthName } from '@/lib/format'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { ProgressBar } from '@/components/shared/progress-bar'
+import { NewBillModal } from '@/components/contas/new-bill-modal'
+import { BillsHistory } from '@/components/contas/bills-history'
+import { Fab } from '@/components/transacoes/fab'
+import { markBillAsPaidAction } from '@/app/actions/bills'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { Plus, Loader2 } from 'lucide-react'
+
+interface Bill {
+  id: string
+  name: string
+  amount: number
+  due_day: number
+  recurrence: string
+  installment_total: number | null
+  installment_current: number | null
+  created_at: string
+  monthlyStatus: { status: string; paid_at: string | null }[]
+}
+
+interface HistoryBill {
+  id: string
+  name: string
+  amount: number
+  due_day: number
+  status: string
+  paid_at: string | null
+}
+
+interface MonthHistory {
+  month: number
+  year: number
+  total: number
+  paid: number
+  pending: number
+  percentage: number
+  bills: HistoryBill[]
+}
+
+interface ContasClientProps {
+  bills: Bill[]
+  history: MonthHistory[]
+  month: number
+  year: number
+}
+
+type Tab = 'current' | 'history'
+
+const RECURRENCE_LABELS: Record<string, string> = {
+  MONTHLY: 'Mensal',
+  BIMONTHLY: 'Bimestral',
+  QUARTERLY: 'Trimestral',
+  SEMIANNUAL: 'Semestral',
+  ANNUAL: 'Anual',
+}
+
+function getBillStatus(bill: Bill): 'paid' | 'pending' | 'overdue' {
+  const status = bill.monthlyStatus?.[0]?.status
+  if (status === 'PAID') return 'paid'
+  if (status === 'OVERDUE') return 'overdue'
+  if (status === 'SKIPPED') return 'pending'
+  return 'pending'
+}
+
+function extractIcon(name: string): string {
+  const match = name.match(/^(\S+)/)
+  if (match && /[^a-zA-Z0-9]/.test(match[1])) return match[1]
+  return '📄'
+}
+
+function extractName(name: string): string {
+  return name.replace(/^\S+\s+/, '')
+}
+
+function getRecurrenceLabel(bill: Bill, viewMonth: number, viewYear: number): string {
+  if (bill.installment_total) {
+    const created = new Date(bill.created_at)
+    const monthsDiff =
+      (viewYear - created.getFullYear()) * 12 + (viewMonth - 1 - created.getMonth())
+    const installmentNumber = Math.max(1, Math.min(1 + monthsDiff, bill.installment_total))
+    return `Parcela ${installmentNumber}/${bill.installment_total}`
+  }
+  return RECURRENCE_LABELS[bill.recurrence] || bill.recurrence
+}
+
+export function ContasClient({ bills, history, month, year }: ContasClientProps) {
+  const [expandedBill, setExpandedBill] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [payingBill, setPayingBill] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('current')
+  const [isPending, startTransition] = useTransition()
+
+  const monthName = getMonthName(month)
+
+  const totalAmount = bills.reduce((sum, b) => sum + b.amount, 0)
+  const paidAmount = bills
+    .filter((b) => getBillStatus(b) === 'paid')
+    .reduce((sum, b) => sum + b.amount, 0)
+  const remaining = totalAmount - paidAmount
+  const paidPercentage = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0
+
+  function handleMarkAsPaid(billId: string) {
+    setPayingBill(billId)
+    startTransition(async () => {
+      const bill = bills.find((b) => b.id === billId)
+      const result = await markBillAsPaidAction(billId, month, year, bill?.amount)
+      if (!result?.success) {
+        toast.error('Erro ao marcar conta.')
+      } else {
+        toast.success('Conta marcada como paga!')
+      }
+      setPayingBill(null)
+      setExpandedBill(null)
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Contas</h1>
+        <p className="text-sm text-gray-500">Gerencie suas contas recorrentes</p>
+      </div>
+
+      <div className="flex bg-white rounded-xl border border-gray-200 p-1">
+        <button
+          onClick={() => setActiveTab('current')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'current'
+              ? 'bg-gray-900 text-white'
+              : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          Este mês
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'history'
+              ? 'bg-gray-900 text-white'
+              : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          Histórico
+        </button>
+      </div>
+
+      {activeTab === 'current' ? (
+        <>
+          <div className="bg-[#1a1a2e] rounded-2xl p-6 text-white">
+            <p className="text-sm text-white/70 mb-1">{monthName}</p>
+            <p className="text-3xl font-bold mb-1">{formatCurrency(totalAmount)}</p>
+            <p className="text-sm text-white/50 mb-4">total de contas</p>
+
+            <div className="flex items-center justify-between text-sm mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                <span className="text-white/70">{formatCurrency(paidAmount)} pago</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
+                <span className="text-white/70">{formatCurrency(remaining)} restante</span>
+              </div>
+            </div>
+
+            <ProgressBar value={paidAmount} max={totalAmount} size="md" />
+            <p className="text-xs text-white/50 mt-2">{paidPercentage}% pago</p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900">Este mês</h2>
+            </div>
+
+            {bills.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+                <p className="text-gray-400 text-sm mb-4">Nenhuma conta cadastrada</p>
+                <button
+                  onClick={() => setModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar conta
+                </button>
+              </div>
+            ) : (
+              bills.map((bill) => {
+                const isExpanded = expandedBill === bill.id
+                const status = getBillStatus(bill)
+                const icon = extractIcon(bill.name)
+                const name = extractName(bill.name)
+                const isPaying = payingBill === bill.id
+                const isParcelada = !!bill.installment_total
+
+                return (
+                  <div
+                    key={bill.id}
+                    className={cn(
+                      'bg-white rounded-2xl border border-gray-100 overflow-hidden transition-all',
+                      status === 'paid' && 'ring-2 ring-green-400'
+                    )}
+                  >
+                    <button
+                      onClick={() => setExpandedBill(isExpanded ? null : bill.id)}
+                      className="w-full flex items-center gap-3 p-4 text-left"
+                    >
+                      <span className="text-xl">{icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+                        <p className="text-xs text-gray-400">
+                          {getRecurrenceLabel(bill, month, year)} · Vence dia {bill.due_day.toString().padStart(2, '0')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gray-900 tabular-nums">
+                          {formatCurrency(bill.amount)}
+                        </p>
+                        <StatusBadge status={status} />
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="px-4 pb-4 border-t border-gray-50 pt-3">
+                        {status !== 'paid' ? (
+                          <button
+                            onClick={() => handleMarkAsPaid(bill.id)}
+                            disabled={isPaying}
+                            className="w-full py-2.5 rounded-xl bg-green-50 text-green-700 font-medium text-sm hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            {isPaying && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {isParcelada ? 'Pagar parcela' : 'Marcar como pago'}
+                          </button>
+                        ) : (
+                          <p className="text-sm text-green-600 text-center font-medium">
+                            ✓ {isParcelada ? 'Parcela paga' : 'Pago'}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {bills.length > 0 && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 font-medium text-sm hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Nova conta
+            </button>
+          )}
+
+          <Fab onClick={() => setModalOpen(true)} />
+          <NewBillModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+        </>
+      ) : (
+        <BillsHistory
+          history={history}
+          currentMonth={month}
+          currentYear={year}
+        />
+      )}
+    </div>
+  )
+}

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { formatCurrency, getMonthName } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { StatusBadge } from '@/components/shared/status-badge'
-import { useMonthStore } from '@/store/month-store'
 import { Plus, X } from 'lucide-react'
 
 const mockGoals = [
@@ -43,9 +43,21 @@ const mockGoals = [
 const monthlySpent = 477.43
 const monthlyBudget = 8500
 const monthlyPercentage = Math.round((monthlySpent / monthlyBudget) * 100)
-const monthName = getMonthName(new Date().getMonth() + 1)
 
 export default function MetasPage() {
+  return (
+    <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
+      <MetasContent />
+    </Suspense>
+  )
+}
+
+function MetasContent() {
+  const searchParams = useSearchParams()
+  const now = new Date()
+  const month = Number(searchParams.get('month')) || now.getMonth() + 1
+  const year = Number(searchParams.get('year')) || now.getFullYear()
+  const monthName = getMonthName(month)
   const [showNewGoal, setShowNewGoal] = useState(false)
 
   return (
