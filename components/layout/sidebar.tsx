@@ -12,6 +12,8 @@ import {
   Settings,
   LogOut,
   Wallet,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/actions/auth'
@@ -22,6 +24,8 @@ const navItems = [
   { href: '/contas', icon: Receipt, label: 'Contas' },
   { href: '/planejamento', icon: Target, label: 'Planejamento' },
   { href: '/metas', icon: Trophy, label: 'Metas' },
+  { href: '/investimentos', icon: TrendingUp, label: 'Investimentos' },
+  { href: '/dividas', icon: TrendingDown, label: 'Dívidas' },
   { href: '/relatorios', icon: BarChart3, label: 'Relatórios' },
 ]
 

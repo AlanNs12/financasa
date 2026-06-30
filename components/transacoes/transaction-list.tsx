@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
 import { PersonAvatar } from '@/components/shared/person-avatar'
-import { Filter, X } from 'lucide-react'
+import { Filter, Trash2, AlertTriangle, Loader2, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { deleteTransactionAction } from '@/app/actions/transactions'
+import { exportTransactionsCsvAction } from '@/app/actions/export'
+import { toast } from 'sonner'
 
 interface TransactionItem {
   id: string
@@ -21,6 +24,8 @@ interface TransactionItem {
 
 interface TransactionListProps {
   transactions: TransactionItem[]
+  month: number
+  year: number
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -32,9 +37,45 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BOLETO: 'Boleto',
 }
 
-export function TransactionList({ transactions }: TransactionListProps) {
+export function TransactionList({ transactions, month, year }: TransactionListProps) {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
   const [showFilters, setShowFilters] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<TransactionItem | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function confirmDelete() {
+    if (!pendingDelete) return
+    const tx = pendingDelete
+    startTransition(async () => {
+      const result = await deleteTransactionAction(tx.id)
+      if (result?.error) {
+        toast.error('Erro ao excluir transação.')
+        return
+      }
+      toast.success('Transação excluída')
+      setPendingDelete(null)
+    })
+  }
+
+  function handleExportCsv() {
+    startTransition(async () => {
+      const result = await exportTransactionsCsvAction(month, year)
+      if ('error' in result && result.error) {
+        toast.error('Erro ao exportar CSV.')
+        return
+      }
+      if ('csv' in result && result.csv) {
+        const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = result.filename
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success('CSV exportado!')
+      }
+    })
+  }
 
   const filtered = transactions.filter((t) => {
     if (filter === 'ALL') return true
@@ -60,6 +101,15 @@ export function TransactionList({ transactions }: TransactionListProps) {
         >
           <Filter className="w-3.5 h-3.5" />
           Filtrar
+        </button>
+
+        <button
+          onClick={handleExportCsv}
+          disabled={isPending}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 ml-auto"
+        >
+          <Download className="w-3.5 h-3.5" />
+          CSV
         </button>
 
         <div className="flex bg-white rounded-lg border border-gray-200 p-0.5">
@@ -122,12 +172,63 @@ export function TransactionList({ transactions }: TransactionListProps) {
                         size="sm"
                       />
                       {tx.user && <PersonAvatar user={tx.user} size="sm" />}
+                      <button
+                        onClick={() => setPendingDelete(tx)}
+                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                        aria-label="Excluir transação"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => !isPending && setPendingDelete(null)}
+          />
+          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm p-6 shadow-xl">
+            <div className="flex flex-col items-center text-center mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">
+                Excluir esta transação?
+              </h2>
+              <p className="text-sm text-gray-500">
+                {pendingDelete.description} · {formatCurrency(pendingDelete.amount)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                disabled={isPending}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isPending}
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Excluir
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -4,8 +4,9 @@ import { useState, useTransition } from 'react'
 import { formatCurrency, getMonthName } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { upsertBudgetItemAction, updateBudgetIncomeAction } from '@/app/actions/budget'
+import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
-import { Pencil, Check, X, Loader2 } from 'lucide-react'
+import { Pencil, Check, X, Loader2, Download, AlertTriangle } from 'lucide-react'
 
 interface PlanejamentoItem {
   id: string
@@ -29,11 +30,12 @@ interface PlanejamentoData {
 
 interface PlanejamentoClientProps {
   data: PlanejamentoData
+  totalBills: number
   month: number
   year: number
 }
 
-export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, totalBills, month, year }: PlanejamentoClientProps) {
   const [editMode, setEditMode] = useState(false)
   const [editingIncome, setEditingIncome] = useState(false)
   const [incomeValue, setIncomeValue] = useState(String(data.total_income))
@@ -42,6 +44,8 @@ export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProp
   const [isPending, startTransition] = useTransition()
 
   const monthName = getMonthName(month)
+  const disponible = data.total_income - totalBills
+  const warningOverBudget = data.total_planned > disponible
 
   function saveIncome() {
     const val = Number(incomeValue)
@@ -82,16 +86,46 @@ export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProp
     if (!editMode) setEditMode(false)
   }
 
+  function handleExportCsv() {
+    startTransition(async () => {
+      const result = await exportPlanningCsvAction(month, year)
+      if ('error' in result && result.error) {
+        toast.error('Erro ao exportar CSV.')
+        return
+      }
+      if ('csv' in result && result.csv) {
+        const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = result.filename
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success('CSV exportado!')
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Planejamento</h1>
-        <p className="text-sm text-gray-500">Orçamento por categoria</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 mb-1">Planejamento</h1>
+          <p className="text-sm text-gray-500">Orçamento por categoria</p>
+        </div>
+        <button
+          onClick={handleExportCsv}
+          disabled={isPending}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0"
+        >
+          <Download className="w-3.5 h-3.5" />
+          CSV
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             Receita total · {monthName}
           </span>
           {editingIncome ? (
@@ -99,35 +133,38 @@ export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProp
               <button
                 onClick={saveIncome}
                 disabled={isPending}
-                className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 transition-colors"
+                aria-label="Confirmar receita"
+                className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 transition-colors"
               >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {isPending ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <Check size={18} />}
               </button>
               <button
                 onClick={() => setEditingIncome(false)}
-                className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
+                aria-label="Cancelar edição"
+                className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X size={18} />
               </button>
             </div>
           ) : (
             <button
               onClick={() => setEditingIncome(true)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Editar receita"
+              className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <Pencil className="w-4 h-4 text-gray-400" />
+              <Pencil size={18} className="text-muted-foreground" />
             </button>
           )}
         </div>
 
         {editingIncome ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">R$</span>
+            <span className="text-sm text-muted-foreground">R$</span>
             <input
               type="number"
               value={incomeValue}
               onChange={(e) => setIncomeValue(e.target.value)}
-              className="w-40 px-3 py-1.5 rounded-lg border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-2xl font-bold"
+              className="w-40 px-3 py-1.5 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:outline-none text-2xl font-bold"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') saveIncome()
@@ -136,21 +173,47 @@ export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProp
             />
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">R$</span>
-            <span className="text-2xl font-bold text-gray-900">
-              {formatCurrency(data.total_income).replace('R$', '').trim()}
-            </span>
-            {data.actual_income > 0 && data.total_income !== data.actual_income && (
-              <span className="text-xs text-gray-400">
-                (recebido: {formatCurrency(data.actual_income)})
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">R$</span>
+              <span className="text-3xl font-bold text-foreground">
+                {formatCurrency(data.total_income).replace('R$', '').trim()}
               </span>
+              {data.actual_income > 0 && data.total_income !== data.actual_income && (
+                <span className="text-xs text-muted-foreground">
+                  (recebido: {formatCurrency(data.actual_income)})
+                </span>
+              )}
+            </div>
+
+            {totalBills > 0 && (
+              <>
+                <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                  <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {formatCurrency(totalBills)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">(=) Disponível</span>
+                  <span
+                    className="text-xl font-bold"
+                    style={{ color: disponible >= 0 ? 'var(--income)' : 'var(--expense)' }}
+                  >
+                    {formatCurrency(disponible)}
+                  </span>
+                  {disponible < 0 && (
+                    <AlertTriangle className="w-4 h-4" style={{ color: 'var(--expense)' }} />
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
 
         {data.actual_income > 0 && (
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-gray-100">
             Receita registrada em transações: {formatCurrency(data.actual_income)}
           </p>
         )}
@@ -164,6 +227,15 @@ export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProp
           </span>
         </div>
 
+        {warningOverBudget && totalBills > 0 && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Total planejado ({formatCurrency(data.total_planned)}) maior que o disponível ({formatCurrency(disponible)})
+            </span>
+          </div>
+        )}
+
         {data.items.map((item) => {
           const isEditing = editingItem === item.id
 
@@ -174,45 +246,71 @@ export function PlanejamentoClient({ data, month, year }: PlanejamentoClientProp
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{item.name}</p>
                   {isEditing ? (
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-xs text-gray-400">Planejado: R$</span>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-xs text-muted-foreground">Planejado: R$</span>
                       <input
                         type="number"
                         value={itemValue}
                         onChange={(e) => setItemValue(e.target.value)}
-                        className="w-24 px-2 py-0.5 rounded border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-xs font-medium"
+                        className="min-w-[120px] px-3 py-1.5 rounded-lg border border-border bg-background text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') saveItem()
                           if (e.key === 'Escape') cancelEdit()
                         }}
                       />
-                      <button onClick={saveItem} disabled={isPending} className="p-0.5 text-green-600 hover:bg-green-50 rounded">
-                        {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                      <button
+                        onClick={saveItem}
+                        disabled={isPending}
+                        aria-label="Confirmar valor"
+                        className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 transition-colors"
+                      >
+                        {isPending ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <Check size={18} />}
                       </button>
-                      <button onClick={cancelEdit} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
-                        <X className="w-3 h-3" />
+                      <button
+                        onClick={cancelEdit}
+                        aria-label="Cancelar edição"
+                        className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 transition-colors"
+                      >
+                        <X size={18} />
                       </button>
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-400">
-                      {item.planned > 0
-                        ? `Gasto: ${formatCurrency(item.spent)} de ${formatCurrency(item.planned)} planejado`
-                        : item.spent > 0
-                          ? `Gasto: ${formatCurrency(item.spent)} · sem planejamento`
-                          : 'Nenhum gasto · sem planejamento'}
-                    </p>
+                    <div className="text-xs">
+                      {item.planned > 0 ? (
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <span className="text-muted-foreground">Gasto:</span>
+                          <span className={item.spent > item.planned ? 'text-expense font-medium' : 'text-foreground font-medium'}>
+                            {formatCurrency(item.spent)}
+                          </span>
+                          <span className="text-muted-foreground">de</span>
+                          <span className="text-foreground font-medium">{formatCurrency(item.planned)}</span>
+                          <span style={{ color: item.planned - item.spent >= 0 ? 'var(--income)' : 'var(--expense)' }} className="font-medium">
+                            ({item.planned - item.spent >= 0 ? '+' : '-'}{formatCurrency(Math.abs(item.planned - item.spent)).replace('R$', '').trim()})
+                          </span>
+                        </div>
+                      ) : item.spent > 0 ? (
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <span className="text-muted-foreground">Gasto:</span>
+                          <span className="text-expense font-medium">{formatCurrency(item.spent)}</span>
+                          <span className="text-muted-foreground">· sem planejamento</span>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">Nenhum gasto · sem planejamento</p>
+                      )}
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={item.percentage > 90 ? 'text-xs font-medium text-red-500' : item.percentage >= 70 ? 'text-xs font-medium text-yellow-500' : 'text-xs font-medium text-gray-500'}>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={item.percentage > 90 ? 'text-xs font-medium text-expense' : item.percentage >= 70 ? 'text-xs font-medium text-yellow-500' : 'text-xs font-medium text-muted-foreground'}>
                     {Math.round(item.percentage)}%
                   </span>
                   <button
                     onClick={() => startEditItem(item)}
-                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                    aria-label="Editar planejamento"
+                    className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                    <Pencil size={18} className="text-muted-foreground" />
                   </button>
                 </div>
               </div>

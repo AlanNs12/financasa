@@ -13,6 +13,7 @@ export type CreateTransactionInput = {
   payment_method: PaymentMethod
   notes?: string
   recurring_bill_id?: string
+  credit_card_id?: string
 }
 
 export async function getTransactionsByMonth(
@@ -57,10 +58,17 @@ export async function createTransaction(data: CreateTransactionInput) {
       payment_method: data.payment_method,
       notes: data.notes,
       recurring_bill_id: data.recurring_bill_id,
+      credit_card_id: data.credit_card_id,
     },
   })
 }
 
-export async function deleteTransaction(id: string) {
-  return prisma.transaction.delete({ where: { id } })
+export async function deleteTransaction(
+  id: string,
+  householdId: string
+): Promise<number> {
+  const result = await prisma.transaction.deleteMany({
+    where: { id, household_id: householdId },
+  })
+  return result.count
 }

@@ -40,6 +40,32 @@ export async function getCurrentUserHousehold(): Promise<{
   return { userId: dbUser.id, householdId: dbUser.household_id }
 }
 
+export async function getCurrentUser(): Promise<{
+  id: string
+  name: string
+  avatarUrl: string | null
+  householdId: string
+} | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabase_id: user.id },
+    select: { id: true, name: true, avatar_url: true, household_id: true },
+  })
+
+  if (!dbUser) return null
+
+  return {
+    id: dbUser.id,
+    name: dbUser.name,
+    avatarUrl: dbUser.avatar_url,
+    householdId: dbUser.household_id,
+  }
+}
+
 export async function createUserAndHousehold(
   supabaseId: string,
   name: string,

@@ -14,6 +14,7 @@ export async function createTransactionAction(data: {
   category_id: string
   payment_method: string
   notes?: string
+  credit_card_id?: string | null
 }) {
   const current = await getCurrentUserHousehold()
   if (!current) {
@@ -28,6 +29,7 @@ export async function createTransactionAction(data: {
     category_id: data.category_id,
     payment_method: data.payment_method,
     notes: data.notes,
+    credit_card_id: data.credit_card_id || undefined,
   }
 
   const parsed = transactionSchema.safeParse(rawData)
@@ -46,6 +48,7 @@ export async function createTransactionAction(data: {
     date: new Date(parsed.data.date + 'T12:00:00'),
     payment_method: parsed.data.payment_method as PaymentMethod,
     notes: parsed.data.notes,
+    credit_card_id: parsed.data.credit_card_id || undefined,
   })
 
   revalidatePath('/transacoes')
@@ -54,7 +57,18 @@ export async function createTransactionAction(data: {
 }
 
 export async function deleteTransactionAction(id: string) {
-  await deleteTransaction(id)
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { error: 'Usuário não autenticado.' }
+  }
+
+  const count = await deleteTransaction(id, current.householdId)
+
+  if (count === 0) {
+    return { error: 'Transação não encontrada.' }
+  }
+
   revalidatePath('/transacoes')
   revalidatePath('/')
+  return { success: true }
 }

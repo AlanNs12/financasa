@@ -32,6 +32,20 @@ export function PersonAvatar({ user, size = 'md', className }: PersonAvatarProps
     )
   }
 
+  if (user?.name) {
+    return (
+      <div
+        className={cn(
+          'rounded-full bg-gray-200 flex items-center justify-center font-medium text-gray-600',
+          sizeClasses[size],
+          className
+        )}
+      >
+        {initials}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(

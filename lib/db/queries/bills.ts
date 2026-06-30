@@ -72,6 +72,7 @@ export async function getBillsHistory(householdId: string, monthsBack = 6) {
       due_day: number
       status: string
       paid_at: string | null
+      is_active: boolean
     }>
   }> = []
 
@@ -94,6 +95,7 @@ export async function getBillsHistory(householdId: string, monthsBack = 6) {
           due_day: b.due_day,
           status: ms?.status ?? 'PENDING',
           paid_at: ms?.paid_at?.toISOString() ?? null,
+          is_active: b.is_active,
         }
       })
 
@@ -123,6 +125,7 @@ export async function createRecurringBill(data: {
   amount: number
   due_day: number
   recurrence: Recurrence
+  category_id?: string | null
   installment_total?: number | null
   installment_current?: number | null
 }) {
@@ -134,6 +137,7 @@ export async function createRecurringBill(data: {
       amount: data.amount,
       due_day: data.due_day,
       recurrence: data.recurrence,
+      category_id: data.category_id ?? null,
       installment_total: data.installment_total ?? null,
       installment_current: data.installment_current ?? null,
     },
@@ -191,5 +195,107 @@ export async function updateBillStatus(
       }
     }
   }
+}
+
+export async function createTransactionFromBill(
+  billId: string,
+  userId: string,
+  month: number,
+  year: number
+): Promise<boolean> {
+  const existing = await prisma.transaction.findFirst({
+    where: {
+      recurring_bill_id: billId,
+      date: {
+        gte: new Date(year, month - 1, 1),
+        lt: new Date(year, month, 1),
+      },
+    },
+  })
+
+  if (existing) return false
+
+  const bill = await prisma.recurringBill.findUnique({
+    where: { id: billId },
+    include: { category: true },
+  })
+
+  if (!bill) return false
+
+  let categoryId = bill.category_id
+
+  if (!categoryId) {
+    const fallback = await prisma.category.findFirst({
+      where: { household_id: bill.household_id, type: 'EXPENSE' },
+    })
+    if (!fallback) return false
+    categoryId = fallback.id
+  }
+
+  const dueDay = bill.due_day
+  const day = dueDay > 0 && dueDay <= 28 ? dueDay : Math.min(new Date(year, month, 0).getDate(), dueDay)
+
+  await prisma.transaction.create({
+    data: {
+      household_id: bill.household_id,
+      user_id: userId,
+      category_id: categoryId,
+      type: 'EXPENSE',
+      amount: bill.amount,
+      description: bill.name,
+      date: new Date(year, month - 1, day),
+      payment_method: 'PIX',
+      recurring_bill_id: bill.id,
+    },
+  })
+
+  return true
+}
+
+export async function getTotalBillsForMonth(householdId: string) {
+  const result = await prisma.recurringBill.aggregate({
+    where: { household_id: householdId, is_active: true },
+    _sum: { amount: true },
+    _count: true,
+  })
+
+  return {
+    totalBills: Number(result._sum.amount ?? 0),
+    billsCount: result._count,
+  }
+}
+
+export async function deleteRecurringBill(id: string, householdId: string) {
+  return prisma.recurringBill.updateMany({
+    where: { id, household_id: householdId },
+    data: { is_active: false },
+  })
+}
+
+export async function updateRecurringBill(
+  id: string,
+  householdId: string,
+  data: {
+    name: string
+    amount: number
+    due_day: number
+    recurrence: Recurrence
+    category_id?: string | null
+  }
+) {
+  await prisma.recurringBill.updateMany({
+    where: { id, household_id: householdId, is_active: true },
+    data: {
+      name: data.name,
+      amount: data.amount,
+      due_day: data.due_day,
+      recurrence: data.recurrence,
+      category_id: data.category_id ?? null,
+    },
+  })
+
+  return prisma.recurringBill.findFirst({
+    where: { id, household_id: householdId },
+  })
 }
 

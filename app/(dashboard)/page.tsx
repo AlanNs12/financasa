@@ -2,11 +2,13 @@ import { MonthlyBudgetCard } from '@/components/dashboard/monthly-budget-card'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { UpcomingBills } from '@/components/dashboard/upcoming-bills'
+import { AlertsPanel } from '@/components/dashboard/alerts-panel'
 import { getMonthAbbr } from '@/lib/format'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { getRecurringBills } from '@/lib/db/queries/bills'
 import { getBudgetWithProgress } from '@/lib/db/queries/budget'
+import { getActiveAlerts } from '@/lib/db/queries/alerts'
 
 const now = new Date()
 
@@ -33,10 +35,11 @@ export default async function DashboardPage({
   }
 
   try {
-    const [transactions, bills, budget] = await Promise.all([
+    const [transactions, bills, budget, alerts] = await Promise.all([
       getTransactionsByMonth(current.householdId, currentMonth, currentYear),
       getRecurringBills(current.householdId, currentMonth, currentYear),
       getBudgetWithProgress(current.householdId, currentMonth, currentYear),
+      getActiveAlerts(current.householdId, currentMonth, currentYear),
     ])
 
     const income = transactions
@@ -98,6 +101,8 @@ export default async function DashboardPage({
           balance={balance}
           pendingBills={pendingBillsAmount}
         />
+
+        {alerts.length > 0 && <AlertsPanel alerts={alerts} />}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RecentTransactions transactions={recentTransactions} />

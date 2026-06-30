@@ -10,4 +10,13 @@ export const goalSchema = z.object({
   color: z.string().optional(),
 })
 
+export const updateGoalSchema = goalSchema.partial().extend({
+  current_amount: z.coerce.number().optional(),
+})
+
+export const addGoalAmountSchema = z.object({
+  amount: z.coerce.number().positive('Valor deve ser positivo'),
+})
+
 export type GoalInput = z.infer<typeof goalSchema>
+export type UpdateGoalInput = z.infer<typeof updateGoalSchema>

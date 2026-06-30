@@ -24,22 +24,32 @@ interface Category {
   type: string
 }
 
+interface CreditCard {
+  id: string
+  name: string
+  issuer: string | null
+}
+
 interface TransactionsClientProps {
   transactions: Transaction[]
   categories: Category[]
+  creditCards: CreditCard[]
+  month: number
+  year: number
 }
 
-export function TransactionsClient({ transactions, categories }: TransactionsClientProps) {
+export function TransactionsClient({ transactions, categories, creditCards, month, year }: TransactionsClientProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
     <>
-      <TransactionList transactions={transactions} />
+      <TransactionList transactions={transactions} month={month} year={year} />
       <Fab onClick={() => setModalOpen(true)} />
       <NewTransactionModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         categories={categories}
+        creditCards={creditCards}
       />
     </>
   )

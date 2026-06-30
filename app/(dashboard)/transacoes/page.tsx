@@ -1,6 +1,7 @@
 ﻿import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { getCategories } from '@/lib/db/queries/categories'
+import { getCreditCards } from '@/lib/db/queries/credit-cards'
 import { TransactionsClient } from '@/components/transacoes/transactions-client'
 
 const now = new Date()
@@ -27,9 +28,10 @@ export default async function TransacoesPage({
     )
   }
 
-  const [transactions, categories] = await Promise.all([
+  const [transactions, categories, creditCards] = await Promise.all([
     getTransactionsByMonth(current.householdId, month, year),
     getCategories(current.householdId),
+    getCreditCards(current.householdId),
   ])
 
   const clientTransactions = transactions.map((t) => ({
@@ -51,6 +53,12 @@ export default async function TransacoesPage({
     type: c.type,
   }))
 
+  const clientCreditCards = creditCards.map((c) => ({
+    id: c.id,
+    name: c.name,
+    issuer: c.issuer ?? null,
+  }))
+
   return (
     <div className="space-y-4">
       <div>
@@ -61,6 +69,9 @@ export default async function TransacoesPage({
       <TransactionsClient
         transactions={clientTransactions}
         categories={clientCategories}
+        creditCards={clientCreditCards}
+        month={month}
+        year={year}
       />
     </div>
   )

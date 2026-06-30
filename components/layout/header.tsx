@@ -3,8 +3,7 @@
 import { Suspense } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { MonthSelector } from './month-selector'
-import { useAuthStore } from '@/store/auth-store'
-import { User } from 'lucide-react'
+import { PersonAvatar } from '@/components/shared/person-avatar'
 
 function MonthSelectorFallback() {
   const now = new Date()
@@ -24,9 +23,11 @@ function MonthSelectorFallback() {
   )
 }
 
-export function Header() {
-  const { userName } = useAuthStore()
+interface HeaderProps {
+  user?: { name: string; avatarUrl: string | null } | null
+}
 
+export function Header({ user }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 bg-[#f8f9fa] border-b border-gray-200 px-4 lg:px-8 py-3">
       <div className="flex items-center justify-between">
@@ -34,11 +35,12 @@ export function Header() {
           <MonthSelector />
         </Suspense>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-            <User className="w-4 h-4 text-gray-500" />
-          </div>
+          <PersonAvatar
+            user={user ? { name: user.name, avatar_url: user.avatarUrl } : null}
+            size="md"
+          />
           <span className="text-sm text-gray-600 hidden sm:block">
-            {userName || 'Usuário'}
+            {user?.name || 'Usuário'}
           </span>
         </div>
       </div>

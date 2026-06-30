@@ -17,6 +17,12 @@ interface Category {
   type: string
 }
 
+interface CreditCard {
+  id: string
+  name: string
+  issuer: string | null
+}
+
 const PAYMENT_METHODS = [
   { id: 'PIX', label: 'Pix' },
   { id: 'CREDIT_CARD', label: 'Crédito' },
@@ -30,9 +36,10 @@ interface NewTransactionModalProps {
   isOpen: boolean
   onClose: () => void
   categories: Category[]
+  creditCards: CreditCard[]
 }
 
-export function NewTransactionModal({ isOpen, onClose, categories }: NewTransactionModalProps) {
+export function NewTransactionModal({ isOpen, onClose, categories, creditCards }: NewTransactionModalProps) {
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
   const [showNotes, setShowNotes] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -60,6 +67,7 @@ export function NewTransactionModal({ isOpen, onClose, categories }: NewTransact
   })
 
   const categoryId = watch('category_id')
+  const paymentMethod = watch('payment_method')
 
   function handleFormSubmit() {
     const values = getValues()
@@ -72,6 +80,7 @@ export function NewTransactionModal({ isOpen, onClose, categories }: NewTransact
         category_id: values.category_id,
         payment_method: values.payment_method,
         notes: values.notes || undefined,
+        credit_card_id: values.credit_card_id || undefined,
       })
 
       if (result?.error) {
@@ -187,6 +196,23 @@ export function NewTransactionModal({ isOpen, onClose, categories }: NewTransact
               </select>
             </div>
           </div>
+
+          {paymentMethod === 'CREDIT_CARD' && creditCards.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Qual cartão?</label>
+              <select
+                {...register('credit_card_id')}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm bg-white"
+              >
+                <option value="">Selecione o cartão</option>
+                {creditCards.map((card) => (
+                  <option key={card.id} value={card.id}>
+                    {card.name}{card.issuer ? ` · ${card.issuer}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>

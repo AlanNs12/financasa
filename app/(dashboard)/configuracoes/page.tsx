@@ -1,10 +1,14 @@
 import { signOut } from '@/app/actions/auth'
 import { getCurrentUserHousehold, getHouseholdInviteCode } from '@/lib/db/queries/user'
+import { getCreditCards } from '@/lib/db/queries/credit-cards'
 import { CopyButton } from './copy-button'
+import { CreditCardsManager } from '@/components/configuracoes/credit-cards-manager'
+import { ThemeToggle } from '@/components/configuracoes/theme-toggle'
 
 export default async function ConfiguracoesPage() {
   const current = await getCurrentUserHousehold()
   const inviteCode = current ? await getHouseholdInviteCode(current.householdId) : null
+  const creditCards = current ? await getCreditCards(current.householdId, true) : []
 
   return (
     <div className="space-y-6">
@@ -27,6 +31,13 @@ export default async function ConfiguracoesPage() {
           </div>
         </div>
       )}
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">Aparência</h2>
+        <ThemeToggle />
+      </div>
+
+      <CreditCardsManager cards={creditCards} />
 
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Conta</h2>

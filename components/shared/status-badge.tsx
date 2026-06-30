@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils'
-import { Check, Clock, AlertTriangle, X, Loader2 } from 'lucide-react'
+import { Check, Clock, AlertTriangle, X, Loader2, Pause } from 'lucide-react'
 
 interface StatusBadgeProps {
-  status: 'paid' | 'pending' | 'overdue' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'paid' | 'pending' | 'overdue' | 'in_progress' | 'completed' | 'cancelled' | 'paused'
   className?: string
 }
 
@@ -36,6 +36,11 @@ const statusConfig = {
     icon: X,
     label: 'Cancelada',
     className: 'bg-gray-100 text-gray-500 border-gray-200',
+  },
+  paused: {
+    icon: Pause,
+    label: 'Pausada',
+    className: 'bg-gray-100 text-gray-600 border-gray-200',
   },
 }
 

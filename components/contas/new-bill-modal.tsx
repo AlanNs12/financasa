@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { recurringBillSchema, type RecurringBillInput } from '@/lib/validations/bill'
-import { createRecurringBillAction } from '@/app/actions/bills'
+import { recurringBillSchema, updateRecurringBillSchema, type RecurringBillInput, type UpdateRecurringBillInput } from '@/lib/validations/bill'
+import { createRecurringBillAction, updateRecurringBillAction } from '@/app/actions/bills'
 import { toast } from 'sonner'
 
 const BILL_ICONS = ['🏠', '🌐', '⚡', '💧', '🏥', '🏋️', '📱', '🎓', '🚗', '🛡️', '📺', '📦']
@@ -18,14 +18,36 @@ const RECURRENCE_OPTIONS = [
   { id: 'ANNUAL', label: 'Anual' },
 ]
 
+interface Category {
+  id: string
+  name: string
+  icon: string
+}
+
+interface EditingBill {
+  id: string
+  name: string
+  amount: number
+  due_day: number
+  recurrence: string
+  is_fixed: boolean
+  installment_total?: number | null
+  category_id?: string | null
+}
+
 interface NewBillModalProps {
   isOpen: boolean
   onClose: () => void
+  categories: Category[]
+  editingBill?: EditingBill | null
 }
 
-export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
+export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBillModalProps) {
+  const isEditing = !!editingBill
+
   const [icon, setIcon] = useState('🏠')
   const [billType, setBillType] = useState<'fixa' | 'parcelada'>('fixa')
+  const [categoryId, setCategoryId] = useState('')
   const [isPending, startTransition] = useTransition()
 
   const {
@@ -34,37 +56,82 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
     reset,
     watch,
     formState: { errors },
-  } = useForm<RecurringBillInput>({
-    resolver: zodResolver(recurringBillSchema) as never,
+  } = useForm<RecurringBillInput & UpdateRecurringBillInput>({
+    resolver: zodResolver(isEditing ? updateRecurringBillSchema : recurringBillSchema) as never,
     defaultValues: {
       recurrence: 'MONTHLY',
-      bill_type: 'fixa',
     },
   })
 
-  const installmentTotal = watch('installment_total')
-
-  function handleFormSubmit(data: RecurringBillInput) {
-    startTransition(async () => {
-      const result = await createRecurringBillAction({
-        name: `${icon} ${data.name}`,
-        amount: data.amount,
-        due_day: data.due_day,
-        recurrence: billType === 'parcelada' ? 'MONTHLY' : data.recurrence,
-        bill_type: billType,
-        installment_total: billType === 'parcelada' ? Number(data.installment_total) : undefined,
+  useEffect(() => {
+    if (!isOpen) return
+    if (editingBill) {
+      const match = editingBill.name.match(/^(\S+)\s+(.+)$/)
+      setIcon(match?.[1] ?? '🏠')
+      setBillType(editingBill.is_fixed ? 'fixa' : 'parcelada')
+      setCategoryId(editingBill.category_id ?? '')
+      reset({
+        name: match?.[2] ?? editingBill.name,
+        amount: editingBill.amount,
+        due_day: editingBill.due_day,
+        recurrence: editingBill.recurrence as 'MONTHLY' | 'BIMONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL',
+        category_id: editingBill.category_id ?? undefined,
       })
-
-      if (result?.error) {
-        toast.error('Erro ao criar conta.')
-        return
-      }
-
-      toast.success('Conta criada com sucesso!')
-      reset()
+    } else {
       setIcon('🏠')
       setBillType('fixa')
-      onClose()
+      setCategoryId('')
+      reset({
+        name: '',
+        amount: undefined as never,
+        due_day: undefined as never,
+        recurrence: 'MONTHLY',
+        bill_type: 'fixa' as never,
+        installment_total: undefined as never,
+      })
+    }
+  }, [isOpen, editingBill, reset])
+
+  const installmentTotal = watch('installment_total')
+
+  function handleFormSubmit(data: RecurringBillInput & UpdateRecurringBillInput) {
+    startTransition(async () => {
+      if (editingBill) {
+        const fullName = `${icon} ${data.name}`
+        const result = await updateRecurringBillAction(editingBill.id, {
+          name: fullName,
+          amount: data.amount,
+          due_day: data.due_day,
+          recurrence: data.recurrence,
+          category_id: categoryId || undefined,
+        })
+
+        if (result?.error) {
+          toast.error('Erro ao atualizar conta.')
+          return
+        }
+
+        toast.success('Conta atualizada!')
+        onClose()
+      } else {
+        const result = await createRecurringBillAction({
+          name: `${icon} ${data.name}`,
+          amount: data.amount,
+          due_day: data.due_day,
+          recurrence: billType === 'parcelada' ? 'MONTHLY' : data.recurrence,
+          bill_type: billType,
+          installment_total: billType === 'parcelada' ? Number(data.installment_total) : undefined,
+          category_id: categoryId || undefined,
+        })
+
+        if (result?.error) {
+          toast.error('Erro ao criar conta.')
+          return
+        }
+
+        toast.success('Conta criada com sucesso!')
+        onClose()
+      }
     })
   }
 
@@ -76,33 +143,42 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
 
       <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-          <h2 className="text-lg font-bold text-gray-900">Nova conta</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">
+            {isEditing ? 'Editar conta' : 'Nova conta'}
+          </h2>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100" aria-label="Fechar">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-5">
-          <div className="flex bg-gray-100 rounded-xl p-1">
-            <button
-              type="button"
-              onClick={() => setBillType('fixa')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                billType === 'fixa' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
-              }`}
-            >
-              Fixa
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillType('parcelada')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                billType === 'parcelada' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
-              }`}
-            >
-              Parcelada
-            </button>
-          </div>
+          {isEditing ? (
+            <div className="flex bg-gray-100 rounded-xl p-1 opacity-60 pointer-events-none">
+              <div className="flex-1 py-2.5 rounded-lg text-sm font-medium text-center bg-white text-gray-900 shadow-sm">Fixa</div>
+              <div className="flex-1 py-2.5 rounded-lg text-sm font-medium text-center text-gray-500">Parcelada</div>
+            </div>
+          ) : (
+            <div className="flex bg-gray-100 rounded-xl p-1">
+              <button
+                type="button"
+                onClick={() => setBillType('fixa')}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  billType === 'fixa' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                }`}
+              >
+                Fixa
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillType('parcelada')}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  billType === 'parcelada' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                }`}
+              >
+                Parcelada
+              </button>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Ícone</label>
@@ -124,6 +200,33 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
             </div>
           </div>
 
+          {categories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Categoria <span className="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id === categoryId ? '' : cat.id)}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
+                      categoryId === cat.id
+                        ? 'border-gray-900 bg-gray-50'
+                        : 'border-gray-100 hover:border-gray-200'
+                    }`}
+                  >
+                    <span className="text-xl">{cat.icon}</span>
+                    <span className="text-[10px] text-gray-600 text-center leading-tight">
+                      {cat.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
             <input
@@ -139,7 +242,7 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {billType === 'parcelada' ? 'Valor de cada parcela' : 'Valor'}
+              {billType === 'parcelada' && !isEditing ? 'Valor de cada parcela' : 'Valor'}
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
@@ -158,7 +261,7 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
             )}
           </div>
 
-          {billType === 'parcelada' ? (
+          {!isEditing && billType === 'parcelada' ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Número de parcelas</label>
               <div className="relative">
@@ -213,7 +316,7 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
             </div>
           )}
 
-          {billType === 'parcelada' && (
+          {!isEditing && billType === 'parcelada' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento</label>
               <input
@@ -244,7 +347,7 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
               className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              Salvar
+              {isEditing ? 'Salvar alterações' : 'Salvar'}
             </button>
           </div>
         </form>

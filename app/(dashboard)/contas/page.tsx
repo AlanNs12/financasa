@@ -1,5 +1,6 @@
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getRecurringBills, getBillsHistory } from '@/lib/db/queries/bills'
+import { getCategories } from '@/lib/db/queries/categories'
 import { ContasClient } from '@/components/contas/contas-client'
 
 const now = new Date()
@@ -26,9 +27,10 @@ export default async function ContasPage({
     )
   }
 
-  const [bills, history] = await Promise.all([
+  const [bills, history, categories] = await Promise.all([
     getRecurringBills(current.householdId, month, year),
     getBillsHistory(current.householdId),
+    getCategories(current.householdId),
   ])
 
   const clientBills = bills.map((b) => ({
@@ -46,12 +48,17 @@ export default async function ContasPage({
     })),
   }))
 
+  const expenseCategories = categories
+    .filter((c) => c.type === 'EXPENSE' || c.type === 'BOTH')
+    .map((c) => ({ id: c.id, name: c.name, icon: c.icon }))
+
   return (
     <ContasClient
       bills={clientBills}
       history={history}
       month={month}
       year={year}
+      categories={expenseCategories}
     />
   )
 }

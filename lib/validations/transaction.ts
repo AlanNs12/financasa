@@ -8,6 +8,7 @@ export const transactionSchema = z.object({
   category_id: z.string().min(1, 'Categoria obrigatória'),
   payment_method: z.enum(['PIX', 'CREDIT_CARD', 'DEBIT_CARD', 'CASH', 'BANK_TRANSFER', 'BOLETO']),
   notes: z.string().optional(),
+  credit_card_id: z.string().optional().nullable(),
 })
 
 export type TransactionInput = z.infer<typeof transactionSchema>

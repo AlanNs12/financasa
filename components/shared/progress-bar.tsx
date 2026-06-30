@@ -6,15 +6,21 @@ interface ProgressBarProps {
   showLabel?: boolean
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  invertColors?: boolean
 }
 
-function getBarColor(percentage: number): string {
-  if (percentage > 90) return 'bg-red-500'
-  if (percentage >= 70) return 'bg-yellow-500'
-  return 'bg-green-500'
+function getBarColor(percentage: number, invert: boolean): string {
+  if (invert) {
+    if (percentage >= 90) return 'var(--progress-safe)'
+    if (percentage >= 70) return 'var(--progress-warning)'
+    return 'var(--progress-danger)'
+  }
+  if (percentage > 90) return 'var(--progress-danger)'
+  if (percentage >= 70) return 'var(--progress-warning)'
+  return 'var(--progress-safe)'
 }
 
-export function ProgressBar({ value, max, showLabel = false, size = 'md', className }: ProgressBarProps) {
+export function ProgressBar({ value, max, showLabel = false, size = 'md', className, invertColors = false }: ProgressBarProps) {
   const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0
   const heightClass = size === 'sm' ? 'h-1.5' : size === 'lg' ? 'h-4' : 'h-2.5'
 
@@ -29,8 +35,8 @@ export function ProgressBar({ value, max, showLabel = false, size = 'md', classN
       )}
       <div className={cn('w-full bg-gray-100 rounded-full overflow-hidden', heightClass)}>
         <div
-          className={cn('rounded-full transition-all duration-500', heightClass, getBarColor(percentage))}
-          style={{ width: `${percentage}%` }}
+          className={cn('rounded-full transition-all duration-500', heightClass)}
+          style={{ width: `${percentage}%`, backgroundColor: getBarColor(percentage, invertColors) }}
         />
       </div>
     </div>

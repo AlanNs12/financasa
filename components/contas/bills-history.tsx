@@ -14,6 +14,7 @@ interface HistoryBill {
   due_day: number
   status: string
   paid_at: string | null
+  is_active: boolean
 }
 
 interface MonthHistory {
@@ -135,7 +136,12 @@ export function BillsHistory({ history, currentMonth, currentYear }: BillsHistor
                         <p className="text-sm font-bold text-gray-900 tabular-nums">
                           {formatCurrency(bill.amount)}
                         </p>
-                        <StatusBadge status={status} />
+                        <div className="flex items-center gap-1 justify-end">
+                          <StatusBadge status={status} />
+                          {!bill.is_active && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Inativa</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )

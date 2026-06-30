@@ -7,10 +7,10 @@ import { ProgressBar } from '@/components/shared/progress-bar'
 import { NewBillModal } from '@/components/contas/new-bill-modal'
 import { BillsHistory } from '@/components/contas/bills-history'
 import { Fab } from '@/components/transacoes/fab'
-import { markBillAsPaidAction } from '@/app/actions/bills'
+import { markBillAsPaidAction, deleteRecurringBillAction } from '@/app/actions/bills'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 
 interface Bill {
   id: string
@@ -31,6 +31,7 @@ interface HistoryBill {
   due_day: number
   status: string
   paid_at: string | null
+  is_active: boolean
 }
 
 interface MonthHistory {
@@ -48,6 +49,18 @@ interface ContasClientProps {
   history: MonthHistory[]
   month: number
   year: number
+  categories: { id: string; name: string; icon: string }[]
+}
+
+interface EditingBill {
+  id: string
+  name: string
+  amount: number
+  due_day: number
+  recurrence: string
+  is_fixed: boolean
+  installment_total?: number | null
+  category_id?: string | null
 }
 
 type Tab = 'current' | 'history'
@@ -89,11 +102,26 @@ function getRecurrenceLabel(bill: Bill, viewMonth: number, viewYear: number): st
   return RECURRENCE_LABELS[bill.recurrence] || bill.recurrence
 }
 
-export function ContasClient({ bills, history, month, year }: ContasClientProps) {
+function mapBillToEditing(bill: Bill): EditingBill {
+  return {
+    id: bill.id,
+    name: bill.name,
+    amount: bill.amount,
+    due_day: bill.due_day,
+    recurrence: bill.recurrence,
+    is_fixed: !bill.installment_total,
+    installment_total: bill.installment_total,
+    category_id: null,
+  }
+}
+
+export function ContasClient({ bills, history, month, year, categories }: ContasClientProps) {
   const [expandedBill, setExpandedBill] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [payingBill, setPayingBill] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('current')
+  const [editingBill, setEditingBill] = useState<EditingBill | null>(null)
+  const [deletingBill, setDeletingBill] = useState<Bill | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const monthName = getMonthName(month)
@@ -113,10 +141,23 @@ export function ContasClient({ bills, history, month, year }: ContasClientProps)
       if (!result?.success) {
         toast.error('Erro ao marcar conta.')
       } else {
-        toast.success('Conta marcada como paga!')
+        toast.success('Conta marcada como paga e registrada como despesa')
       }
       setPayingBill(null)
       setExpandedBill(null)
+    })
+  }
+
+  function handleDelete() {
+    if (!deletingBill) return
+    startTransition(async () => {
+      const result = await deleteRecurringBillAction(deletingBill.id)
+      if (result?.error) {
+        toast.error('Erro ao excluir conta.')
+      } else {
+        toast.success('Conta excluída')
+      }
+      setDeletingBill(null)
     })
   }
 
@@ -216,11 +257,31 @@ export function ContasClient({ bills, history, month, year }: ContasClientProps)
                           {getRecurrenceLabel(bill, month, year)} · Vence dia {bill.due_day.toString().padStart(2, '0')}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900 tabular-nums">
-                          {formatCurrency(bill.amount)}
-                        </p>
-                        <StatusBadge status={status} />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900 tabular-nums">
+                            {formatCurrency(bill.amount)}
+                          </p>
+                          <StatusBadge status={status} />
+                        </div>
+                        {status !== 'paid' && (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditingBill(mapBillToEditing(bill)) }}
+                              aria-label="Editar conta"
+                              className="p-1.5 min-w-[36px] min-h-[36px] rounded-lg text-muted-foreground hover:text-foreground hover:bg-gray-100 transition-colors"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDeletingBill(bill) }}
+                              aria-label="Excluir conta"
+                              className="p-1.5 min-w-[36px] min-h-[36px] rounded-lg text-muted-foreground hover:text-expense hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </button>
 
@@ -259,7 +320,42 @@ export function ContasClient({ bills, history, month, year }: ContasClientProps)
           )}
 
           <Fab onClick={() => setModalOpen(true)} />
-          <NewBillModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+          <NewBillModal
+            isOpen={modalOpen || !!editingBill}
+            onClose={() => { setModalOpen(false); setEditingBill(null) }}
+            categories={categories}
+            editingBill={editingBill}
+          />
+
+          {deletingBill && (
+            <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setDeletingBill(null)} />
+              <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">Excluir conta?</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  A conta <span className="text-foreground font-medium">{extractName(deletingBill.name)}</span> será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeletingBill(null)}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="flex-1 py-3 rounded-xl bg-expense text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <BillsHistory
