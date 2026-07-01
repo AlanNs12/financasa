@@ -87,14 +87,14 @@ export function SimuladorClient() {
       <div className="flex items-center gap-3">
         <Link
           href="/investimentos"
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-lg hover:bg-accent transition-colors"
           aria-label="Voltar para investimentos"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Simulador de aposentadoria</h1>
-          <p className="text-sm text-gray-500">Projeção de juros compostos com aporte mensal</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Simulador de aposentadoria</h1>
+          <p className="text-sm text-muted-foreground">Projeção de juros compostos com aporte mensal</p>
         </div>
       </div>
 
@@ -106,11 +106,11 @@ export function SimuladorClient() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+      <div className="bg-card rounded-2xl border border-border p-6 space-y-5">
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">Valor inicial</label>
-            <span className="text-sm font-bold text-gray-900 tabular-nums">
+            <label className="text-sm font-medium text-muted-foreground">Valor inicial</label>
+            <span className="text-sm font-bold text-foreground tabular-nums">
               {formatCurrency(initialValue)}
             </span>
           </div>
@@ -127,8 +127,8 @@ export function SimuladorClient() {
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">Aporte mensal</label>
-            <span className="text-sm font-bold text-gray-900 tabular-nums">
+            <label className="text-sm font-medium text-muted-foreground">Aporte mensal</label>
+            <span className="text-sm font-bold text-foreground tabular-nums">
               {formatCurrency(monthlyContribution)}
             </span>
           </div>
@@ -145,8 +145,8 @@ export function SimuladorClient() {
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">Prazo</label>
-            <span className="text-sm font-bold text-gray-900 tabular-nums">
+            <label className="text-sm font-medium text-muted-foreground">Prazo</label>
+            <span className="text-sm font-bold text-foreground tabular-nums">
               {years} anos
             </span>
           </div>
@@ -163,10 +163,10 @@ export function SimuladorClient() {
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-muted-foreground">
               Rentabilidade anual esperada
             </label>
-            <span className="text-sm font-bold text-gray-900 tabular-nums">
+            <span className="text-sm font-bold text-foreground tabular-nums">
               {annualRate.toFixed(1).replace('.', ',')}%
             </span>
           </div>
@@ -183,24 +183,24 @@ export function SimuladorClient() {
       </div>
 
       <div className="bg-[#1a1a2e] rounded-2xl p-6 text-white">
-        <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
           Resultado em {years} anos
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <p className="text-xs text-gray-400 mb-1">Valor total acumulado</p>
+            <p className="text-xs text-muted-foreground mb-1">Valor total acumulado</p>
             <p className="text-2xl font-bold tabular-nums">
               {formatCurrency(simulation.grossValue)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-1">Total aportado</p>
+            <p className="text-xs text-muted-foreground mb-1">Total aportado</p>
             <p className="text-lg font-bold tabular-nums text-blue-400">
               {formatCurrency(simulation.totalContributed)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 mb-1">Rendimentos</p>
+            <p className="text-xs text-muted-foreground mb-1">Rendimentos</p>
             <p className="text-lg font-bold tabular-nums text-green-400">
               {formatCurrency(simulation.totalEarnings)}
             </p>
@@ -208,8 +208,8 @@ export function SimuladorClient() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
           Evolução da carteira
         </h2>
         <div className="h-72">
@@ -260,43 +260,43 @@ export function SimuladorClient() {
         <div className="flex items-center gap-4 mt-3 justify-center">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#6366f1' }} />
-            <span className="text-xs text-gray-500">Aportado</span>
+            <span className="text-xs text-muted-foreground">Aportado</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
-            <span className="text-xs text-gray-500">Rendimentos</span>
+            <span className="text-xs text-muted-foreground">Rendimentos</span>
           </div>
         </div>
       </div>
 
       <div>
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">
+        <h2 className="text-sm font-semibold text-foreground mb-3">
           Cenários líquidos por tributação
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {simulation.netResults.map((result) => (
             <div
               key={result.productType}
-              className="bg-white rounded-2xl border border-gray-100 p-4"
+              className="bg-card rounded-2xl border border-border p-4"
             >
-              <p className="text-sm font-semibold text-gray-900 mb-1">
+              <p className="text-sm font-semibold text-foreground mb-1">
                 {PRODUCT_LABELS[result.productType]}
               </p>
-              <p className="text-[11px] text-gray-400 mb-3">
+              <p className="text-[11px] text-muted-foreground mb-3">
                 {PRODUCT_DESCRIPTIONS[result.productType]}
               </p>
-              <p className="text-lg font-bold text-gray-900 tabular-nums">
+              <p className="text-lg font-bold text-foreground tabular-nums">
                 {formatCurrency(result.netValue)}
               </p>
-              <div className="mt-2 pt-2 border-t border-gray-50 space-y-1">
+              <div className="mt-2 pt-2 border-t border-border space-y-1">
                 <div className="flex justify-between text-[11px]">
-                  <span className="text-gray-400">IR estimado</span>
+                  <span className="text-muted-foreground">IR estimado</span>
                   <span className="text-red-500 tabular-nums">
                     -{formatCurrency(result.taxAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between text-[11px]">
-                  <span className="text-gray-400">Rendimentos</span>
+                  <span className="text-muted-foreground">Rendimentos</span>
                   <span className="text-green-600 tabular-nums">
                     {formatCurrency(result.totalEarnings)}
                   </span>
@@ -310,7 +310,7 @@ export function SimuladorClient() {
       <button
         onClick={handleSaveAsGoal}
         disabled={isPending}
-        className="w-full py-3 rounded-xl bg-gray-900 text-white font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isPending ? (
           <Loader2 className="w-4 h-4 animate-spin" />

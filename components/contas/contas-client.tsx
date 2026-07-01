@@ -164,17 +164,17 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Contas</h1>
-        <p className="text-sm text-gray-500">Gerencie suas contas recorrentes</p>
+        <h1 className="text-xl font-bold text-foreground mb-1">Contas</h1>
+        <p className="text-sm text-muted-foreground">Gerencie suas contas recorrentes</p>
       </div>
 
-      <div className="flex bg-white rounded-xl border border-gray-200 p-1">
+      <div className="flex bg-card rounded-xl border border-border p-1">
         <button
           onClick={() => setActiveTab('current')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === 'current'
-              ? 'bg-gray-900 text-white'
-              : 'text-gray-500 hover:text-gray-900'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           Este mês
@@ -183,8 +183,8 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
           onClick={() => setActiveTab('history')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
             activeTab === 'history'
-              ? 'bg-gray-900 text-white'
-              : 'text-gray-500 hover:text-gray-900'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           Histórico
@@ -215,15 +215,15 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">Este mês</h2>
+              <h2 className="text-sm font-semibold text-foreground">Este mês</h2>
             </div>
 
             {bills.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
-                <p className="text-gray-400 text-sm mb-4">Nenhuma conta cadastrada</p>
+              <div className="bg-card rounded-2xl border border-border p-8 text-center">
+                <p className="text-muted-foreground text-sm mb-4">Nenhuma conta cadastrada</p>
                 <button
                   onClick={() => setModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Adicionar conta
@@ -242,7 +242,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
                   <div
                     key={bill.id}
                     className={cn(
-                      'bg-white rounded-2xl border border-gray-100 overflow-hidden transition-all',
+                      'bg-card rounded-2xl border border-border overflow-hidden transition-all',
                       status === 'paid' && 'ring-2 ring-green-400'
                     )}
                   >
@@ -252,14 +252,14 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
                     >
                       <span className="text-xl">{icon}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                        <p className="text-xs text-muted-foreground">
                           {getRecurrenceLabel(bill, month, year)} · Vence dia {bill.due_day.toString().padStart(2, '0')}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">
-                          <p className="text-sm font-bold text-gray-900 tabular-nums">
+                          <p className="text-sm font-bold text-foreground tabular-nums">
                             {formatCurrency(bill.amount)}
                           </p>
                           <StatusBadge status={status} />
@@ -269,7 +269,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
                             <button
                               onClick={(e) => { e.stopPropagation(); setEditingBill(mapBillToEditing(bill)) }}
                               aria-label="Editar conta"
-                              className="p-1.5 min-w-[36px] min-h-[36px] rounded-lg text-muted-foreground hover:text-foreground hover:bg-gray-100 transition-colors"
+                              className="p-1.5 min-w-[36px] min-h-[36px] rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                             >
                               <Pencil size={16} />
                             </button>
@@ -286,7 +286,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
                     </button>
 
                     {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-gray-50 pt-3">
+                      <div className="px-4 pb-4 border-t border-border pt-3">
                         {status !== 'paid' ? (
                           <button
                             onClick={() => handleMarkAsPaid(bill.id)}
@@ -312,7 +312,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
           {bills.length > 0 && (
             <button
               onClick={() => setModalOpen(true)}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 font-medium text-sm hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground font-medium text-sm hover:border-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Nova conta
@@ -330,8 +330,8 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
           {deletingBill && (
             <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
               <div className="absolute inset-0 bg-black/40" onClick={() => setDeletingBill(null)} />
-              <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-2">Excluir conta?</h2>
+              <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
+                <h2 className="text-lg font-bold text-foreground mb-2">Excluir conta?</h2>
                 <p className="text-sm text-muted-foreground mb-4">
                   A conta <span className="text-foreground font-medium">{extractName(deletingBill.name)}</span> será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.
                 </p>
@@ -339,7 +339,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
                   <button
                     type="button"
                     onClick={() => setDeletingBill(null)}
-                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                    className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
                   >
                     Cancelar
                   </button>

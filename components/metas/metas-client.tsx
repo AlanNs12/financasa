@@ -152,12 +152,12 @@ export function MetasClient({ goals }: MetasClientProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Metas</h1>
-        <p className="text-sm text-gray-500">Acompanhe seus objetivos financeiros</p>
+        <h1 className="text-xl font-bold text-foreground mb-1">Metas</h1>
+        <p className="text-sm text-muted-foreground">Acompanhe seus objetivos financeiros</p>
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-gray-900">Metas financeiras</h2>
+        <h2 className="text-sm font-semibold text-foreground">Metas financeiras</h2>
 
         {goals.length === 0 ? (
           <EmptyState
@@ -167,7 +167,7 @@ export function MetasClient({ goals }: MetasClientProps) {
             action={
               <button
                 onClick={() => setShowNewGoal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Nova meta
@@ -186,12 +186,12 @@ export function MetasClient({ goals }: MetasClientProps) {
               const locked = isGoalLocked(goal.status)
 
               return (
-                <div key={goal.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                <div key={goal.id} className="bg-card rounded-2xl border border-border p-4">
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-2xl">{goal.icon || '🎯'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900">{goal.name}</p>
+                        <p className="text-sm font-medium text-foreground">{goal.name}</p>
                         <StatusBadge status={mapGoalStatus(goal.status, isOverdue)} />
                       </div>
                       <p className="text-xs text-muted-foreground">
@@ -214,7 +214,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                       <button
                         onClick={() => openEdit(goal)}
                         aria-label="Editar meta"
-                        className="p-2 min-w-[40px] min-h-[40px] rounded-lg hover:bg-gray-100 transition-colors"
+                        className="p-2 min-w-[40px] min-h-[40px] rounded-lg hover:bg-accent transition-colors"
                       >
                         <Pencil size={18} className="text-muted-foreground" />
                       </button>
@@ -240,7 +240,7 @@ export function MetasClient({ goals }: MetasClientProps) {
 
             <button
               onClick={() => setShowNewGoal(true)}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 font-medium text-sm hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground font-medium text-sm hover:border-muted-foreground hover:text-muted-foreground transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Nova meta
@@ -252,12 +252,12 @@ export function MetasClient({ goals }: MetasClientProps) {
       {showNewGoal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowNewGoal(false)} />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-              <h2 className="text-lg font-bold text-gray-900">Nova meta</h2>
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
+              <h2 className="text-lg font-bold text-foreground">Nova meta</h2>
               <button
                 onClick={() => setShowNewGoal(false)}
-                className="p-1 rounded-lg hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -266,11 +266,11 @@ export function MetasClient({ goals }: MetasClientProps) {
 
             <form onSubmit={createForm.handleSubmit(handleCreate)} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Nome</label>
                 <input
                   type="text"
                   placeholder="Ex: Reserva de emergência"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...createForm.register('name')}
                 />
                 {createForm.formState.errors.name && (
@@ -280,12 +280,12 @@ export function MetasClient({ goals }: MetasClientProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor meta</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">Valor meta</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...createForm.register('target_amount')}
                   />
                   {createForm.formState.errors.target_amount && (
@@ -293,12 +293,12 @@ export function MetasClient({ goals }: MetasClientProps) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Atual</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">Atual</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...createForm.register('current_amount')}
                   />
                   {createForm.formState.errors.current_amount && (
@@ -308,10 +308,10 @@ export function MetasClient({ goals }: MetasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prazo</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Prazo</label>
                 <input
                   type="date"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...createForm.register('deadline')}
                 />
                 {createForm.formState.errors.deadline && (
@@ -323,14 +323,14 @@ export function MetasClient({ goals }: MetasClientProps) {
                 <button
                   type="button"
                   onClick={() => setShowNewGoal(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Salvar
@@ -344,12 +344,12 @@ export function MetasClient({ goals }: MetasClientProps) {
       {editingGoal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditingGoal(null)} />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-              <h2 className="text-lg font-bold text-gray-900">Editar meta</h2>
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
+              <h2 className="text-lg font-bold text-foreground">Editar meta</h2>
               <button
                 onClick={() => setEditingGoal(null)}
-                className="p-1 rounded-lg hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -358,7 +358,7 @@ export function MetasClient({ goals }: MetasClientProps) {
 
             <form onSubmit={editForm.handleSubmit(handleEdit)} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ícone</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Ícone</label>
                 <div className="flex flex-wrap gap-2">
                   {['🎯', '🏠', '🚗', '✈️', '🎓', '💻', '💍', '🏥', '💼', '📱', '🐱', '🌟'].map((ic) => (
                     <button
@@ -367,8 +367,8 @@ export function MetasClient({ goals }: MetasClientProps) {
                       onClick={() => editForm.setValue('icon', ic)}
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${
                         editForm.watch('icon') === ic
-                          ? 'border-gray-900 bg-gray-50'
-                          : 'border-gray-100 hover:border-gray-200'
+                          ? 'border-foreground bg-muted'
+                          : 'border-border hover:border-border'
                       }`}
                     >
                       {ic}
@@ -378,11 +378,11 @@ export function MetasClient({ goals }: MetasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Nome</label>
                 <input
                   type="text"
                   placeholder="Ex: Reserva de emergência"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...editForm.register('name')}
                 />
                 {editForm.formState.errors.name && (
@@ -391,22 +391,22 @@ export function MetasClient({ goals }: MetasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Descrição</label>
                 <input
                   type="text"
                   placeholder="Opcional"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...editForm.register('description')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valor alvo</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Valor alvo</label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0,00"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...editForm.register('target_amount')}
                 />
                 {editForm.formState.errors.target_amount && (
@@ -415,16 +415,16 @@ export function MetasClient({ goals }: MetasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prazo</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Prazo</label>
                 <input
                   type="date"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...editForm.register('deadline')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cor</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Cor</label>
                 <div className="flex flex-wrap gap-2">
                   {GOAL_COLORS.map((c) => (
                     <button
@@ -432,7 +432,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                       type="button"
                       onClick={() => editForm.setValue('color', c)}
                       className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        editForm.watch('color') === c ? 'border-gray-900 scale-110' : 'border-transparent'
+                        editForm.watch('color') === c ? 'border-foreground scale-110' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
                       aria-label={`Cor ${c}`}
@@ -445,14 +445,14 @@ export function MetasClient({ goals }: MetasClientProps) {
                 <button
                   type="button"
                   onClick={() => setEditingGoal(null)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Salvar
@@ -466,12 +466,12 @@ export function MetasClient({ goals }: MetasClientProps) {
       {depositGoal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDepositGoal(null)} />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">Adicionar valor</h2>
+              <h2 className="text-lg font-bold text-foreground">Adicionar valor</h2>
               <button
                 onClick={() => setDepositGoal(null)}
-                className="p-1 rounded-lg hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -483,9 +483,9 @@ export function MetasClient({ goals }: MetasClientProps) {
               Atual: {formatCurrency(depositGoal.current_amount)} de {formatCurrency(depositGoal.target_amount)}
             </p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Valor a adicionar</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Valor a adicionar</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">R$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
                 <input
                   type="number"
                   step="0.01"
@@ -493,7 +493,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
                   placeholder="0,00"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-lg font-bold"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-lg font-bold"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleDeposit()
@@ -506,7 +506,7 @@ export function MetasClient({ goals }: MetasClientProps) {
               <button
                 type="button"
                 onClick={() => setDepositGoal(null)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
               >
                 Cancelar
               </button>
@@ -514,7 +514,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                 type="button"
                 onClick={handleDeposit}
                 disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-green-600 text-primary-foreground font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Adicionar
@@ -527,12 +527,12 @@ export function MetasClient({ goals }: MetasClientProps) {
       {deleteGoal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteGoal(null)} />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Excluir meta</h2>
+              <h2 className="text-lg font-bold text-foreground">Excluir meta</h2>
               <button
                 onClick={() => setDeleteGoal(null)}
-                className="p-1 rounded-lg hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -548,7 +548,7 @@ export function MetasClient({ goals }: MetasClientProps) {
               <button
                 type="button"
                 onClick={() => setDeleteGoal(null)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
               >
                 Cancelar
               </button>
@@ -556,7 +556,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                 type="button"
                 onClick={handleDelete}
                 disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-red-600 text-primary-foreground font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Excluir

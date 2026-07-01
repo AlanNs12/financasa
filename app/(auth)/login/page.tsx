@@ -34,13 +34,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-900 text-white mb-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground mb-4">
           <Wallet className="w-6 h-6" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Entrar</h1>
-        <p className="text-gray-500 mt-1">Acesse seu controle financeiro</p>
+        <h1 className="text-2xl font-bold text-foreground">Entrar</h1>
+        <p className="text-muted-foreground mt-1">Acesse seu controle financeiro</p>
       </div>
 
       {error && (
@@ -51,14 +51,14 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground mb-1">
             Email
           </label>
           <input
             {...register('email')}
             type="email"
             placeholder="seu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition-colors text-sm"
+            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
           />
           {errors.email && (
             <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
@@ -66,7 +66,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground mb-1">
             Senha
           </label>
           <div className="relative">
@@ -74,12 +74,12 @@ export default function LoginPage() {
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
               placeholder="Sua senha"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none transition-colors text-sm pr-12"
+              className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm pr-12"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -92,15 +92,15 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         Não tem conta?{' '}
-        <Link href="/cadastro" className="text-gray-900 font-medium hover:underline">
+        <Link href="/cadastro" className="text-foreground font-medium hover:underline">
           Criar conta
         </Link>
       </p>

@@ -28,12 +28,12 @@ export function ProgressBar({ value, max, showLabel = false, size = 'md', classN
     <div className={cn('w-full', className)}>
       {showLabel && (
         <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {Math.round(percentage)}%
           </span>
         </div>
       )}
-      <div className={cn('w-full bg-gray-100 rounded-full overflow-hidden', heightClass)}>
+      <div className={cn('w-full bg-secondary rounded-full overflow-hidden', heightClass)}>
         <div
           className={cn('rounded-full transition-all duration-500', heightClass)}
           style={{ width: `${percentage}%`, backgroundColor: getBarColor(percentage, invertColors) }}

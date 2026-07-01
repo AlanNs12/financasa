@@ -134,8 +134,8 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Dívidas</h1>
-        <p className="text-sm text-gray-500">Acompanhe e quite suas dívidas</p>
+        <h1 className="text-xl font-bold text-foreground mb-1">Dívidas</h1>
+        <p className="text-sm text-muted-foreground">Acompanhe e quite suas dívidas</p>
       </div>
 
       {hasDebts ? (
@@ -143,7 +143,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
           <div className="bg-[#1a1a2e] rounded-2xl p-6 text-white">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                   Dívida total
                 </p>
                 <p className="text-xl font-bold tabular-nums">
@@ -151,7 +151,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                   Total pago
                 </p>
                 <p className="text-xl font-bold tabular-nums text-green-400">
@@ -161,7 +161,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             </div>
             <div className="border-t border-white/10 pt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">
                   Saldo devedor
                 </span>
                 <span className="text-lg font-bold tabular-nums text-red-400">
@@ -174,7 +174,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                   style={{ width: `${Math.min(summaryProgressPct, 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5">
                 {Math.round(summaryProgressPct)}% quitado
               </p>
             </div>
@@ -182,7 +182,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
           {activeDebts.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-foreground">
                 Dívidas ativas
               </h2>
               {activeDebts.map((debt) => (
@@ -199,7 +199,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
           {settledDebts.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-foreground">
                 Quitadas
               </h2>
               {settledDebts.map((debt) => (
@@ -216,14 +216,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
           <button
             onClick={() => setShowModal(true)}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 font-medium text-sm hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground font-medium text-sm hover:border-muted-foreground hover:text-muted-foreground transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Nova dívida
           </button>
         </>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
           <EmptyState
             icon={TrendingDown}
             title="Nenhuma dívida cadastrada"
@@ -231,7 +231,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             action={
               <button
                 onClick={() => setShowModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Nova dívida
@@ -244,12 +244,12 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-              <h2 className="text-lg font-bold text-gray-900">Nova dívida</h2>
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
+              <h2 className="text-lg font-bold text-foreground">Nova dívida</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 rounded-lg hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -258,11 +258,11 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
             <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Instituição</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Instituição</label>
                 <input
                   type="text"
                   placeholder="Ex: Banco do Brasil"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...register('institution')}
                 />
                 {errors.institution && (
@@ -271,11 +271,11 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Produto</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Produto</label>
                 <input
                   type="text"
                   placeholder="Ex: Empréstimo pessoal, Financiamento carro..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...register('product')}
                 />
                 {errors.product && (
@@ -284,9 +284,9 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Classificação</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Classificação</label>
                 <select
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm bg-white"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm bg-card"
                   {...register('classification')}
                 >
                   {DEBT_TYPE_OPTIONS.map((opt) => (
@@ -302,26 +302,26 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Entrada (opc.)
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-3 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('down_payment')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Valor inicial
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-3 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('principal_amount')}
                   />
                   {errors.principal_amount && (
@@ -331,12 +331,12 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Data de início
                 </label>
                 <input
                   type="date"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...register('started_at')}
                 />
                 {errors.started_at && (
@@ -346,14 +346,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Juros % a.a.
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="Ex: 12,5"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-3 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('interest_rate')}
                   />
                   {errors.interest_rate && (
@@ -361,14 +361,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     CET % (opc.)
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="Ex: 18,3"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-3 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('cet_rate')}
                   />
                 </div>
@@ -376,14 +376,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Valor da parcela
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-3 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('installment_amount')}
                   />
                   {errors.installment_amount && (
@@ -391,14 +391,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Qtd. parcelas
                   </label>
                   <input
                     type="number"
                     min={1}
                     placeholder="Ex: 12"
-                    className="w-full px-3 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-3 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('installment_total')}
                   />
                   {errors.installment_total && (
@@ -411,14 +411,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Salvar
@@ -435,18 +435,18 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             className="absolute inset-0 bg-black/40"
             onClick={() => !isPending && setPendingDelete(null)}
           />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm p-6 shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm p-6 shadow-xl">
             <div className="flex flex-col items-center text-center mb-5">
               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900 mb-1">
+              <h2 className="text-lg font-bold text-foreground mb-1">
                 Excluir esta dívida?
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {pendingDelete.institution} · {pendingDelete.product}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Esta ação não pode ser desfeita.
               </p>
             </div>
@@ -455,7 +455,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                 type="button"
                 onClick={() => setPendingDelete(null)}
                 disabled={isPending}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -487,13 +487,13 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
   const isPaying = payingId === debt.id
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+    <div className="bg-card rounded-2xl border border-border p-4">
       <div className="flex items-start gap-3 mb-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-medium text-foreground">
             {debt.institution}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {debt.product} · {DEBT_TYPE_LABELS[debt.classification]}
           </p>
         </div>
@@ -513,15 +513,15 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
 
       <div className="grid grid-cols-3 gap-2 text-center mb-3">
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
             Parcela
           </p>
-          <p className="text-xs font-medium text-gray-700 tabular-nums">
+          <p className="text-xs font-medium text-muted-foreground tabular-nums">
             {formatCurrency(debt.installment_amount)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
             Pago
           </p>
           <p className="text-xs font-medium text-green-600 tabular-nums">
@@ -529,7 +529,7 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
             Saldo
           </p>
           <p className="text-xs font-medium text-red-500 tabular-nums">
@@ -540,10 +540,10 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
 
       <div className="mb-3">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {debt.installment_paid}/{debt.installment_total} parcelas
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {Math.round(debt.progress_pct)}%
           </span>
         </div>
@@ -554,7 +554,7 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
         />
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap text-[11px] text-gray-400 mb-3">
+      <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground mb-3">
         <span>Início: {formatDate(debt.started_at)}</span>
         <span>·</span>
         <span>Juros: {Number(debt.interest_rate).toFixed(2).replace('.', ',')}% a.a.</span>

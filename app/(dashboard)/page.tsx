@@ -27,8 +27,8 @@ export default async function DashboardPage({
   if (!current) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
-          <p className="text-gray-500">Faça login para acessar o dashboard</p>
+        <div className="bg-card rounded-2xl border border-border p-8 text-center">
+          <p className="text-muted-foreground">Faça login para acessar o dashboard</p>
         </div>
       </div>
     )
@@ -113,8 +113,8 @@ export default async function DashboardPage({
   } catch {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
-          <p className="text-gray-500">Nenhum dado disponível. Comece adicionando transações.</p>
+        <div className="bg-card rounded-2xl border border-border p-8 text-center">
+          <p className="text-muted-foreground">Nenhum dado disponível. Comece adicionando transações.</p>
         </div>
       </div>
     )

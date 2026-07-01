@@ -61,8 +61,8 @@ export function BillsHistory({ history, currentMonth, currentYear }: BillsHistor
 
   if (history.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
-        <p className="text-gray-400 text-sm">Nenhum histórico disponível</p>
+      <div className="bg-card rounded-2xl border border-border p-8 text-center">
+        <p className="text-muted-foreground text-sm">Nenhum histórico disponível</p>
       </div>
     )
   }
@@ -77,42 +77,42 @@ export function BillsHistory({ history, currentMonth, currentYear }: BillsHistor
         return (
           <div
             key={key}
-            className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+            className="bg-card rounded-2xl border border-border overflow-hidden"
           >
             <button
               onClick={() => toggleMonth(key)}
-              className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-3 p-4 text-left hover:bg-accent transition-colors"
             >
-              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   {monthName} {h.year}
                 </p>
                 <div className="flex items-center gap-3 mt-1">
                   <ProgressBar value={h.paid} max={h.total} size="sm" className="w-24" />
-                  <span className="text-xs text-gray-400">{h.percentage}% pago</span>
+                  <span className="text-xs text-muted-foreground">{h.percentage}% pago</span>
                 </div>
               </div>
 
               <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-gray-900 tabular-nums">
+                <p className="text-sm font-bold text-foreground tabular-nums">
                   {formatCurrency(h.total)}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   {formatCurrency(h.paid)} pago
                 </p>
               </div>
             </button>
 
             {isExpanded && (
-              <div className="border-t border-gray-50 divide-y divide-gray-50">
+              <div className="border-t border-border divide-y divide-border">
                 {h.bills.map((bill) => {
                   const status = getBillStatus(bill.status)
                   const icon = extractIcon(bill.name)
@@ -125,21 +125,21 @@ export function BillsHistory({ history, currentMonth, currentYear }: BillsHistor
                     >
                       <span className="text-lg">{icon}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {name}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-muted-foreground">
                           Vence dia {bill.due_day.toString().padStart(2, '0')}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900 tabular-nums">
+                        <p className="text-sm font-bold text-foreground tabular-nums">
                           {formatCurrency(bill.amount)}
                         </p>
                         <div className="flex items-center gap-1 justify-end">
                           <StatusBadge status={status} />
                           {!bill.is_active && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Inativa</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Inativa</span>
                           )}
                         </div>
                       </div>

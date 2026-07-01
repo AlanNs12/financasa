@@ -110,20 +110,20 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Planejamento</h1>
-          <p className="text-sm text-gray-500">Orçamento por categoria</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Planejamento</h1>
+          <p className="text-sm text-muted-foreground">Orçamento por categoria</p>
         </div>
         <button
           onClick={handleExportCsv}
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-accent transition-colors disabled:opacity-50 shrink-0"
         >
           <Download className="w-3.5 h-3.5" />
           CSV
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <div className="bg-card rounded-2xl border border-border p-6">
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm text-muted-foreground">
             Receita total · {monthName}
@@ -150,7 +150,7 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
             <button
               onClick={() => setEditingIncome(true)}
               aria-label="Editar receita"
-              className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent dark:hover:bg-gray-800 transition-colors"
             >
               <Pencil size={18} className="text-muted-foreground" />
             </button>
@@ -213,7 +213,7 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
         )}
 
         {data.actual_income > 0 && (
-          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-gray-100">
+          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
             Receita registrada em transações: {formatCurrency(data.actual_income)}
           </p>
         )}
@@ -221,8 +221,8 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">Categorias</h2>
-          <span className="text-xs text-gray-400">
+          <h2 className="text-sm font-semibold text-foreground">Categorias</h2>
+          <span className="text-xs text-muted-foreground">
             {formatCurrency(data.total_spent)} de {formatCurrency(data.total_planned)} planejado
           </span>
         </div>
@@ -240,11 +240,11 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
           const isEditing = editingItem === item.id
 
           return (
-            <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+            <div key={item.id} className="bg-card rounded-2xl border border-border p-4">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xl">{item.icon}</span>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                  <p className="text-sm font-medium text-foreground">{item.name}</p>
                   {isEditing ? (
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <span className="text-xs text-muted-foreground">Planejado: R$</span>
@@ -308,7 +308,7 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
                   <button
                     onClick={() => startEditItem(item)}
                     aria-label="Editar planejamento"
-                    className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent dark:hover:bg-gray-800 transition-colors"
                   >
                     <Pencil size={18} className="text-muted-foreground" />
                   </button>

@@ -30,7 +30,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.21.0",
-    "next": "^16.2.9",
+    "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.80.0",
@@ -70,8 +70,9 @@
   "test:watch": "vitest",
   "db:generate": "prisma generate",
   "db:push": "prisma db push",
-  "db:seed": "tsx prisma/seed.ts",
-  "db:studio": "prisma studio"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
 }
 ```
 
@@ -686,15 +687,22 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 | 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 133 testes em 12 arquivos cobrindo cálculos, formatação e validações. |
 | 14 | **db:push pendente** | Schema tem 3 models novos (Investment, Debt, CreditCard) + credit_card_id em Transaction. Rodar `npm run db:push` para aplicar. |
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
-| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 6 erros de `react-hooks/error-boundaries` (JSX em try/catch). Pré-existentes, não introduzidos pelas tarefas. |
+| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 7 erros (JSX em try/catch). Total: 18 problemas (7 erros, 11 warnings). Pré-existentes, não introduzidos pelas tarefas. |
 
 ---
 
 ## 13. Estado do Git
 
 - **Branch:** `main`, em dia com `origin/main`.
-- **Commits:** apenas 2 (`b2d5bf6 Initial commit`, `093fcb3 initial-commit`).
-- **Alterações não staged (working tree):** muitas modificações ainda não commitadas, incluindo todos os arquivos criados/modificados pelas tarefas 1.1–4.1.
+- **Commits (7):**
+  - `83693bf` — update needed vercel deploy
+  - `477c713` — att-package.json
+  - `9689079` — Update middleware.ts
+  - `f8bf550` — mvp-complete
+  - `eabcedc` — initial commit
+  - `093fcb3` — initial-commit
+  - `b2d5bf6` — Initial commit
+- **Working tree:** limpo (todas as alterações commitadas).
 - **Não commitar** a menos que explicitamente solicitado.
 
 ---

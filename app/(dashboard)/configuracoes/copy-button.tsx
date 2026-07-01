@@ -16,7 +16,7 @@ export function CopyButton({ code }: { code: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="p-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+      className="p-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/80 transition-colors"
       aria-label="Copiar código de convite"
     >
       {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}

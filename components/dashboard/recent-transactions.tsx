@@ -23,12 +23,12 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+    <div className="bg-card rounded-2xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-900">Últimas transações</h2>
+        <h2 className="text-sm font-semibold text-foreground">Últimas transações</h2>
         <Link
           href="/transacoes"
-          className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           Ver todas
           <ArrowRight className="w-3 h-3" />
@@ -36,23 +36,23 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
       </div>
 
       {transactions.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Nenhuma transação este mês</p>
+        <p className="text-sm text-muted-foreground text-center py-6">Nenhuma transação este mês</p>
       ) : (
         <div className="space-y-1">
           {transactions.map((tx) => (
             <div
               key={tx.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
             >
               <CategoryIcon category={tx.category} size="sm" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {tx.description}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">{tx.category?.name}</span>
+                  <span className="text-xs text-muted-foreground">{tx.category?.name}</span>
                   <span className="text-xs text-gray-300">·</span>
-                  <span className="text-xs text-gray-400">{formatDate(tx.date)}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(tx.date)}</span>
                 </div>
               </div>
               <MoneyDisplay

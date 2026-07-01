@@ -141,29 +141,29 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
-        <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-          <h2 className="text-lg font-bold text-gray-900">
+      <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
+          <h2 className="text-lg font-bold text-foreground">
             {isEditing ? 'Editar conta' : 'Nova conta'}
           </h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100" aria-label="Fechar">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-accent" aria-label="Fechar">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-5">
           {isEditing ? (
-            <div className="flex bg-gray-100 rounded-xl p-1 opacity-60 pointer-events-none">
-              <div className="flex-1 py-2.5 rounded-lg text-sm font-medium text-center bg-white text-gray-900 shadow-sm">Fixa</div>
-              <div className="flex-1 py-2.5 rounded-lg text-sm font-medium text-center text-gray-500">Parcelada</div>
+            <div className="flex bg-muted rounded-xl p-1 opacity-60 pointer-events-none">
+              <div className="flex-1 py-2.5 rounded-lg text-sm font-medium text-center bg-card text-foreground shadow-sm">Fixa</div>
+              <div className="flex-1 py-2.5 rounded-lg text-sm font-medium text-center text-muted-foreground">Parcelada</div>
             </div>
           ) : (
-            <div className="flex bg-gray-100 rounded-xl p-1">
+            <div className="flex bg-muted rounded-xl p-1">
               <button
                 type="button"
                 onClick={() => setBillType('fixa')}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  billType === 'fixa' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                  billType === 'fixa' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                 }`}
               >
                 Fixa
@@ -172,7 +172,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
                 type="button"
                 onClick={() => setBillType('parcelada')}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  billType === 'parcelada' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                  billType === 'parcelada' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                 }`}
               >
                 Parcelada
@@ -181,7 +181,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Ícone</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Ícone</label>
             <div className="grid grid-cols-6 gap-2">
               {BILL_ICONS.map((ic) => (
                 <button
@@ -190,8 +190,8 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
                   onClick={() => setIcon(ic)}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${
                     icon === ic
-                      ? 'border-gray-900 bg-gray-50'
-                      : 'border-gray-100 hover:border-gray-200'
+                      ? 'border-foreground bg-muted'
+                      : 'border-border hover:border-border'
                   }`}
                 >
                   {ic}
@@ -202,8 +202,8 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
 
           {categories.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Categoria <span className="text-gray-400 font-normal">(opcional)</span>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
+                Categoria <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {categories.map((cat) => (
@@ -213,12 +213,12 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
                     onClick={() => setCategoryId(cat.id === categoryId ? '' : cat.id)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
                       categoryId === cat.id
-                        ? 'border-gray-900 bg-gray-50'
-                        : 'border-gray-100 hover:border-gray-200'
+                        ? 'border-foreground bg-muted'
+                        : 'border-border hover:border-border'
                     }`}
                   >
                     <span className="text-xl">{cat.icon}</span>
-                    <span className="text-[10px] text-gray-600 text-center leading-tight">
+                    <span className="text-[10px] text-muted-foreground text-center leading-tight">
                       {cat.name}
                     </span>
                   </button>
@@ -228,12 +228,12 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Nome</label>
             <input
               {...register('name')}
               type="text"
               placeholder="Ex: Aluguel, Internet, Energia..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
             />
             {errors.name && (
               <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
@@ -241,11 +241,11 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               {billType === 'parcelada' && !isEditing ? 'Valor de cada parcela' : 'Valor'}
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
                 R$
               </span>
               <input
@@ -253,7 +253,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
                 type="number"
                 step="0.01"
                 placeholder="0,00"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
               />
             </div>
             {errors.amount && (
@@ -263,7 +263,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
 
           {!isEditing && billType === 'parcelada' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Número de parcelas</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Número de parcelas</label>
               <div className="relative">
                 <input
                   {...register('installment_total')}
@@ -271,15 +271,15 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
                   min={2}
                   max={360}
                   placeholder="Ex: 12"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">x</span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">x</span>
               </div>
               {errors.installment_total && (
                 <p className="text-red-500 text-xs mt-1">{errors.installment_total.message}</p>
               )}
               {installmentTotal && Number(installmentTotal) > 0 && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Total: {Number(installmentTotal)} parcelas
                 </p>
               )}
@@ -287,24 +287,24 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Vencimento</label>
                 <input
                   {...register('due_day')}
                   type="number"
                   min={1}
                   max={31}
                   placeholder="Dia do mês"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                 />
                 {errors.due_day && (
                   <p className="text-red-500 text-xs mt-1">{errors.due_day.message}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Recorrência</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Recorrência</label>
                 <select
                   {...register('recurrence')}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm bg-white"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm bg-card"
                 >
                   {RECURRENCE_OPTIONS.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -318,14 +318,14 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
 
           {!isEditing && billType === 'parcelada' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Vencimento</label>
               <input
                 {...register('due_day')}
                 type="number"
                 min={1}
                 max={31}
                 placeholder="Dia do mês"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
               />
               {errors.due_day && (
                 <p className="text-red-500 text-xs mt-1">{errors.due_day.message}</p>
@@ -337,14 +337,14 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               {isEditing ? 'Salvar alterações' : 'Salvar'}
