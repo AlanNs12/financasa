@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getFinancialGoals } from '@/lib/db/queries/goals'
 import { MetasClient } from '@/components/metas/metas-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function MetasPage() {
   const current = await getCurrentUserHousehold()
@@ -9,10 +10,7 @@ export default async function MetasPage() {
   if (!current) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Metas</h1>
-          <p className="text-sm text-muted-foreground">Faça login para ver suas metas</p>
-        </div>
+        <PageHeader title="Metas" description="Faça login para ver suas metas" />
       </div>
     )
   }

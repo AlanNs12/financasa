@@ -2,6 +2,7 @@ import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getRecurringBills, getBillsHistory } from '@/lib/db/queries/bills'
 import { getCategories } from '@/lib/db/queries/categories'
 import { ContasClient } from '@/components/contas/contas-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 const now = new Date()
 
@@ -19,10 +20,7 @@ export default async function ContasPage({
   if (!current) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Contas</h1>
-          <p className="text-sm text-muted-foreground">Faça login para gerenciar suas contas</p>
-        </div>
+        <PageHeader title="Contas" description="Faça login para gerenciar suas contas" />
       </div>
     )
   }

@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { formatCurrency, formatDate } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
+import { PageCard } from '@/components/shared/page-card'
 
 interface RecentTransaction {
   id: string
@@ -21,11 +22,13 @@ interface RecentTransactionsProps {
   transactions: RecentTransaction[]
 }
 
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export function RecentTransactions({
+  transactions,
+}: RecentTransactionsProps) {
   return (
-    <div className="bg-card rounded-2xl border border-border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-foreground">Últimas transações</h2>
+    <PageCard
+      title="Últimas transações"
+      action={
         <Link
           href="/transacoes"
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -33,16 +36,19 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
           Ver todas
           <ArrowRight className="w-3 h-3" />
         </Link>
-      </div>
-
+      }
+      noPadding
+    >
       {transactions.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">Nenhuma transação este mês</p>
+        <p className="text-sm text-muted-foreground text-center py-6">
+          Nenhuma transação este mês
+        </p>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-0.5 px-5 pb-5 pt-0">
           {transactions.map((tx) => (
             <div
               key={tx.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <CategoryIcon category={tx.category} size="sm" />
               <div className="flex-1 min-w-0">
@@ -50,9 +56,13 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                   {tx.description}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{tx.category?.name}</span>
-                  <span className="text-xs text-gray-300">·</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(tx.date)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {tx.category?.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">&middot;</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(tx.date)}
+                  </span>
                 </div>
               </div>
               <MoneyDisplay
@@ -64,6 +74,6 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
           ))}
         </div>
       )}
-    </div>
+    </PageCard>
   )
 }

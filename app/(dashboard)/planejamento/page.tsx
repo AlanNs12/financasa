@@ -3,6 +3,7 @@ import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData } from '@/lib/db/queries/budget'
 import { getTotalBillsForMonth } from '@/lib/db/queries/bills'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 const now = new Date()
 
@@ -20,10 +21,7 @@ export default async function PlanejamentoPage({
   if (!current) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Planejamento</h1>
-          <p className="text-sm text-muted-foreground">Faça login para usar o planejamento</p>
-        </div>
+        <PageHeader title="Planejamento" description="Faça login para usar o planejamento" />
       </div>
     )
   }

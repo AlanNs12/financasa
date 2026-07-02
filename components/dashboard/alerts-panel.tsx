@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { AlertTriangle, ChevronRight, Receipt, Target, CreditCard } from 'lucide-react'
+import { AlertTriangle, Receipt, Target, CreditCard } from 'lucide-react'
 import type { ActiveAlert, AlertType } from '@/lib/db/queries/alerts'
 
 interface AlertsPanelProps {
@@ -23,33 +23,45 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
       {visible.map((alert) => {
         const isDanger = alert.severity === 'danger'
         const Icon = TYPE_ICONS[alert.type]
-        const colorClass = isDanger
-          ? 'bg-red-50 border-red-200'
-          : 'bg-amber-50 border-amber-200'
-        const textClass = isDanger ? 'text-red-700' : 'text-amber-700'
-        const iconBg = isDanger ? 'bg-red-100' : 'bg-amber-100'
 
         return (
           <Link
             key={alert.id}
             href={alert.href}
-            className={`flex items-center gap-3 p-3 rounded-xl border ${colorClass} hover:opacity-80 transition-opacity`}
+            className="flex gap-3 p-3.5 rounded-xl border transition-colors hover:opacity-80"
+            style={{
+              borderColor: isDanger
+                ? 'var(--error-500)'
+                : 'var(--warning-500)',
+              borderLeftWidth: '3px',
+              backgroundColor: isDanger
+                ? 'var(--error-50)'
+                : 'var(--warning-50)',
+            }}
           >
-            <div className={`w-9 h-9 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
-              <Icon className={`w-4 h-4 ${textClass}`} />
-            </div>
+            <AlertTriangle
+              size={16}
+              className="mt-0.5 shrink-0"
+              style={{ color: isDanger ? 'var(--error-500)' : 'var(--warning-500)' }}
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <AlertTriangle className={`w-3.5 h-3.5 ${textClass} shrink-0`} />
-                <p className={`text-sm font-medium ${textClass} truncate`}>
+                <Icon
+                  size={14}
+                  className="shrink-0"
+                  style={{ color: isDanger ? 'var(--error-600)' : 'var(--warning-600)' }}
+                />
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: isDanger ? 'var(--error-700)' : 'var(--warning-600)' }}
+                >
                   {alert.title}
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {alert.description}
               </p>
             </div>
-            <ChevronRight className={`w-4 h-4 ${textClass} shrink-0`} />
           </Link>
         )
       })}

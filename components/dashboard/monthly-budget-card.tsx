@@ -1,8 +1,6 @@
 'use client'
 
-import { formatCurrency, formatPercentage } from '@/lib/format'
-import { ProgressBar } from '@/components/shared/progress-bar'
-import { ArrowRight } from 'lucide-react'
+import { formatCurrency } from '@/lib/format'
 import Link from 'next/link'
 
 interface MonthlyBudgetCardProps {
@@ -13,40 +11,55 @@ interface MonthlyBudgetCardProps {
   percentage: number
 }
 
-export function MonthlyBudgetCard({ month, balance, spent, totalBudget, percentage }: MonthlyBudgetCardProps) {
-  return (
-    <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+export function MonthlyBudgetCard({
+  month,
+  balance,
+  spent,
+  totalBudget,
+  percentage,
+}: MonthlyBudgetCardProps) {
+  const percent = Math.min(100, percentage)
 
-      <div className="relative">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-white/70">Orçamento Mensal</span>
-          <span className="text-sm font-semibold bg-white/10 px-3 py-1 rounded-lg">{month}</span>
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white shadow-theme-lg relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/2" />
+
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-white/70 text-sm font-medium mb-1">
+              Orçamento Mensal
+            </p>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(balance)}
+            </p>
+            <p className="text-white/60 text-xs mt-1">saldo disponível</p>
+          </div>
+          <span className="text-xs font-medium bg-white/20 rounded-full px-3 py-1">
+            {month}
+          </span>
         </div>
 
-        <p className="text-3xl font-bold tracking-tight mb-1">
-          {formatCurrency(balance)}
-        </p>
-        <p className="text-sm text-white/50 mb-4">saldo disponível</p>
+        <div className="mb-4">
+          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white transition-all duration-700"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+        </div>
 
-        <ProgressBar value={spent} max={totalBudget} size="sm" className="mb-2" />
-
-        <div className="flex items-center justify-between text-sm mb-4">
-          <span className="text-white/70">
-            Gasto: {formatCurrency(spent)}
-          </span>
-          <span className="text-white/50">
-            Meta: {formatCurrency(totalBudget)}
-          </span>
+        <div className="flex justify-between text-xs text-white/70">
+          <span>Gasto: {formatCurrency(spent)}</span>
+          <span>Meta: {formatCurrency(totalBudget)}</span>
         </div>
 
         <Link
           href="/planejamento"
-          className="inline-flex items-center gap-1 text-sm font-medium text-white/80 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 mt-4 text-xs text-white/80 hover:text-white transition-colors font-medium"
         >
-          Ver detalhes
-          <ArrowRight className="w-4 h-4" />
+          Ver detalhes &rarr;
         </Link>
       </div>
     </div>
