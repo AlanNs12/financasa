@@ -53,7 +53,7 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-accent text-foreground'
+                  ? 'bg-accent text-foreground dark:bg-[#1f6feb33] dark:text-[#58a6ff] dark:border-l-2 dark:border-[#58a6ff]'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               )}
             >
@@ -69,9 +69,9 @@ export function Sidebar() {
           href="/configuracoes"
           className={cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-            pathname === '/configuracoes'
-              ? 'bg-accent text-foreground'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              pathname === '/configuracoes'
+                ? 'bg-accent text-foreground dark:bg-[#1f6feb33] dark:text-[#58a6ff] dark:border-l-2 dark:border-[#58a6ff]'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
           )}
         >
           <Settings className="w-5 h-5" />

@@ -193,7 +193,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
 
       {activeTab === 'current' ? (
         <>
-          <div className="bg-[#1a1a2e] rounded-2xl p-6 text-white">
+          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
             <p className="text-sm text-white/70 mb-1">{monthName}</p>
             <p className="text-3xl font-bold mb-1">{formatCurrency(totalAmount)}</p>
             <p className="text-sm text-white/50 mb-4">total de contas</p>

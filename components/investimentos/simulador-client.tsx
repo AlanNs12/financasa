@@ -182,7 +182,7 @@ export function SimuladorClient() {
         </div>
       </div>
 
-      <div className="bg-[#1a1a2e] rounded-2xl p-6 text-white">
+      <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
           Resultado em {years} anos
         </p>

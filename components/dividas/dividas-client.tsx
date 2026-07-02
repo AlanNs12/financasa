@@ -140,7 +140,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
       {hasDebts ? (
         <>
-          <div className="bg-[#1a1a2e] rounded-2xl p-6 text-white">
+          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
