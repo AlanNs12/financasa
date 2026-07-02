@@ -1,12 +1,13 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Outfit } from "next/font/google"
 import { Toaster } from "sonner"
 import { cookies } from "next/headers"   // ← adicionar
 import "./globals.css"
 
-const interSans = Inter({
+const outfit = Outfit({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 })
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default async function RootLayout({   // ← adicionar async
   return (
     <html
       lang="pt-BR"
-      className={`${interSans.variable} h-full antialiased ${theme === "dark" ? "dark" : ""}`}  // ← adicionar dark
+      className={`${outfit.variable} h-full antialiased ${theme === "dark" ? "dark" : ""}`}  // ← adicionar dark
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>

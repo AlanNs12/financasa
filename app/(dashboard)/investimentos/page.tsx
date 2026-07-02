@@ -7,6 +7,7 @@ import {
   getInvestmentsByGoal,
 } from '@/lib/db/queries/investments'
 import { InvestimentosClient } from '@/components/investimentos/investimentos-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function InvestimentosPage() {
   const current = await getCurrentUserHousehold()
@@ -14,10 +15,7 @@ export default async function InvestimentosPage() {
   if (!current) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Investimentos</h1>
-          <p className="text-sm text-muted-foreground">Faça login para ver seus investimentos</p>
-        </div>
+        <PageHeader title="Investimentos" description="Faça login para ver seus investimentos" />
       </div>
     )
   }

@@ -6,6 +6,7 @@ import {
   getPlannedVsActual,
 } from '@/lib/db/queries/reports'
 import { RelatoriosClient } from '@/components/relatorios/relatorios-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 const now = new Date()
 
@@ -23,10 +24,7 @@ export default async function RelatoriosPage({
   if (!current) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Relatórios</h1>
-          <p className="text-sm text-muted-foreground">Faça login para ver os relatórios</p>
-        </div>
+        <PageHeader title="Relatórios" description="Faça login para ver os relatórios" />
       </div>
     )
   }

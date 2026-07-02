@@ -35,23 +35,29 @@ export function MonthSelector() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 rounded-xl border border-border
+                    bg-background px-1 py-1 shadow-theme-xs">
       <button
         onClick={prevMonth}
-        className="p-1.5 rounded-lg hover:bg-accent transition-colors"
         aria-label="Mês anterior"
+        className="w-7 h-7 flex items-center justify-center rounded-lg
+                   text-muted-foreground hover:bg-muted hover:text-foreground
+                   transition-colors"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft size={16} />
       </button>
-      <span className="text-sm font-semibold text-foreground min-w-[90px] text-center">
+      <span className="min-w-[120px] text-center text-sm font-semibold
+                       text-foreground uppercase tracking-wide px-2">
         {monthLabel} {year}
       </span>
       <button
         onClick={nextMonth}
-        className="p-1.5 rounded-lg hover:bg-accent transition-colors"
         aria-label="Próximo mês"
+        className="w-7 h-7 flex items-center justify-center rounded-lg
+                   text-muted-foreground hover:bg-muted hover:text-foreground
+                   transition-colors"
       >
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight size={16} />
       </button>
     </div>
   )

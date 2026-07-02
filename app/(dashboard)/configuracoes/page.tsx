@@ -6,6 +6,7 @@ import { CreditCardsManager } from '@/components/configuracoes/credit-cards-mana
 import { ThemeToggle } from '@/components/configuracoes/theme-toggle'
 import { HouseholdMembers } from '@/components/configuracoes/household-members'
 import { PasswordManager } from '@/components/configuracoes/password-manager'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function ConfiguracoesPage() {
   const current = await getCurrentUserHousehold()
@@ -19,10 +20,7 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground mb-1">Configurações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie sua conta e casa</p>
-      </div>
+      <PageHeader title="Configurações" description="Gerencie sua conta e casa" />
 
       {inviteCode && (
         <div className="bg-card rounded-2xl border border-border p-6">

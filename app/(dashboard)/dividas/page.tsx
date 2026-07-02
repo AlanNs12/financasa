@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getDebts, getDebtsSummary } from '@/lib/db/queries/debts'
 import { DividasClient } from '@/components/dividas/dividas-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function DividasPage() {
   const current = await getCurrentUserHousehold()
@@ -9,10 +10,7 @@ export default async function DividasPage() {
   if (!current) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Dívidas</h1>
-          <p className="text-sm text-muted-foreground">Faça login para ver suas dívidas</p>
-        </div>
+        <PageHeader title="Dívidas" description="Faça login para ver suas dívidas" />
       </div>
     )
   }

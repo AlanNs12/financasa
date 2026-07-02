@@ -1,6 +1,9 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { Header } from '@/components/layout/header'
+import { Backdrop } from '@/components/layout/backdrop'
+import { MainContent } from '@/components/layout/main-content'
+import { SidebarProvider } from '@/lib/sidebar-context'
 import { getCurrentUser } from '@/lib/db/queries/user'
 
 export default async function DashboardLayout({
@@ -11,15 +14,18 @@ export default async function DashboardLayout({
   const user = await getCurrentUser()
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="lg:pl-60">
-        <Header user={user} />
-        <main className="p-4 lg:p-8 pb-24 lg:pb-8 max-w-6xl mx-auto">
-          {children}
-        </main>
+    <SidebarProvider>
+      <div className="min-h-screen bg-background">
+        <Sidebar />
+        <Backdrop />
+        <MainContent>
+          <Header user={user} />
+          <main className="p-4 lg:p-6 pb-24 lg:pb-6 max-w-[1280px] mx-auto">
+            {children}
+          </main>
+        </MainContent>
+        <BottomNav />
       </div>
-      <BottomNav />
-    </div>
+    </SidebarProvider>
   )
 }

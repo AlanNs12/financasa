@@ -2,23 +2,25 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSidebar } from '@/lib/sidebar-context'
+import { cn } from '@/lib/utils'
+import { signOut } from '@/app/actions/auth'
 import {
   LayoutDashboard,
   ArrowLeftRight,
   Receipt,
   Target,
   Trophy,
+  TrendingUp,
+  TrendingDown,
   BarChart3,
   Settings,
   LogOut,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
+  Menu,
+  ChevronLeft,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { signOut } from '@/app/actions/auth'
 
-const navItems = [
+const NAV_ITEMS = [
   { href: '/', icon: LayoutDashboard, label: 'Home' },
   { href: '/transacoes', icon: ArrowLeftRight, label: 'Transações' },
   { href: '/contas', icon: Receipt, label: 'Contas' },
@@ -30,63 +32,174 @@ const navItems = [
 ]
 
 export function Sidebar() {
+  const {
+    isExpanded,
+    isHovered,
+    isMobileOpen,
+    toggleExpanded,
+    setIsHovered,
+    closeMobile,
+  } = useSidebar()
   const pathname = usePathname()
+  const showLabels = isExpanded || isHovered
 
   return (
-    <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 bg-card border-r border-border z-30">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <Wallet className="w-4 h-4 text-primary-foreground" />
-        </div>
-        <span className="font-bold text-lg text-foreground">Financasa</span>
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        onMouseEnter={() => {
+          if (!isExpanded) setIsHovered(true)
+        }}
+        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          'fixed left-0 top-0 bottom-0 z-[50] hidden lg:flex flex-col',
+          'bg-card border-r border-border',
+          'transition-all duration-300 ease-in-out overflow-hidden',
+          isExpanded || isHovered ? 'w-[290px]' : 'w-[88px]'
+        )}
+      >
+        <SidebarInner
+          showLabels={showLabels}
+          pathname={pathname}
+          isExpanded={isExpanded}
+          toggleExpanded={toggleExpanded}
+        />
+      </aside>
+
+      {/* Mobile sidebar */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 bottom-0 z-[50] flex flex-col lg:hidden',
+          'bg-card border-r border-border w-[290px]',
+          'transition-transform duration-300 ease-in-out',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <SidebarInner
+          showLabels={true}
+          pathname={pathname}
+          isExpanded={true}
+          toggleExpanded={closeMobile}
+        />
+      </aside>
+    </>
+  )
+}
+
+function SidebarInner({
+  showLabels,
+  pathname,
+  isExpanded,
+  toggleExpanded,
+}: {
+  showLabels: boolean
+  pathname: string
+  isExpanded: boolean
+  toggleExpanded: () => void
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      <div
+        className={cn(
+          'flex items-center h-16 px-4 border-b border-border shrink-0',
+          showLabels ? 'justify-between' : 'justify-center'
+        )}
+      >
+        {showLabels && (
+          <Link href="/" className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-lg bg-brand-500 flex items-center
+                          justify-center text-white font-bold text-sm"
+            >
+              F
+            </div>
+            <span className="text-base font-semibold text-foreground">
+              Financasa
+            </span>
+          </Link>
+        )}
+        <button
+          onClick={toggleExpanded}
+          aria-label={isExpanded ? 'Recolher sidebar' : 'Expandir sidebar'}
+          className="w-8 h-8 flex items-center justify-center rounded-lg
+                     text-muted-foreground hover:bg-muted hover:text-foreground
+                     transition-colors shrink-0"
+        >
+          {isExpanded ? <ChevronLeft size={18} /> : <Menu size={18} />}
+        </button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto no-scrollbar">
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive =
-            pathname === item.href ||
-            (item.href !== '/' && pathname.startsWith(item.href))
+            href === '/'
+              ? pathname === '/'
+              : pathname.startsWith(href)
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
+              prefetch={true}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-accent text-foreground dark:bg-[#1f6feb33] dark:text-[#58a6ff] dark:border-l-2 dark:border-[#58a6ff]'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                'menu-item',
+                isActive ? 'menu-item-active' : 'menu-item-inactive',
+                !showLabels && 'justify-center px-0'
               )}
+              title={!showLabels ? label : undefined}
             >
-              <item.icon className="w-5 h-5" />
-              {item.label}
+              <Icon
+                size={20}
+                className={
+                  isActive
+                    ? 'text-brand-500 dark:text-brand-400'
+                    : 'text-muted-foreground'
+                }
+                aria-hidden="true"
+              />
+              {showLabels && <span className="truncate">{label}</span>}
             </Link>
           )
         })}
       </nav>
 
-      <div className="p-3 border-t border-border space-y-1">
+      <div className="px-3 py-4 border-t border-border space-y-0.5">
         <Link
           href="/configuracoes"
+          prefetch={true}
           className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              pathname === '/configuracoes'
-                ? 'bg-accent text-foreground dark:bg-[#1f6feb33] dark:text-[#58a6ff] dark:border-l-2 dark:border-[#58a6ff]'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            'menu-item',
+            pathname === '/configuracoes'
+              ? 'menu-item-active'
+              : 'menu-item-inactive',
+            !showLabels && 'justify-center px-0'
           )}
+          title={!showLabels ? 'Configurações' : undefined}
         >
-          <Settings className="w-5 h-5" />
-          Configurações
+          <Settings
+            size={20}
+            className={
+              pathname === '/configuracoes'
+                ? 'text-brand-500 dark:text-brand-400'
+                : 'text-muted-foreground'
+            }
+            aria-hidden="true"
+          />
+          {showLabels && <span>Configurações</span>}
         </Link>
         <form action={signOut}>
           <button
             type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
+            className={cn(
+              'menu-item menu-item-inactive w-full',
+              !showLabels && 'justify-center px-0'
+            )}
+            title={!showLabels ? 'Sair' : undefined}
           >
-            <LogOut className="w-5 h-5" />
-            Sair
+            <LogOut size={20} className="text-muted-foreground" aria-hidden="true" />
+            {showLabels && <span>Sair</span>}
           </button>
         </form>
       </div>
-    </aside>
+    </div>
   )
 }

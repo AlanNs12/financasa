@@ -3,6 +3,7 @@ import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { getCategories } from '@/lib/db/queries/categories'
 import { getCreditCards } from '@/lib/db/queries/credit-cards'
 import { TransactionsClient } from '@/components/transacoes/transactions-client'
+import { PageHeader } from '@/components/shared/page-header'
 
 const now = new Date()
 
@@ -20,10 +21,7 @@ export default async function TransacoesPage({
   if (!current) {
     return (
       <div className="space-y-4">
-        <div>
-          <h1 className="text-xl font-bold text-foreground mb-1">Transações</h1>
-          <p className="text-sm text-muted-foreground">Faça login para gerenciar suas transações</p>
-        </div>
+        <PageHeader title="Transações" description="Faça login para gerenciar suas transações" />
       </div>
     )
   }
@@ -61,10 +59,7 @@ export default async function TransacoesPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-foreground mb-1">Transações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie suas entradas e saídas</p>
-      </div>
+      <PageHeader title="Transações" description="Gerencie suas entradas e saídas" />
 
       <TransactionsClient
         transactions={clientTransactions}

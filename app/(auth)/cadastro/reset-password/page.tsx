@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Wallet } from 'lucide-react'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -35,52 +35,70 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground mb-4">
-          <Wallet className="w-6 h-6" />
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">Nova senha</h1>
-        <p className="text-muted-foreground mt-1">
-          Digite e confirme sua nova senha
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-sm">
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
+        <div className="mb-8 text-center">
+          <Link href="/" className="inline-flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center
+                            justify-center text-white font-bold text-lg shadow-theme-md">
+              F
+            </div>
+            <span className="text-xl font-semibold text-foreground">
+              Financasa
+            </span>
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Nova senha
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
-            required
-            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
-          />
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Digite e confirme sua nova senha
+          </p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
-            Confirmar senha
-          </label>
-          <input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Repita a senha"
-            required
-            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {isPending ? 'Salvando...' : 'Salvar nova senha'}
-        </button>
-      </form>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Nova senha
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              required
+              className="w-full h-11 px-4 rounded-lg border border-border
+                         bg-background text-foreground text-sm
+                         placeholder:text-muted-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Confirmar senha
+            </label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Repita a senha"
+              required
+              className="w-full h-11 px-4 rounded-lg border border-border
+                         bg-background text-foreground text-sm
+                         placeholder:text-muted-foreground"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-11 rounded-lg bg-brand-500 text-white
+                       font-semibold text-sm hover:bg-brand-600 active:bg-brand-700
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       transition-colors shadow-theme-xs"
+          >
+            {isPending ? 'Salvando...' : 'Salvar nova senha'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
