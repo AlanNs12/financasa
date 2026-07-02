@@ -97,18 +97,22 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+    <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
-        <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
-          <h2 className="text-lg font-bold text-foreground">Nova transação</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-accent">
-            <X className="w-5 h-5" />
+      <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-theme-lg border border-border max-h-[90dvh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
+          <h2 className="text-base font-semibold text-foreground">Nova transação</h2>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-5 space-y-5">
           <div className="flex bg-muted rounded-xl p-1">
             {(['EXPENSE', 'INCOME'] as const).map((t) => (
               <button
@@ -123,8 +127,8 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
                   'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all',
                   type === t
                     ? t === 'EXPENSE'
-                      ? 'bg-red-500 text-white shadow-sm'
-                      : 'bg-green-500 text-white shadow-sm'
+                      ? 'bg-error-500 text-white shadow-theme-xs'
+                      : 'bg-success-500 text-white shadow-theme-xs'
                     : 'text-muted-foreground'
                 )}
               >
@@ -139,9 +143,11 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Valor</label>
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+              Valor
+            </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
                 R$
               </span>
               <input
@@ -149,44 +155,50 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
                 type="number"
                 step="0.01"
                 placeholder="0,00"
-                className="w-full pl-10 pr-4 py-4 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-lg font-bold"
+                className="w-full pl-10 pr-4 h-10 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none transition-colors"
               />
             </div>
             {errors.amount && (
-              <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>
+              <p className="text-error-500 text-xs mt-1">{errors.amount.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Descrição</label>
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+              Descrição
+            </label>
             <input
               {...register('description')}
               type="text"
               placeholder="Ex: Mercado, Uber, Salário..."
-              className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none transition-colors"
             />
             {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>
+              <p className="text-error-500 text-xs mt-1">{errors.description.message}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Data</label>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Data
+              </label>
               <input
                 {...register('date')}
                 type="date"
-                className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none transition-colors"
               />
               {errors.date && (
-                <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>
+                <p className="text-error-500 text-xs mt-1">{errors.date.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Pagamento</label>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Pagamento
+              </label>
               <select
                 {...register('payment_method')}
-                className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm bg-card"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none transition-colors"
               >
                 {PAYMENT_METHODS.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -199,10 +211,12 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
 
           {paymentMethod === 'CREDIT_CARD' && creditCards.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1">Qual cartão?</label>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Qual cartão?
+              </label>
               <select
                 {...register('credit_card_id')}
-                className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm bg-card"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none transition-colors"
               >
                 <option value="">Selecione o cartão</option>
                 {creditCards.map((card) => (
@@ -215,7 +229,9 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
           )}
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Categoria</label>
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Categoria
+            </label>
             {filteredCategories.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma categoria disponível</p>
             ) : (
@@ -241,7 +257,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
               </div>
             )}
             {errors.category_id && (
-              <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>
+              <p className="text-error-500 text-xs mt-1">{errors.category_id.message}</p>
             )}
           </div>
 
@@ -249,7 +265,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             <button
               type="button"
               onClick={() => setShowNotes(!showNotes)}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {showNotes ? '- Ocultar observação' : '+ Adicionar observação'}
             </button>
@@ -258,23 +274,23 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
                 {...register('notes')}
                 placeholder="Observação opcional..."
                 rows={2}
-                className="w-full mt-2 px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm resize-none"
+                className="w-full mt-2 h-20 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
               />
             )}
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
+              className="flex-1 h-11 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 h-11 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 disabled:opacity-50 transition-colors shadow-theme-xs flex items-center justify-center gap-2"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Salvar

@@ -38,9 +38,9 @@ export function QuickAddTransaction({ categories, creditCards }: QuickAddTransac
       <button
         onClick={() => setIsOpen(true)}
         aria-label="Adicionar nova transação"
-        className="fixed bottom-24 right-4 lg:bottom-8 lg:right-8 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all z-40"
+        className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 w-14 h-14 rounded-2xl bg-brand-500 text-white shadow-theme-lg hover:bg-brand-600 active:scale-95 transition-all duration-150 flex items-center justify-center z-40"
       >
-        <Plus size={24} />
+        <Plus size={24} strokeWidth={2.5} />
       </button>
 
       <NewTransactionModal

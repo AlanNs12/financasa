@@ -3,132 +3,115 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  ArrowLeftRight,
-  Receipt,
-  Target,
-  Trophy,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react'
+import { Home, ArrowLeftRight, Receipt, Banknote, Grid3x3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/actions/auth'
 
-const navItems = [
-  { href: '/', icon: LayoutDashboard, label: 'Home' },
-  { href: '/transacoes', icon: ArrowLeftRight, label: 'Transações' },
-  { href: '/contas', icon: Receipt, label: 'Contas' },
-  { href: '/planejamento', icon: Target, label: 'Planej.' },
+const NAV_ITEMS = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/transacoes', label: 'Transações', icon: ArrowLeftRight },
+  { href: '/contas', label: 'Contas', icon: Receipt },
+  { href: '/planejamento', label: 'Planejar', icon: Banknote },
 ]
 
-const moreItems = [
-  { href: '/metas', icon: Trophy, label: 'Metas' },
-  { href: '/investimentos', icon: TrendingUp, label: 'Investimentos' },
-  { href: '/dividas', icon: TrendingDown, label: 'Dívidas' },
-  { href: '/relatorios', icon: BarChart3, label: 'Relatórios' },
-  { href: '/configuracoes', icon: Settings, label: 'Configurações' },
+const MORE_ITEMS = [
+  { href: '/metas', label: 'Metas', icon: '🎯' },
+  { href: '/investimentos', label: 'Investimentos', icon: '📈' },
+  { href: '/dividas', label: 'Dívidas', icon: '💳' },
+  { href: '/relatorios', label: 'Relatórios', icon: '📊' },
+  { href: '/configuracoes', label: 'Config.', icon: '⚙️' },
 ]
-
-function isPathActive(pathname: string, href: string): boolean {
-  return pathname === href || (href !== '/' && pathname.startsWith(href))
-}
 
 export function BottomNav() {
   const pathname = usePathname()
-  const [moreOpen, setMoreOpen] = useState(false)
-
-  const moreActive = moreItems.some((item) => isPathActive(pathname, item.href))
-
-  function closeMore() {
-    setMoreOpen(false)
-  }
+  const [showMore, setShowMore] = useState(false)
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border safe-area-bottom">
-        <div className="flex items-center justify-around h-16">
-          {navItems.map((item) => {
-            const isActive = isPathActive(pathname, item.href)
+      <nav className="fixed bottom-0 inset-x-0 z-[30] lg:hidden bg-card/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+        <div className="flex items-center h-16">
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+            const isActive =
+              href === '/' ? pathname === '/' : pathname.startsWith(href)
             return (
               <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 px-2 py-1 min-w-0 flex-1 transition-colors',
-                  isActive ? 'text-foreground' : 'text-muted-foreground'
-                )}
+                key={href}
+                href={href}
+                prefetch={true}
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors"
               >
-                <item.icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium truncate w-full text-center">
-                  {item.label}
+                <Icon
+                  size={22}
+                  className={
+                    isActive ? 'text-brand-500' : 'text-muted-foreground'
+                  }
+                  strokeWidth={isActive ? 2.5 : 1.8}
+                />
+                <span
+                  className={cn(
+                    'text-[10px] font-medium transition-colors',
+                    isActive ? 'text-brand-500' : 'text-muted-foreground'
+                  )}
+                >
+                  {label}
                 </span>
               </Link>
             )
           })}
+
           <button
-            onClick={() => setMoreOpen(true)}
-            className={cn(
-              'flex flex-col items-center justify-center gap-0.5 px-2 py-1 min-w-0 flex-1 transition-colors',
-              moreActive ? 'text-foreground' : 'text-muted-foreground'
-            )}
-            aria-label="Mais opções"
+            onClick={() => setShowMore(true)}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 h-full"
+            aria-label="Ver mais opções"
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Mais</span>
+            <Grid3x3
+              size={22}
+              className="text-muted-foreground"
+              strokeWidth={1.8}
+            />
+            <span className="text-[10px] font-medium text-muted-foreground">
+              Mais
+            </span>
           </button>
         </div>
       </nav>
 
-      {moreOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeMore} />
-          <div className="relative bg-card rounded-t-3xl w-full p-4 pb-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h2 className="text-base font-bold text-foreground">Mais</h2>
-              <button
-                onClick={closeMore}
-                className="p-1 rounded-lg hover:bg-accent"
-                aria-label="Fechar"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-1">
-              {moreItems.map((item) => {
-                const isActive = isPathActive(pathname, item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={closeMore}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-accent text-foreground'
-                        : 'text-muted-foreground hover:bg-accent'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    {item.label}
-                  </Link>
-                )
-              })}
-              <form action={signOut} className="pt-1">
-                <button
-                  type="submit"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
+      {showMore && (
+        <div
+          className="fixed inset-0 z-[50] lg:hidden"
+          onClick={() => setShowMore(false)}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="absolute bottom-0 inset-x-0 bg-card rounded-t-3xl border-t border-border p-4 pb-8 safe-area-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5" />
+
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {MORE_ITEMS.map(({ href, label, icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setShowMore(false)}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted/60 hover:bg-muted transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
-                  Sair
-                </button>
-              </form>
+                  <span className="text-2xl">{icon}</span>
+                  <span className="text-xs font-medium text-foreground">
+                    {label}
+                  </span>
+                </Link>
+              ))}
             </div>
+
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-error-500 hover:bg-error-50 transition-colors"
+              >
+                Sair da conta
+              </button>
+            </form>
           </div>
         </div>
       )}
