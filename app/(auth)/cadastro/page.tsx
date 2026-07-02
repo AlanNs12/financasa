@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
 import { signUp } from '@/app/actions/auth'
 import Link from 'next/link'
-import { Eye, EyeOff, Wallet, Users, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, UserPlus, Users } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -39,28 +40,32 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground mb-4">
-          <Wallet className="w-6 h-6" />
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">Criar conta</h1>
-        <p className="text-muted-foreground mt-1">Comece a gerenciar suas finanças</p>
+    <>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Criar conta
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Configure sua conta e convide sua família
+        </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-error-50 border border-error-500/30 text-error-600 text-sm">
           {error}
         </div>
       )}
 
-      <div className="flex bg-secondary rounded-xl p-1 mb-4">
+      <div className="flex rounded-lg border border-border p-1 mb-6 bg-muted/40">
         <button
           type="button"
           onClick={() => setIsJoining(false)}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
-            !isJoining ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-          }`}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all',
+            !isJoining
+              ? 'bg-card text-foreground shadow-theme-xs'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
         >
           <UserPlus className="w-4 h-4" />
           Nova casa
@@ -68,48 +73,55 @@ export default function RegisterPage() {
         <button
           type="button"
           onClick={() => setIsJoining(true)}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isJoining ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-          }`}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all',
+            isJoining
+              ? 'bg-card text-foreground shadow-theme-xs'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
         >
           <Users className="w-4 h-4" />
-          Entrar em casa
+          Tenho um convite
         </button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Nome
           </label>
           <input
             {...register('name')}
             type="text"
             placeholder="Seu nome completo"
-            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
+            className="w-full h-11 px-4 rounded-lg border border-border
+                       bg-background text-foreground text-sm
+                       placeholder:text-muted-foreground"
           />
           {errors.name && (
-            <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+            <p className="text-error-500 text-xs mt-1">{errors.name.message}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Email
           </label>
           <input
             {...register('email')}
             type="email"
             placeholder="seu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
+            className="w-full h-11 px-4 rounded-lg border border-border
+                       bg-background text-foreground text-sm
+                       placeholder:text-muted-foreground"
           />
           {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+            <p className="text-error-500 text-xs mt-1">{errors.email.message}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Senha
           </label>
           <div className="relative">
@@ -117,39 +129,44 @@ export default function RegisterPage() {
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
               placeholder="Mínimo 6 caracteres"
-              className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm pr-12"
+              className="w-full h-11 px-4 rounded-lg border border-border
+                         bg-background text-foreground text-sm
+                         placeholder:text-muted-foreground pr-11"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+            <p className="text-error-500 text-xs mt-1">{errors.password.message}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Confirmar senha
           </label>
           <input
             {...register('confirmPassword')}
             type="password"
             placeholder="Repita a senha"
-            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
+            className="w-full h-11 px-4 rounded-lg border border-border
+                       bg-background text-foreground text-sm
+                       placeholder:text-muted-foreground"
           />
           {errors.confirmPassword && (
-            <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>
+            <p className="text-error-500 text-xs mt-1">{errors.confirmPassword.message}</p>
           )}
         </div>
 
         {isJoining && (
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
               Código de convite
             </label>
             <input
@@ -157,7 +174,9 @@ export default function RegisterPage() {
               type="text"
               placeholder="Ex: A4K9M2"
               maxLength={6}
-              className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm uppercase tracking-widest text-center font-mono"
+              className="w-full h-11 px-4 rounded-lg border border-border
+                         bg-background text-foreground text-sm
+                         placeholder:text-muted-foreground uppercase tracking-widest text-center font-mono"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Peça o código para quem já está na casa
@@ -168,7 +187,10 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-11 mt-6 rounded-lg bg-brand-500 text-white
+                     font-semibold text-sm hover:bg-brand-600 active:bg-brand-700
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-colors shadow-theme-xs"
         >
           {isPending ? 'Criando conta...' : 'Criar conta'}
         </button>
@@ -176,10 +198,12 @@ export default function RegisterPage() {
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         Já tem conta?{' '}
-        <Link href="/login" className="text-foreground font-medium hover:underline">
+        <Link href="/login"
+              className="text-brand-500 hover:text-brand-600 font-medium
+                         transition-colors">
           Entrar
         </Link>
       </p>
-    </div>
+    </>
   )
 }

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
 import { signIn, resetPasswordAction } from '@/app/actions/auth'
 import Link from 'next/link'
-import { Eye, EyeOff, Wallet, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function LoginPage() {
@@ -54,80 +54,89 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground mb-4">
-          <Wallet className="w-6 h-6" />
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">Entrar</h1>
-        <p className="text-muted-foreground mt-1">Acesse seu controle financeiro</p>
+    <>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Bem-vindo de volta
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Entre com seu email e senha para acessar
+        </p>
       </div>
 
       {confirmed === 'true' && (
-        <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 text-sm flex items-center gap-2 justify-center">
-          <CheckCircle className="w-4 h-4" />
+        <div className="mb-4 p-3 rounded-lg bg-success-50 border border-success-500/30 text-success-600 text-sm flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 shrink-0" />
           Email confirmado! Faça login para continuar.
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-error-50 border border-error-500/30 text-error-600 text-sm">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Email
           </label>
           <input
             {...register('email')}
             type="email"
             placeholder="seu@email.com"
-            className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm"
+            className="w-full h-11 px-4 rounded-lg border border-border
+                       bg-background text-foreground text-sm
+                       placeholder:text-muted-foreground"
           />
           {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+            <p className="text-error-500 text-xs mt-1">{errors.email.message}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1">
-            Senha
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-sm font-medium text-foreground">Senha</label>
+            <button
+              type="button"
+              onClick={() => setShowResetForm(true)}
+              className="text-xs text-brand-500 hover:text-brand-600
+                         transition-colors"
+            >
+              Esqueceu a senha?
+            </button>
+          </div>
           <div className="relative">
             <input
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
               placeholder="Sua senha"
-              className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none transition-colors text-sm pr-12"
+              className="w-full h-11 px-4 rounded-lg border border-border
+                         bg-background text-foreground text-sm
+                         placeholder:text-muted-foreground pr-11"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+            <p className="text-error-500 text-xs mt-1">{errors.password.message}</p>
           )}
-          <button
-            type="button"
-            onClick={() => setShowResetForm(true)}
-            className="text-xs text-muted-foreground hover:text-foreground mt-1.5 transition-colors"
-          >
-            Esqueceu sua senha?
-          </button>
         </div>
 
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-11 mt-6 rounded-lg bg-brand-500 text-white
+                     font-semibold text-sm hover:bg-brand-600 active:bg-brand-700
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-colors shadow-theme-xs"
         >
           {isPending ? 'Entrando...' : 'Entrar'}
         </button>
@@ -155,14 +164,19 @@ export default function LoginPage() {
                 onChange={(e) => setResetEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
+                className="w-full h-11 px-4 rounded-lg border border-border
+                           bg-background text-foreground text-sm
+                           placeholder:text-muted-foreground"
               />
               <button
                 type="submit"
                 disabled={isResetPending}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-lg bg-brand-500 text-white
+                           font-semibold text-sm hover:bg-brand-600
+                           disabled:opacity-50 transition-colors shadow-theme-xs
+                           flex items-center justify-center gap-2"
               >
-                {isResetPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {isResetPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isResetPending ? 'Enviando...' : 'Enviar link de recuperação'}
               </button>
             </form>
@@ -171,11 +185,13 @@ export default function LoginPage() {
       )}
 
       <p className="text-center text-sm text-muted-foreground mt-6">
-        Não tem conta?{' '}
-        <Link href="/cadastro" className="text-foreground font-medium hover:underline">
+        Não tem uma conta?{' '}
+        <Link href="/cadastro"
+              className="text-brand-500 hover:text-brand-600 font-medium
+                         transition-colors">
           Criar conta
         </Link>
       </p>
-    </div>
+    </>
   )
 }
