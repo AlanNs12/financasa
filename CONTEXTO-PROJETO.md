@@ -9,7 +9,7 @@
 **Financasa** é um aplicativo web **privado de controle financeiro familiar**, voltado para uso exclusivo de um casal. Substitui planilhas por uma interface moderna, responsiva e minimalista (cartões escuros sobre fundo claro, inspirada em apps financeiros mobile).
 
 - **Status:** Em desenvolvimento ativo. Todas as telas funcionais com dados reais (Supabase + Prisma). Sem dados mock restantes.
-- **Branch:** `main` (com alterações não commitadas — ver seção "Estado do Git").
+- **Branch:** `develop`. Working tree limpo.
 - **Locale:** pt-BR em todos os textos e formatos.
 
 ---
@@ -123,12 +123,12 @@ financasa/
 │   │   └── transacoes/page.tsx    # Transações (server, usa TransactionsClient)
 │   ├── actions/
 │   │   ├── auth.ts                # signIn, signUp, signOut (server actions)
-│   │   ├── bills.ts               # markBillAsPaidAction, createRecurringBillAction
+│   │   ├── bills.ts               # markBillAsPaidAction, createRecurringBillAction, deleteRecurringBillAction, updateRecurringBillAction
 │   │   ├── budget.ts              # updateBudgetIncomeAction, upsertBudgetItemAction
 │   │   ├── credit-cards.ts        # createCreditCardAction, updateCreditCardAction, deleteCreditCardAction
 │   │   ├── debts.ts               # createDebtAction, updateDebtAction, payInstallmentAction, deleteDebtAction
 │   │   ├── export.ts              # exportTransactionsCsvAction, exportPlanningCsvAction
-│   │   ├── goals.ts               # createGoalAction
+│   │   ├── goals.ts               # createGoalAction, updateGoalAction, addGoalAmountAction, deleteGoalAction
 │   │   ├── investments.ts         # createInvestmentAction, updateInvestmentAction, deleteInvestmentAction
 │   │   ├── theme.ts               # setThemeAction (cookie de tema)
 │   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction
@@ -164,10 +164,12 @@ financasa/
 │   ├── planejamento/
 │   │   └── planejamento-client.tsx # Edição inline + botão exportar CSV
 │   ├── relatorios/
-│   │   └── relatorios-client.tsx  # 3 abas com gráficos recharts + botão imprimir/PDF
+│   │   ├── print-button.tsx       # Botão de impressão/PDF
+│   │   └── relatorios-client.tsx  # 3 abas com gráficos recharts
 │   ├── shared/
 │   │   ├── category-icon.tsx      # Ícone emoji com fundo colorido
 │   │   ├── empty-state.tsx
+│   │   ├── loading-skeleton.tsx
 │   │   ├── money-display.tsx      # Valor com sinal + cor (income/expense/neutral)
 │   │   ├── person-avatar.tsx      # Iniciais ou imagem
 │   │   ├── progress-bar.tsx       # Cor dinâmica + invertColors (p/ metas/investimentos)
@@ -188,13 +190,13 @@ financasa/
 │   │   ├── prisma.ts              # Singleton PrismaClient
 │   │   └── queries/
 │   │       ├── alerts.ts          # getActiveAlerts (contas, orçamento, cartões)
-│   │       ├── bills.ts           # getRecurringBills, getBillsHistory, createRecurringBill, updateBillStatus
+│   │       ├── bills.ts           # getRecurringBills, getBillsHistory, createRecurringBill, updateBillStatus, createTransactionFromBill, getTotalBillsForMonth, deleteRecurringBill, updateRecurringBill
 │   │       ├── budget.ts          # getPlanejamentoData, getBudgetWithProgress
 │   │       ├── categories.ts      # getCategories, createDefaultCategories (12 categorias seed)
 │   │       ├── credit-cards.ts    # getCreditCards, getCreditCardSpending, getCreditCardsWithSpending, CRUD
 │   │       ├── dashboard.ts       # getDashboardSummary (não usado diretamente)
 │   │       ├── debts.ts           # getDebts, getDebtsSummary, createDebt, updateDebt, payInstallment, deleteDebt
-│   │       ├── goals.ts           # getFinancialGoals, createFinancialGoal
+│   │       ├── goals.ts           # getFinancialGoals, createFinancialGoal, updateFinancialGoal, addAmountToGoal, deleteFinancialGoal
 │   │       ├── investments.ts     # getInvestments, getInvestmentsSummary, getInvestmentsByGoal, CRUD
 │   │       ├── reports.ts         # getExpensesByCategory, getMonthlyEvolution, getPlannedVsActual
 │   │       ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction
@@ -306,8 +308,9 @@ model Category {
   type         CategoryType @default(EXPENSE)
   is_default   Boolean      @default(false)
 
-  transactions  Transaction[]
-  budgetItems   BudgetItem[]
+  transactions   Transaction[]
+  recurringBills RecurringBill[]
+  budgetItems    BudgetItem[]
 }
 
 enum CategoryType { INCOME; EXPENSE; BOTH }
@@ -347,6 +350,8 @@ model RecurringBill {
   amount             Decimal     @db.Decimal(10, 2)
   due_day            Int
   recurrence         Recurrence  @default(MONTHLY)
+  category_id        String?
+  category           Category?   @relation(fields: [category_id], references: [id])
   is_active          Boolean     @default(true)
   installment_total  Int?
   installment_current Int?
@@ -536,10 +541,12 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - Dark card resumo do mês (total/pago/restante + barra).
 - Tab **"Este mês"** / **"Histórico"** (histórico expansível dos últimos 6 meses).
 - Lista de contas com status badge (Pago/Pendente/Atrasado).
-- Expande ao tocar → "Marcar como pago".
+- Expande ao tocar → "Marcar como pago" + opções editar/deletar.
 - Modal nova conta com toggle **Fixa/Parcelada** (parcelada tem `installment_total`).
-- Ícone armazenado como prefixo no `name` (formato `"🏠 Aluguel"`), extraído via regex no client.
-- `updateBillStatus` incrementa `installment_current` e desativa bill ao finalizar parcelas.
+- Select de categoria no modal (opcional, armazena `category_id`).
+- `markBillAsPaidAction` gera automaticamente transação de saída correspondente.
+- `deleteRecurringBillAction` faz soft delete (`is_active = false`).
+- `updateRecurringBillAction` permite editar nome, valor, vencimento, recorrência e categoria.
 
 ### ✅ Planejamento (`/planejamento`) — FUNCIONAL
 - Card receita total do mês (editável inline).
@@ -553,6 +560,9 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - Cards de meta com barra de progresso invertida (verde = perto de bater a meta).
 - Badge de status com variante "Atrasado" quando deadline passou e status é IN_PROGRESS.
 - Modal "Nova meta" com RHF + zodResolver, chama `createGoalAction` via `useTransition`.
+- Botão "Adicionar valor" em metas ativas (chama `addGoalAmountAction`).
+- Botão delete com modal de confirmação (`deleteGoalAction`).
+- Edição de meta via `updateGoalAction` (nome, descrição, valor, prazo, ícone, cor).
 - Estado vazio com `EmptyState`.
 
 ### ✅ Relatórios (`/relatorios`) — FUNCIONAL (dados reais)
@@ -685,16 +695,18 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 | 11 | **`getDashboardSummary` não usado** | `lib/db/queries/dashboard.ts` existe mas o dashboard calcula in-place. Considerar consolidar. |
 | 12 | **Avisos CRLF** | Git avisa LF→CRLF no Windows. Configurar `.gitattributes` se necessário. |
 | 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 133 testes em 12 arquivos cobrindo cálculos, formatação e validações. |
-| 14 | **db:push pendente** | Schema tem 3 models novos (Investment, Debt, CreditCard) + credit_card_id em Transaction. Rodar `npm run db:push` para aplicar. |
+| 14 | ~~db:push pendente~~ | **RESOLVIDO**: Models Investment, Debt, CreditCard e `category_id` em RecurringBill já estão no banco e em uso. |
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
 | 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 7 erros (JSX em try/catch). Total: 18 problemas (7 erros, 11 warnings). Pré-existentes, não introduzidos pelas tarefas. |
+| 17 | **Cores hardcoded → tokens semânticos** | Commit `395682a` substituiu cores hardcoded por tokens semânticos para melhor suporte a dark mode. Tokens em `globals.css` (`--expense`, `--income`, `--paid`, etc.) agora são usados nos componentes.
 
 ---
 
 ## 13. Estado do Git
 
-- **Branch:** `main`, em dia com `origin/main`.
-- **Commits (7):**
+- **Branch:** `develop`, em dia com `origin/develop`.
+- **Commits (8):**
+  - `395682a` — fix: substituir cores hardcoded por tokens semânticos para dark mode
   - `83693bf` — update needed vercel deploy
   - `477c713` — att-package.json
   - `9689079` — Update middleware.ts
@@ -798,7 +810,7 @@ Script SQL em `prisma/sql/enable_rls.sql`. Aplicar manualmente no Supabase SQL E
 ## 19. Observações Finais
 
 - A especificação original (`prompt-financeiro-familiar.md`) é **referência de design/intenção**, mas **desatualizada** em versões de libs e em alguns detalhes de implementação. Sempre prefira o código real.
-- O projeto está **~95% funcional**. Todas as telas usam dados reais. Restam: aplicar `db:push` (3 models novos), aplicar RLS no Supabase, e corrigir erros lint pré-existentes no dashboard.
+- O projeto está **~98% funcional**. Todas as telas usam dados reais com CRUD completo. Restam: aplicar RLS no Supabase, e corrigir erros lint pré-existentes no dashboard.
 - A interface está visualmente alinhada à especificação (dark cards `#1a1a2e`, fundo `#f8f9fa`, barras coloridas por threshold).
-- Dark mode implementado com toggle em `/configuracoes`, persistência em cookie, e script anti-flash no root layout.
+- Dark mode implementado com toggle em `/configuracoes`, persistência em cookie, e script anti-flash no root layout. Cores hardcoded substituídas por tokens semânticos (`--expense`, `--income`, `--paid`, etc.) em todos os componentes.
 - Testes automatizados (Vitest) cobrem cálculos financeiros, formatação e validações Zod — 133 testes, 12 arquivos.
