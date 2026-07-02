@@ -3,12 +3,15 @@ import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { UpcomingBills } from '@/components/dashboard/upcoming-bills'
 import { AlertsPanel } from '@/components/dashboard/alerts-panel'
+import { QuickAddTransaction } from '@/components/dashboard/quick-add-transaction'
 import { getMonthAbbr } from '@/lib/format'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { getRecurringBills } from '@/lib/db/queries/bills'
 import { getBudgetWithProgress } from '@/lib/db/queries/budget'
 import { getActiveAlerts } from '@/lib/db/queries/alerts'
+import { getCategories } from '@/lib/db/queries/categories'
+import { getCreditCards } from '@/lib/db/queries/credit-cards'
 
 const now = new Date()
 
@@ -35,11 +38,13 @@ export default async function DashboardPage({
   }
 
   try {
-    const [transactions, bills, budget, alerts] = await Promise.all([
+    const [transactions, bills, budget, alerts, categories, creditCards] = await Promise.all([
       getTransactionsByMonth(current.householdId, currentMonth, currentYear),
       getRecurringBills(current.householdId, currentMonth, currentYear),
       getBudgetWithProgress(current.householdId, currentMonth, currentYear),
       getActiveAlerts(current.householdId, currentMonth, currentYear),
+      getCategories(current.householdId),
+      getCreditCards(current.householdId, false),
     ])
 
     const income = transactions
@@ -108,6 +113,11 @@ export default async function DashboardPage({
           <RecentTransactions transactions={recentTransactions} />
           <UpcomingBills bills={upcomingBills} month={currentMonth} />
         </div>
+
+        <QuickAddTransaction
+          categories={categories.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color, type: c.type }))}
+          creditCards={creditCards.map((c) => ({ id: c.id, name: c.name, issuer: c.issuer ?? null }))}
+        />
       </div>
     )
   } catch {
