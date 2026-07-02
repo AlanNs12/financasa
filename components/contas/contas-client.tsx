@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { formatCurrency, getMonthName } from '@/lib/format'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ProgressBar } from '@/components/shared/progress-bar'
@@ -116,6 +117,7 @@ function mapBillToEditing(bill: Bill): EditingBill {
 }
 
 export function ContasClient({ bills, history, month, year, categories }: ContasClientProps) {
+  const router = useRouter()
   const [expandedBill, setExpandedBill] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [payingBill, setPayingBill] = useState<string | null>(null)
@@ -142,6 +144,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
         toast.error('Erro ao marcar conta.')
       } else {
         toast.success('Conta marcada como paga e registrada como despesa')
+        router.refresh()
       }
       setPayingBill(null)
       setExpandedBill(null)
@@ -156,9 +159,16 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
         toast.error('Erro ao excluir conta.')
       } else {
         toast.success('Conta excluída')
+        router.refresh()
       }
       setDeletingBill(null)
     })
+  }
+
+  function handleModalClose() {
+    setModalOpen(false)
+    setEditingBill(null)
+    router.refresh()
   }
 
   return (
@@ -322,7 +332,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
           <Fab onClick={() => setModalOpen(true)} />
           <NewBillModal
             isOpen={modalOpen || !!editingBill}
-            onClose={() => { setModalOpen(false); setEditingBill(null) }}
+            onClose={handleModalClose}
             categories={categories}
             editingBill={editingBill}
           />

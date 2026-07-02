@@ -45,11 +45,11 @@ export async function createRecurringBillAction(data: {
 }) {
   const current = await getCurrentUserHousehold()
   if (!current) {
-    return { error: { _form: 'Usuário não autenticado.' } }
+    return { success: false, error: 'Usuário não autenticado.' }
   }
 
   if (!data.name || data.amount <= 0 || data.due_day < 1 || data.due_day > 31) {
-    return { error: { _form: 'Dados inválidos.' } }
+    return { success: false, error: 'Dados inválidos.' }
   }
 
   const isParcelada = data.bill_type === 'parcelada'
@@ -75,13 +75,13 @@ export async function createRecurringBillAction(data: {
 export async function deleteRecurringBillAction(billId: string) {
   const current = await getCurrentUserHousehold()
   if (!current) {
-    return { error: 'Usuário não autenticado.' }
+    return { success: false, error: 'Usuário não autenticado.' }
   }
 
   try {
     z.string().uuid().parse(billId)
   } catch {
-    return { error: 'ID inválido.' }
+    return { success: false, error: 'ID inválido.' }
   }
 
   await deleteRecurringBill(billId, current.householdId)
@@ -103,12 +103,12 @@ export async function updateRecurringBillAction(
 ) {
   const current = await getCurrentUserHousehold()
   if (!current) {
-    return { error: { _form: 'Usuário não autenticado.' } }
+    return { success: false, error: 'Usuário não autenticado.' }
   }
 
   const parsed = updateRecurringBillSchema.safeParse(data)
   if (!parsed.success) {
-    return { error: parsed.error.flatten().fieldErrors }
+    return { success: false, error: parsed.error.flatten().fieldErrors }
   }
 
   await updateRecurringBill(billId, current.householdId, {

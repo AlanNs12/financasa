@@ -111,7 +111,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
           return
         }
 
-        toast.success('Conta atualizada!')
+        toast.success('Conta atualizada')
         onClose()
       } else {
         const result = await createRecurringBillAction({
