@@ -95,48 +95,58 @@
 }
 
 .dark {
-  --background: #111827;
-  --foreground: #f9fafb;
-  --card: #1f2937;
-  --card-foreground: #f9fafb;
-  --popover: #1f2937;
-  --popover-foreground: #f9fafb;
-  --primary: #f9fafb;
-  --primary-foreground: #111827;
-  --secondary: #374151;
-  --secondary-foreground: #f9fafb;
-  --muted: #374151;
-  --muted-foreground: #9ca3af;
-  --accent: #374151;
-  --accent-foreground: #f9fafb;
-  --destructive: #ef4444;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #6b7280;
-  --chart-1: #818cf8;
-  --chart-2: #fbbf24;
-  --chart-3: #60a5fa;
-  --chart-4: #f87171;
-  --chart-5: #f472b6;
-  --sidebar: #1f2937;
-  --sidebar-foreground: #f9fafb;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #374151;
-  --sidebar-accent-foreground: #f9fafb;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #6b7280;
+  --background: #0d1117;
+  --foreground: #e6edf3;
+  --card: #161b22;
+  --card-foreground: #e6edf3;
+  --popover: #161b22;
+  --popover-foreground: #e6edf3;
+  --primary: #58a6ff;
+  --primary-foreground: #0d1117;
+  --secondary: #21262d;
+  --secondary-foreground: #e6edf3;
+  --muted: #21262d;
+  --muted-foreground: #8b949e;
+  --accent: #1f6feb33;
+  --accent-foreground: #58a6ff;
+  --destructive: #f85149;
+  --border: #30363d;
+  --input: #21262d;
+  --ring: #388bfd;
+  --sidebar: #161b22;
+  --sidebar-foreground: #e6edf3;
+  --sidebar-primary: #58a6ff;
+  --sidebar-primary-foreground: #0d1117;
+  --sidebar-accent: #21262d;
+  --sidebar-accent-foreground: #e6edf3;
+  --sidebar-border: #30363d;
+  --sidebar-ring: #388bfd;
+  --chart-1: #58a6ff;
+  --chart-2: #f0883e;
+  --chart-3: #3fb950;
+  --chart-4: #f85149;
+  --chart-5: #bc8cff;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+  input, select, textarea {
+    @apply bg-input border border-border text-foreground placeholder:text-muted-foreground;
+  }
+  input:focus, select:focus, textarea:focus {
+    @apply ring-2 ring-ring outline-none;
   }
 }
 
@@ -148,11 +158,21 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--muted-foreground);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #30363d;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #0d1117;
 }
 
 /* Safe area for mobile */

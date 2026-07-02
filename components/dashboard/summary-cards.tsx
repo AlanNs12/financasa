@@ -25,13 +25,13 @@ export function SummaryCards({ income, expenses, balance, pendingBills }: Summar
         return (
           <div
             key={card.key}
-            className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow"
+            className="bg-card rounded-xl border border-border p-4 hover:shadow-sm transition-shadow"
           >
             <div className={`w-8 h-8 rounded-lg ${card.bgColor} flex items-center justify-center mb-3`}>
               <Icon className={`w-4 h-4 ${card.color}`} />
             </div>
-            <p className="text-xs text-gray-500 mb-1">{card.label}</p>
-            <p className="text-sm font-bold text-gray-900 tabular-nums">
+            <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
+            <p className="text-sm font-bold text-foreground tabular-nums">
               {formatCurrency(values[card.key])}
             </p>
           </div>

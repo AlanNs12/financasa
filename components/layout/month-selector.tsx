@@ -38,17 +38,17 @@ export function MonthSelector() {
     <div className="flex items-center gap-2">
       <button
         onClick={prevMonth}
-        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-accent transition-colors"
         aria-label="Mês anterior"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
-      <span className="text-sm font-semibold text-gray-900 min-w-[90px] text-center">
+      <span className="text-sm font-semibold text-foreground min-w-[90px] text-center">
         {monthLabel} {year}
       </span>
       <button
         onClick={nextMonth}
-        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-accent transition-colors"
         aria-label="Próximo mês"
       >
         <ChevronRight className="w-4 h-4" />

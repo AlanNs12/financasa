@@ -21,8 +21,8 @@ export default async function PlanejamentoPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Planejamento</h1>
-          <p className="text-sm text-gray-500">Faça login para usar o planejamento</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Planejamento</h1>
+          <p className="text-sm text-muted-foreground">Faça login para usar o planejamento</p>
         </div>
       </div>
     )

@@ -36,7 +36,7 @@ export function PersonAvatar({ user, size = 'md', className }: PersonAvatarProps
     return (
       <div
         className={cn(
-          'rounded-full bg-gray-200 flex items-center justify-center font-medium text-gray-600',
+          'rounded-full bg-secondary flex items-center justify-center font-medium text-muted-foreground',
           sizeClasses[size],
           className
         )}
@@ -49,7 +49,7 @@ export function PersonAvatar({ user, size = 'md', className }: PersonAvatarProps
   return (
     <div
       className={cn(
-        'rounded-full bg-gray-200 flex items-center justify-center',
+        'rounded-full bg-secondary flex items-center justify-center',
         sizeClasses[size],
         className
       )}

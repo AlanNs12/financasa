@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Toaster } from "sonner"
+import { cookies } from "next/headers"   // ← adicionar
 import "./globals.css"
 
 const interSans = Inter({
@@ -13,13 +14,20 @@ export const metadata: Metadata = {
   description: "Aplicativo de controle financeiro para famílias",
 }
 
-export default function RootLayout({
+export default async function RootLayout({   // ← adicionar async
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()         // ← adicionar
+  const theme = cookieStore.get("theme")?.value ?? "light"  // ← adicionar
+
   return (
-    <html lang="pt-BR" className={`${interSans.variable} h-full antialiased`} suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className={`${interSans.variable} h-full antialiased ${theme === "dark" ? "dark" : ""}`}  // ← adicionar dark
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{

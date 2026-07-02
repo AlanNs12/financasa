@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createUserAndHousehold, joinHouseholdByInviteCode } from '@/lib/db/queries/user'
 
@@ -30,11 +31,16 @@ export async function signUp(formData: FormData) {
   const password = formData.get('password') as string
   const inviteCode = (formData.get('invite_code') as string) || null
 
+  const headersList = await headers()
+  const origin = headersList.get('origin') ?? headersList.get('host') ?? ''
+  const baseUrl = origin.startsWith('http') ? origin : `https://${origin}`
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { name },
+      emailRedirectTo: `${baseUrl}/login?confirmed=true`,
     },
   })
 
@@ -73,4 +79,31 @@ export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/login')
+}
+
+export async function resetPasswordAction(email: string) {
+  const supabase = await createClient()
+  const headersList = await headers()
+  const origin = headersList.get('origin') ?? ''
+  const baseUrl = origin.startsWith('http') ? origin : `https://${origin}`
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${baseUrl}/cadastro/reset-password`,
+  })
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function updatePasswordAction(
+  currentPassword: string,
+  newPassword: string
+) {
+  if (newPassword.length < 6) {
+    return { error: 'A nova senha deve ter pelo menos 6 caracteres' }
+  }
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) return { error: error.message }
+  return { success: true }
 }

@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   const user = await getCurrentUser()
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa]">
+    <div className="min-h-screen bg-background">
       <Sidebar />
       <div className="lg:pl-60">
         <Header user={user} />

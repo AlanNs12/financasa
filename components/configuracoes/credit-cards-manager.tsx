@@ -104,12 +104,12 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
+    <div className="bg-card rounded-2xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-900">Cartões de crédito</h2>
+        <h2 className="text-sm font-semibold text-foreground">Cartões de crédito</h2>
         <button
           onClick={openNewCard}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-muted border border-border hover:bg-accent transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Adicionar
@@ -117,7 +117,7 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
       </div>
 
       {cards.length === 0 ? (
-        <p className="text-sm text-gray-400 py-4 text-center">
+        <p className="text-sm text-muted-foreground py-4 text-center">
           Nenhum cartão cadastrado. Clique em &ldquo;Adicionar&rdquo; para criar.
         </p>
       ) : (
@@ -125,14 +125,14 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
           {cards.map((card) => (
             <div
               key={card.id}
-              className="flex items-center gap-3 p-3 rounded-xl border border-gray-100"
+              className="flex items-center gap-3 p-3 rounded-xl border border-border"
             >
-              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-                <CreditCardIcon className="w-5 h-5 text-gray-500" />
+              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                <CreditCardIcon className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{card.name}</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm font-medium text-foreground">{card.name}</p>
+                <p className="text-xs text-muted-foreground">
                   {card.issuer || 'Sem emissor'}
                   {card.spending_cap != null && (
                     <span className="ml-1">· Teto: {formatCurrency(card.spending_cap)}</span>
@@ -147,7 +147,7 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
               </div>
               <button
                 onClick={() => openEditCard(card)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
                 aria-label="Editar cartão"
               >
                 <Pencil className="w-4 h-4" />
@@ -168,14 +168,14 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-              <h2 className="text-lg font-bold text-gray-900">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingCard ? 'Editar cartão' : 'Novo cartão'}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1 rounded-lg hover:bg-gray-100"
+                className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -184,11 +184,11 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
 
             <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">Nome</label>
                 <input
                   type="text"
                   placeholder="Ex: Nubank, Itaú Personnalité..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...register('name')}
                 />
                 {errors.name && (
@@ -197,30 +197,30 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Emissor (opcional)
                 </label>
                 <input
                   type="text"
                   placeholder="Ex: Mastercard, Visa..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                   {...register('issuer')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Teto de gasto (opcional)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
                     R$
                   </span>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('spending_cap')}
                   />
                 </div>
@@ -231,7 +231,7 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Dia de fechamento
                   </label>
                   <input
@@ -239,7 +239,7 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
                     min={1}
                     max={31}
                     placeholder="Ex: 28"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('closing_day')}
                   />
                   {errors.closing_day && (
@@ -247,7 +247,7 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">
                     Dia de vencimento
                   </label>
                   <input
@@ -255,7 +255,7 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
                     min={1}
                     max={31}
                     placeholder="Ex: 5"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-border focus:border-foreground focus:ring-1 focus:ring-foreground outline-none text-sm"
                     {...register('due_day')}
                   />
                   {errors.due_day && (
@@ -268,14 +268,14 @@ export function CreditCardsManager({ cards }: CreditCardsManagerProps) {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Salvar

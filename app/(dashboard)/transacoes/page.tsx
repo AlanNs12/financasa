@@ -21,8 +21,8 @@ export default async function TransacoesPage({
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Transações</h1>
-          <p className="text-sm text-gray-500">Faça login para gerenciar suas transações</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Transações</h1>
+          <p className="text-sm text-muted-foreground">Faça login para gerenciar suas transações</p>
         </div>
       </div>
     )
@@ -62,8 +62,8 @@ export default async function TransacoesPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Transações</h1>
-        <p className="text-sm text-gray-500">Gerencie suas entradas e saídas</p>
+        <h1 className="text-xl font-bold text-foreground mb-1">Transações</h1>
+        <p className="text-sm text-muted-foreground">Gerencie suas entradas e saídas</p>
       </div>
 
       <TransactionsClient

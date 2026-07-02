@@ -15,7 +15,7 @@ export function MoneyDisplay({ amount, type = 'neutral', size = 'md', className 
       ? 'text-green-500'
       : type === 'expense'
         ? 'text-red-500'
-        : 'text-gray-900'
+        : 'text-foreground'
   const sizeClass =
     size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-2xl' : 'text-base'
 

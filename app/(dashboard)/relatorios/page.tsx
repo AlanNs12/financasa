@@ -24,8 +24,8 @@ export default async function RelatoriosPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Relatórios</h1>
-          <p className="text-sm text-gray-500">Faça login para ver os relatórios</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">Faça login para ver os relatórios</p>
         </div>
       </div>
     )

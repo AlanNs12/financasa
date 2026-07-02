@@ -70,19 +70,19 @@ export function RelatoriosClient({
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Relatórios</h1>
-          <p className="text-sm text-gray-500">Análise financeira detalhada</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">Análise financeira detalhada</p>
         </div>
         <button
           onClick={() => window.open(`/relatorios/imprimir?month=${month}&year=${year}`, '_blank')}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-accent transition-colors shrink-0"
         >
           <Printer className="w-3.5 h-3.5" />
           Imprimir / PDF
         </button>
       </div>
 
-      <div className="flex bg-white rounded-xl border border-gray-200 p-1">
+      <div className="flex bg-card rounded-xl border border-border p-1">
         {[
           { key: 'categories' as Tab, label: 'Gastos por categoria' },
           { key: 'evolution' as Tab, label: 'Evolução mensal' },
@@ -93,8 +93,8 @@ export function RelatoriosClient({
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-500 hover:text-gray-900'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
@@ -105,7 +105,7 @@ export function RelatoriosClient({
       {activeTab === 'categories' && (
         <div className="space-y-4">
           {expensesByCategory.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="bg-card rounded-2xl border border-border p-6">
               <EmptyState
                 icon={PieChartIcon}
                 title="Nenhum gasto no mês"
@@ -114,8 +114,8 @@ export function RelatoriosClient({
             </div>
           ) : (
             <>
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-sm font-semibold text-gray-900 mb-4">
+              <div className="bg-card rounded-2xl border border-border p-6">
+                <h2 className="text-sm font-semibold text-foreground mb-4">
                   Distribuição de gastos · {monthName}
                 </h2>
                 <div className="h-64">
@@ -147,7 +147,7 @@ export function RelatoriosClient({
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <div className="bg-card rounded-2xl border border-border p-6">
                 <div className="space-y-3">
                   {expensesByCategory.map((cat, idx) => {
                     const pct = Math.round((cat.total / totalExpenses) * 100)
@@ -160,13 +160,13 @@ export function RelatoriosClient({
                               cat.color || FALLBACK_COLORS[idx % FALLBACK_COLORS.length],
                           }}
                         />
-                        <span className="flex-1 text-sm text-gray-700">
+                        <span className="flex-1 text-sm text-muted-foreground">
                           {cat.icon} {cat.categoryName}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-foreground">
                           {formatCurrency(cat.total)}
                         </span>
-                        <span className="text-xs text-gray-400 w-10 text-right">
+                        <span className="text-xs text-muted-foreground w-10 text-right">
                           {pct}%
                         </span>
                       </div>
@@ -182,7 +182,7 @@ export function RelatoriosClient({
       {activeTab === 'evolution' && (
         <div className="space-y-4">
           {!evolutionHasData ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="bg-card rounded-2xl border border-border p-6">
               <EmptyState
                 icon={TrendingUp}
                 title="Sem dados para exibir"
@@ -191,8 +191,8 @@ export function RelatoriosClient({
             </div>
           ) : (
             <>
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-sm font-semibold text-gray-900 mb-4">
+              <div className="bg-card rounded-2xl border border-border p-6">
+                <h2 className="text-sm font-semibold text-foreground mb-4">
                   Receitas vs Gastos
                 </h2>
                 <div className="h-72">
@@ -227,17 +227,17 @@ export function RelatoriosClient({
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-sm font-semibold text-gray-900 mb-4">
+              <div className="bg-card rounded-2xl border border-border p-6">
+                <h2 className="text-sm font-semibold text-foreground mb-4">
                   Resumo mensal
                 </h2>
                 <div className="space-y-2">
                   {monthlyEvolution.map((m) => (
                     <div
                       key={`${m.year}-${m.month}`}
-                      className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                      className="flex items-center justify-between py-2 border-b border-border last:border-0"
                     >
-                      <span className="text-sm text-gray-600">{m.label}</span>
+                      <span className="text-sm text-muted-foreground">{m.label}</span>
                       <div className="flex items-center gap-4">
                         <span className="text-sm text-green-600 font-medium">
                           {formatCurrency(m.income)}
@@ -265,8 +265,8 @@ export function RelatoriosClient({
       )}
 
       {activeTab === 'budget' && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <h2 className="text-sm font-semibold text-foreground mb-6">
             Planejado x Realizado · {monthName}
           </h2>
           {plannedVsActual.length === 0 ? (

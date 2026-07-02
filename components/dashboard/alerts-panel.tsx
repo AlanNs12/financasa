@@ -45,7 +45,7 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
                   {alert.title}
                 </p>
               </div>
-              <p className="text-xs text-gray-600 truncate mt-0.5">
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
                 {alert.description}
               </p>
             </div>
@@ -57,7 +57,7 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
       {remaining > 0 && (
         <Link
           href="/contas"
-          className="block text-center text-xs text-gray-500 hover:text-gray-900 py-1.5 transition-colors"
+          className="block text-center text-xs text-muted-foreground hover:text-foreground py-1.5 transition-colors"
         >
           Ver mais {remaining} {remaining === 1 ? 'alerta' : 'alertas'}
         </Link>

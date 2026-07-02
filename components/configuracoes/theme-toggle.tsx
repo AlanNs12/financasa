@@ -29,7 +29,7 @@ export function ThemeToggle() {
     <button
       onClick={toggleTheme}
       disabled={isPending}
-      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full text-left disabled:opacity-50"
+      className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent dark:hover:bg-gray-800 transition-colors w-full text-left disabled:opacity-50"
     >
       <div className={cn(
         'w-10 h-10 rounded-xl flex items-center justify-center transition-colors',
@@ -42,8 +42,8 @@ export function ThemeToggle() {
         )}
       </div>
       <div className="flex-1">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Tema</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
+        <p className="text-sm font-medium text-foreground dark:text-gray-100">Tema</p>
+        <p className="text-xs text-muted-foreground dark:text-gray-500">
           {isDark ? 'Escuro' : 'Claro'}
         </p>
       </div>
@@ -53,7 +53,7 @@ export function ThemeToggle() {
       )}>
         <div
           className={cn(
-            'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+            'absolute top-0.5 w-5 h-5 rounded-full bg-card shadow transition-transform',
             isDark ? 'translate-x-[22px]' : 'translate-x-0.5'
           )}
         />

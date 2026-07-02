@@ -20,8 +20,8 @@ export default async function ContasPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">Contas</h1>
-          <p className="text-sm text-gray-500">Faça login para gerenciar suas contas</p>
+          <h1 className="text-xl font-bold text-foreground mb-1">Contas</h1>
+          <p className="text-sm text-muted-foreground">Faça login para gerenciar suas contas</p>
         </div>
       </div>
     )
