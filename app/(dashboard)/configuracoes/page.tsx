@@ -9,9 +9,13 @@ import { PasswordManager } from '@/components/configuracoes/password-manager'
 
 export default async function ConfiguracoesPage() {
   const current = await getCurrentUserHousehold()
-  const inviteCode = current ? await getHouseholdInviteCode(current.householdId) : null
-  const creditCards = current ? await getCreditCards(current.householdId, true) : []
-  const members = current ? await getHouseholdMembers(current.householdId) : []
+  const [inviteCode, creditCards, members] = current
+    ? await Promise.all([
+        getHouseholdInviteCode(current.householdId),
+        getCreditCards(current.householdId, true),
+        getHouseholdMembers(current.householdId),
+      ])
+    : [null, [], []]
 
   return (
     <div className="space-y-6">
