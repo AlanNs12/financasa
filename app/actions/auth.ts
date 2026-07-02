@@ -80,3 +80,30 @@ export async function signOut() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+export async function resetPasswordAction(email: string) {
+  const supabase = await createClient()
+  const headersList = await headers()
+  const origin = headersList.get('origin') ?? ''
+  const baseUrl = origin.startsWith('http') ? origin : `https://${origin}`
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${baseUrl}/cadastro/reset-password`,
+  })
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function updatePasswordAction(
+  currentPassword: string,
+  newPassword: string
+) {
+  if (newPassword.length < 6) {
+    return { error: 'A nova senha deve ter pelo menos 6 caracteres' }
+  }
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) return { error: error.message }
+  return { success: true }
+}

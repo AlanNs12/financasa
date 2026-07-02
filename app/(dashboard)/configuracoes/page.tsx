@@ -5,6 +5,7 @@ import { CopyButton } from './copy-button'
 import { CreditCardsManager } from '@/components/configuracoes/credit-cards-manager'
 import { ThemeToggle } from '@/components/configuracoes/theme-toggle'
 import { HouseholdMembers } from '@/components/configuracoes/household-members'
+import { PasswordManager } from '@/components/configuracoes/password-manager'
 
 export default async function ConfiguracoesPage() {
   const current = await getCurrentUserHousehold()
@@ -47,14 +48,17 @@ export default async function ConfiguracoesPage() {
 
       <div className="bg-card rounded-2xl border border-border p-6">
         <h2 className="text-sm font-semibold text-foreground mb-4">Conta</h2>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl bg-red-50 text-red-600 font-medium text-sm hover:bg-red-100 transition-colors"
-          >
-            Sair da conta
-          </button>
-        </form>
+        <div className="space-y-3">
+          <PasswordManager />
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-red-50 text-red-600 font-medium text-sm hover:bg-red-100 transition-colors"
+            >
+              Sair da conta
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
