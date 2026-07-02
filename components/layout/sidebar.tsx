@@ -14,6 +14,7 @@ import {
   TrendingUp,
   TrendingDown,
   BarChart3,
+  CalendarDays,
   Settings,
   LogOut,
   Menu,
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: '/investimentos', icon: TrendingUp, label: 'Investimentos' },
   { href: '/dividas', icon: TrendingDown, label: 'Dívidas' },
   { href: '/relatorios', icon: BarChart3, label: 'Relatórios' },
+  { href: '/calendario', icon: CalendarDays, label: 'Calendário' },
 ]
 
 export function Sidebar() {
