@@ -77,7 +77,7 @@ export default async function ImprimirRelatorioPage({
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Receita</p>
             <p className="text-lg font-bold text-green-600 tabular-nums">

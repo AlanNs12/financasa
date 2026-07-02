@@ -244,7 +244,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
               <h2 className="text-lg font-bold text-foreground">Nova dívida</h2>
               <button
@@ -435,7 +435,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             className="absolute inset-0 bg-black/40"
             onClick={() => !isPending && setPendingDelete(null)}
           />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm p-6 shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl">
             <div className="flex flex-col items-center text-center mb-5">
               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
                 <AlertTriangle className="w-6 h-6 text-red-500" />
@@ -511,7 +511,7 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center mb-3">
+      <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 text-center mb-3">
         <div>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
             Parcela

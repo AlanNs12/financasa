@@ -194,7 +194,7 @@ export function TransactionList({ transactions, month, year }: TransactionListPr
             className="absolute inset-0 bg-black/40"
             onClick={() => !isPending && setPendingDelete(null)}
           />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm p-6 shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl">
             <div className="flex flex-col items-center text-center mb-5">
               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
                 <AlertTriangle className="w-6 h-6 text-red-500" />

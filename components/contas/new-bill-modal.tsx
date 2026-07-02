@@ -141,7 +141,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+      <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
           <h2 className="text-lg font-bold text-foreground">
             {isEditing ? 'Editar conta' : 'Nova conta'}
@@ -182,7 +182,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
 
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-2">Ícone</label>
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {BILL_ICONS.map((ic) => (
                 <button
                   key={ic}
@@ -205,7 +205,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
               <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Categoria <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {categories.map((cat) => (
                   <button
                     key={cat.id}

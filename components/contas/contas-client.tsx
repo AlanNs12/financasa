@@ -330,7 +330,7 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
           {deletingBill && (
             <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
               <div className="absolute inset-0 bg-black/40" onClick={() => setDeletingBill(null)} />
-              <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-sm shadow-xl p-6">
+              <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm shadow-xl p-6">
                 <h2 className="text-lg font-bold text-foreground mb-2">Excluir conta?</h2>
                 <p className="text-sm text-muted-foreground mb-4">
                   A conta <span className="text-foreground font-medium">{extractName(deletingBill.name)}</span> será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.

@@ -100,7 +100,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full lg:max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
+      <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
           <h2 className="text-lg font-bold text-foreground">Nova transação</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-accent">
@@ -219,7 +219,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             {filteredCategories.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma categoria disponível</p>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {filteredCategories.map((cat) => (
                   <button
                     key={cat.id}

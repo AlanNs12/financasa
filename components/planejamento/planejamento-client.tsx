@@ -252,7 +252,7 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
                         type="number"
                         value={itemValue}
                         onChange={(e) => setItemValue(e.target.value)}
-                        className="min-w-[120px] px-3 py-1.5 rounded-lg border border-border bg-background text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+                        className="min-w-0 w-[120px] max-w-full px-3 py-1.5 rounded-lg border border-border bg-background text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') saveItem()
