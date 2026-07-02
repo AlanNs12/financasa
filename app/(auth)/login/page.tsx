@@ -2,13 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
+import { useSearchParams } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
-import { Eye, EyeOff, Wallet } from 'lucide-react'
+import { Eye, EyeOff, Wallet, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const confirmed = searchParams.get('confirmed')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -42,6 +45,13 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-foreground">Entrar</h1>
         <p className="text-muted-foreground mt-1">Acesse seu controle financeiro</p>
       </div>
+
+      {confirmed === 'true' && (
+        <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 text-sm flex items-center gap-2 justify-center">
+          <CheckCircle className="w-4 h-4" />
+          Email confirmado! Faça login para continuar.
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">

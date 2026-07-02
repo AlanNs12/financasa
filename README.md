@@ -163,3 +163,25 @@ O script:
 Cada policy pode ser removida com `DROP POLICY`, e o RLS desabilitado com
 `ALTER TABLE ... DISABLE ROW LEVEL SECURITY`. Veja as instruções no final
 do arquivo `prisma/sql/enable_rls.sql`.
+
+## Configuração Supabase
+
+### URL de Redirect para confirmação de email
+
+Ao cadastrar um novo usuário, o Supabase envia um email de confirmação com um
+link para `/login?confirmed=true`. Para que o link funcione tanto em
+desenvolvimento quanto em produção, configure as URLs de redirect no
+Dashboard do Supabase:
+
+**Authentication → URL Configuration → Redirect URLs:**
+
+```
+http://localhost:3000/**
+https://SEU_DOMINIO/**
+```
+
+Substitua `SEU_DOMINIO` pelo domínio real em produção (ex: `financasa.vercel.app`).
+
+> O `emailRedirectTo` é construído dinamicamente na server action `signUp`
+> usando `headers()` do Next.js, então a URL aponta corretamente para o
+> ambiente atual sem hardcoding.
