@@ -1,14 +1,16 @@
 import { signOut } from '@/app/actions/auth'
-import { getCurrentUserHousehold, getHouseholdInviteCode } from '@/lib/db/queries/user'
+import { getCurrentUserHousehold, getHouseholdInviteCode, getHouseholdMembers } from '@/lib/db/queries/user'
 import { getCreditCards } from '@/lib/db/queries/credit-cards'
 import { CopyButton } from './copy-button'
 import { CreditCardsManager } from '@/components/configuracoes/credit-cards-manager'
 import { ThemeToggle } from '@/components/configuracoes/theme-toggle'
+import { HouseholdMembers } from '@/components/configuracoes/household-members'
 
 export default async function ConfiguracoesPage() {
   const current = await getCurrentUserHousehold()
   const inviteCode = current ? await getHouseholdInviteCode(current.householdId) : null
   const creditCards = current ? await getCreditCards(current.householdId, true) : []
+  const members = current ? await getHouseholdMembers(current.householdId) : []
 
   return (
     <div className="space-y-6">
@@ -30,6 +32,10 @@ export default async function ConfiguracoesPage() {
             <CopyButton code={inviteCode} />
           </div>
         </div>
+      )}
+
+      {current && members.length > 0 && (
+        <HouseholdMembers members={members} currentUserId={current.userId} />
       )}
 
       <div className="bg-card rounded-2xl border border-border p-6">

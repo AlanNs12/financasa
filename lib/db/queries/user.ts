@@ -134,3 +134,22 @@ export async function getHouseholdInviteCode(
 
   return household?.invite_code ?? null
 }
+
+export async function getHouseholdMembers(householdId: string) {
+  const members = await prisma.user.findMany({
+    where: { household_id: householdId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatar_url: true,
+      created_at: true,
+    },
+    orderBy: { created_at: 'asc' },
+  })
+
+  return members.map((m) => ({
+    ...m,
+    created_at: m.created_at.toISOString(),
+  }))
+}
