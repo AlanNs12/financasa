@@ -8,7 +8,7 @@
 
 **Financasa** é um aplicativo web **privado de controle financeiro familiar**, voltado para uso exclusivo de um casal. Substitui planilhas por uma interface moderna, responsiva e minimalista (cartões escuros sobre fundo claro, inspirada em apps financeiros mobile).
 
-- **Status:** Em desenvolvimento ativo. Todas as telas funcionais com dados reais (Supabase + Prisma). Sem dados mock restantes.
+- **Status:** Em desenvolvimento ativo. Todas as telas funcionais com dados reais (Supabase + Prisma). Sem dados mock restantes. Performance otimizada (queries paralelizadas em todas as páginas, middleware com matcher restrito).
 - **Branch:** `develop`. Working tree limpo.
 - **Locale:** pt-BR em todos os textos e formatos.
 
@@ -99,13 +99,15 @@ DIRECT_URL=...            # connection direta do Prisma
 financasa/
 ├── app/
 │   ├── (auth)/
-│   │   ├── cadastro/page.tsx      # Cadastro (nova casa OU entrar via código convite)
+│   │   ├── cadastro/
+│   │   │   ├── reset-password/page.tsx # Define nova senha pós-email de recuperação
+│   │   │   └── page.tsx      # Cadastro (nova casa OU entrar via código convite)
 │   │   ├── layout.tsx             # Layout centralizado auth
-│   │   └── login/page.tsx         # Login com RHF + Zod
+│   │   └── login/page.tsx         # Login com RHF + Zod + "Esqueceu senha?" + banner confirmação
 │   ├── (dashboard)/
 │   │   ├── configuracoes/
 │   │   │   ├── copy-button.tsx    # Botão copiar código convite (client)
-│   │   │   └── page.tsx           # Config: convite, theme toggle, cartões, logout
+│   │   │   └── page.tsx           # Config: convite, membros da casa, aparência, cartões, senha, logout
 │   │   ├── contas/page.tsx        # Contas recorrentes (server, usa ContasClient)
 │   │   ├── dividas/page.tsx       # Dívidas (server, usa DividasClient)
 │   │   ├── investimentos/
@@ -122,7 +124,7 @@ financasa/
 │   │   │   └── page.tsx           # Relatórios com gráficos recharts (server)
 │   │   └── transacoes/page.tsx    # Transações (server, usa TransactionsClient)
 │   ├── actions/
-│   │   ├── auth.ts                # signIn, signUp, signOut (server actions)
+│   │   ├── auth.ts                # signIn, signUp, signOut, resetPasswordAction, updatePasswordAction
 │   │   ├── bills.ts               # markBillAsPaidAction, createRecurringBillAction, deleteRecurringBillAction, updateRecurringBillAction
 │   │   ├── budget.ts              # updateBudgetIncomeAction, upsertBudgetItemAction
 │   │   ├── credit-cards.ts        # createCreditCardAction, updateCreditCardAction, deleteCreditCardAction
@@ -131,13 +133,15 @@ financasa/
 │   │   ├── goals.ts               # createGoalAction, updateGoalAction, addGoalAmountAction, deleteGoalAction
 │   │   ├── investments.ts         # createInvestmentAction, updateInvestmentAction, deleteInvestmentAction
 │   │   ├── theme.ts               # setThemeAction (cookie de tema)
-│   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction
+│   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction (revalidate / e /transacoes)
 │   ├── globals.css                # Tema Tailwind v4 + variáveis CSS + .dark
 │   ├── layout.tsx                 # Root layout (Inter, Toaster sonner, script anti-flash dark mode)
 │   └── favicon.ico
 ├── components/
 │   ├── configuracoes/
 │   │   ├── credit-cards-manager.tsx # Gestão de cartões de crédito (CRUD + modal)
+│   │   ├── household-members.tsx    # Lista membros da casa (avatar, nome, email, "Você")
+│   │   ├── password-manager.tsx     # Seção expansível "Alterar senha"
 │   │   └── theme-toggle.tsx         # Toggle dark/light mode (client)
 │   ├── contas/
 │   │   ├── bills-history.tsx      # Histórico expansível por mês
@@ -146,6 +150,7 @@ financasa/
 │   ├── dashboard/
 │   │   ├── alerts-panel.tsx       # Painel de alertas consolidado (contas, orçamento, cartões)
 │   │   ├── monthly-budget-card.tsx # Dark card principal do dashboard
+│   │   ├── quick-add-transaction.tsx # FAB (+) para nova transação no dashboard
 │   │   ├── recent-transactions.tsx
 │   │   ├── summary-cards.tsx       # Grid 4 cards (receita/gastos/saldo/pendentes)
 │   │   └── upcoming-bills.tsx
@@ -200,7 +205,7 @@ financasa/
 │   │       ├── investments.ts     # getInvestments, getInvestmentsSummary, getInvestmentsByGoal, CRUD
 │   │       ├── reports.ts         # getExpensesByCategory, getMonthlyEvolution, getPlannedVsActual
 │   │       ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction
-│   │       └── user.ts            # getCurrentUserHousehold, getCurrentUser, createUserAndHousehold, joinHouseholdByInviteCode, getHouseholdInviteCode
+│   │       └── user.ts            # getCurrentUserHousehold, getCurrentUser, createUserAndHousehold, joinHouseholdByInviteCode, getHouseholdInviteCode, getHouseholdMembers
 │   ├── supabase/
 │   │   ├── client.ts             # createBrowserClient
 │   │   └── server.ts             # createServerClient (cookies)
@@ -515,17 +520,20 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ## 7. Estado de Implementação por Tela
 
-### ✅ Autenticação (`/login`, `/cadastro`) — FUNCIONAL
-- Login com RHF + Zod (`loginSchema`).
+### ✅ Autenticação (`/login`, `/cadastro`, `/cadastro/reset-password`) — FUNCIONAL
+- Login com RHF + Zod (`loginSchema`). Banner "Email confirmado!" quando `?confirmed=true`.
+- Link **"Esqueceu sua senha?"** no login → modal com campo de email → `resetPasswordAction` envia link do Supabase.
+- Página `/cadastro/reset-password`: recebe token do Supabase, permite definir nova senha via `supabase.auth.updateUser()`.
 - Cadastro com toggle **"Nova casa"** vs **"Entrar em casa"** (código de convite).
-- `signUp` server action: cria user no Supabase Auth, depois cria Household + User no Prisma (ou entra via `invite_code`).
+- `signUp` server action: `emailRedirectTo` dinâmico via `headers()` (localhost em dev, domínio real em prod). Cria user no Supabase Auth, depois Household + User no Prisma (ou entra via `invite_code`).
 - Redirecionamento via middleware.
 
-### ✅ Dashboard / Home (`/`) — FUNCIONAL (dados reais + alertas)
+### ✅ Dashboard / Home (`/`) — FUNCIONAL (dados reais + alertas + FAB)
 - `MonthlyBudgetCard` (dark card `#1a1a2e`): orçamento mensal, saldo, barra de progresso, link p/ planejamento.
 - `SummaryCards`: grid 4 cards (receita, gastos, saldo, contas pendentes).
 - `AlertsPanel`: painel consolidado de alertas (contas a vencer, orçamento estourado, cartão perto do limite). Só aparece quando há alertas. Danger primeiro, warning depois. Clickable → tela relevante.
 - `RecentTransactions` (5 últimas) + `UpcomingBills` (3 próximas).
+- `QuickAddTransaction`: FAB (+) fixo para criar transação sem sair do dashboard. Abre `NewTransactionModal`.
 - Cálculos feitos in-place na página server (`app/(dashboard)/page.tsx`).
 
 ### ✅ Transações (`/transacoes`) — FUNCIONAL
@@ -537,7 +545,7 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - Select **"Qual cartão?"** quando payment_method é CREDIT_CARD (populado com cartões ativos).
 - `deleteTransactionAction` valida household no server (`deleteMany` com `household_id`).
 
-### ✅ Contas (`/contas`) — FUNCIONAL
+### ✅ Contas (`/contas`) — FUNCIONAL (router.refresh após mutações)
 - Dark card resumo do mês (total/pago/restante + barra).
 - Tab **"Este mês"** / **"Histórico"** (histórico expansível dos últimos 6 meses).
 - Lista de contas com status badge (Pago/Pendente/Atrasado).
@@ -547,6 +555,7 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - `markBillAsPaidAction` gera automaticamente transação de saída correspondente.
 - `deleteRecurringBillAction` faz soft delete (`is_active = false`).
 - `updateRecurringBillAction` permite editar nome, valor, vencimento, recorrência e categoria.
+- `router.refresh()` após criar/pagar/editar/excluir para atualizar lista sem F5.
 
 ### ✅ Planejamento (`/planejamento`) — FUNCIONAL
 - Card receita total do mês (editável inline).
@@ -608,7 +617,9 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ### ✅ Configurações (`/configuracoes`) — FUNCIONAL
 - Código de convite da household (com botão copiar).
+- **Membros da casa**: lista com avatar, nome, email, data de entrada e badge "Você" no usuário atual (`getHouseholdMembers`).
 - **Toggle de tema** (claro/escuro) com persistência em cookie + script anti-flash no root layout.
+- **Alterar senha**: seção expansível com nova senha/confirmação, chama `updatePasswordAction`.
 - **Gestão de cartões de crédito**: lista cartões, criar/editar/desativar (soft delete), modal com nome, emissor, teto de gasto, dia de fechamento, dia de vencimento.
 - Logout.
 
@@ -617,19 +628,41 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 ## 8. Layout e Navegação
 
 ### Desktop
-- Sidebar fixa esquerda (240px / `w-60`), 8 itens: Home, Transações, Contas, Planejamento, Metas, Investimentos, Dívidas, Relatórios + Configurações + Sair.
+- Sidebar fixa esquerda (240px / `w-60`), 8 itens: Home, Transações, Contas, Planejamento, Metas, Investimentos, Dívidas, Relatórios + Configurações + Sair. Item ativo com destaque azul no dark mode.
 - Conteúdo com `lg:pl-60`, `max-w-6xl mx-auto`.
 
 ### Mobile
 - Bottom nav fixa (5 itens diretos: Home, Transações, Contas, Planejamento + **"Mais"**).
 - Botão **"Mais"** abre bottom sheet (`fixed inset-0 + bg-black/40`) com: Metas, Investimentos, Dívidas, Relatórios, Configurações, Sair.
 - `pb-24` no main para não esconder conteúdo atrás da bottom nav.
+- **Regra global anti-overflow:** `html, body { overflow-x: hidden; max-width: 100vw }`.
+- **Grids responsivos:** `grid-cols-4` e `grid-cols-3` colapsam para 1-2 colunas no mobile.
+- **Modais:** container interno com `mx-4` para evitar encostar nas bordas da tela.
+- **FAB dashboard:** posicionado em `bottom-24` (acima da BottomNav) no mobile, `bottom-8` no desktop.
 
 ### Header
 - Sticky top, contém `MonthSelector` (chevrons ← → + label "JUN 2026") e avatar/nome usuário.
 - `MonthSelector` manipula query params (`?month=&year=`) via `useRouter`.
 - Header recebe `user` como prop do Server Component layout (que busca via `getCurrentUser()`). Não usa mais Zustand.
 - `PersonAvatar` mostra iniciais do nome quando não há `avatar_url`.
+
+---
+
+## 8.5 Middleware e Performance
+
+### Middleware (`middleware.ts`)
+- Protege rotas privadas: redireciona para `/login` se usuário não autenticado.
+- Redireciona para `/` se usuário autenticado em rota pública.
+- **Matcher otimizado:** exclui `_next/static`, `_next/image`, `_next/data`, favicon, e assets estáticos (`svg|png|jpg|woff2|css|js`), evitando `supabase.auth.getUser()` em cada asset.
+
+### Otimização de Queries
+- **Todas as páginas** usam `Promise.all` para queries independentes (dashboard: 6 queries, configurações: 3 queries, etc.).
+- `getDashboardSummary` em `lib/db/queries/dashboard.ts` não é usado — cálculos são feitos in-place na página.
+- PrismaClient é singleton via `globalThis` (evita múltiplas conexões em dev).
+
+### Navegação
+- Sidebar e BottomNav usam `<Link>` do Next.js com prefetch automático.
+- `router.refresh()` em mutações críticas (contas, transações via FAB) força revalidação sem navegação.
 
 ---
 
@@ -655,10 +688,32 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 --progress-warning: #f59e0b; /* 70-90% */
 --progress-danger: #ef4444;  /* >90% */
 ```
-- Dark card destaque: `bg-[#1a1a2e]` com texto branco.
-- **Dark mode ativo**: classe `.dark` define variáveis CSS inversas. Toggle em `/configuracoes` via `ThemeToggle`. Script inline no root layout (`next/script` com `strategy="beforeInteractive"`) aplica classe antes da hidratação. Persiste em cookie `theme`.
+
+### Paleta Dark Mode (`.dark`)
+```css
+--background: #0d1117;        /* azul-preto profundo */
+--foreground: #e6edf3;
+--card: #161b22;              /* uma camada acima do fundo */
+--muted: #21262d;             /* terceira camada para inputs/hovers */
+--border: #30363d;            /* borda sutil mas visível */
+--primary: #58a6ff;           /* azul claro vibrante */
+--muted-foreground: #8b949e;  /* texto secundário legível */
+--ring: #388bfd;
+--chart-1: #58a6ff;
+--chart-2: #f0883e;
+--chart-3: #3fb950;
+--chart-4: #f85149;
+--chart-5: #bc8cff;
+```
+
+Inspirada na paleta GitHub Dark, com 3 camadas de profundidade: fundo (#0d1117) → cards (#161b22) → inputs/secondary (#21262d).
+- Dark card destaque: `bg-[#1a1a2e]` com texto branco. No dark mode ganha gradiente `dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d]`.
+- Cards normais usam `border border-border` para definição no dark mode.
+- Inputs, selects e textareas têm `bg-input border border-border text-foreground placeholder:text-muted-foreground` via `@layer base`.
+- Scrollbar customizada com thumb `#30363d` e track `#0d1117` no dark mode.
+- **Dark mode ativo**: classe `.dark` define variáveis CSS. Toggle em `/configuracoes` via `ThemeToggle`. Script inline no root layout (`next/script` com `strategy="beforeInteractive"`) aplica classe antes da hidratação. Persiste em cookie `theme`.
+- Sidebar com item ativo destacado em azul (`#58a6ff`) com borda lateral no dark mode.
 - Font: Inter (`next/font/google`, variável `--font-sans`).
-- Scrollbar customizada (6px).
 - Safe area mobile: `.safe-area-bottom`.
 
 ---
@@ -697,24 +752,32 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 | 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 133 testes em 12 arquivos cobrindo cálculos, formatação e validações. |
 | 14 | ~~db:push pendente~~ | **RESOLVIDO**: Models Investment, Debt, CreditCard e `category_id` em RecurringBill já estão no banco e em uso. |
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
-| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 7 erros (JSX em try/catch). Total: 18 problemas (7 erros, 11 warnings). Pré-existentes, não introduzidos pelas tarefas. |
-| 17 | **Cores hardcoded → tokens semânticos** | Commit `395682a` substituiu cores hardcoded por tokens semânticos para melhor suporte a dark mode. Tokens em `globals.css` (`--expense`, `--income`, `--paid`, etc.) agora são usados nos componentes.
+| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch). Total: 19 problemas (8 erros, 11 warnings). Pré-existentes, não introduzidos pelas tarefas. |
+| 17 | ~~Cores hardcoded → tokens semânticos~~ | **RESOLVIDO**: Tokens em `globals.css` (`--expense`, `--income`, `--paid`, etc.) usados nos componentes. |
+| 18 | **Dark mode refinado** | Paleta GitHub Dark (#0d1117 base, #161b22 cards, #21262d inputs, #58a6ff primary). Gradiente nos cards de destaque. Scrollbar customizada. Input base styles. Sidebar com destaque azul no item ativo. |
+| 19 | **Overflow horizontal mobile** | Corrigido: grids colapsam no mobile, modais com `mx-4`, regra global `overflow-x: hidden`. |
+| 20 | **FAB no dashboard** | Botão (+) fixo (`bottom-24` mobile) para criar transação via `QuickAddTransaction`. |
+| 21 | **Performance otimizada** | Configurações: 3 queries sequenciais → `Promise.all`. Middleware: matcher expandido para excluir assets estáticos e `_next/data`. Prisma singleton verificado. Todas as demais páginas já paralelizavam. |
+| 22 | **router.refresh nas contas** | Criar/pagar/editar/excluir contas agora atualiza a lista sem F5. |
+| 23 | **Recuperação de senha** | Login com "Esqueceu sua senha?" → modal → email → `/cadastro/reset-password`. |
+| 24 | **Alterar senha em /configuracoes** | Seção expansível `PasswordManager` com nova senha/confirmação. |
+| 25 | **Membros da casa** | Seção `HouseholdMembers` em /configuracoes com avatar, nome, email, "Você". |
 
 ---
 
 ## 13. Estado do Git
 
 - **Branch:** `develop`, em dia com `origin/develop`.
-- **Commits (8):**
-  - `395682a` — fix: substituir cores hardcoded por tokens semânticos para dark mode
-  - `83693bf` — update needed vercel deploy
-  - `477c713` — att-package.json
-  - `9689079` — Update middleware.ts
-  - `f8bf550` — mvp-complete
-  - `eabcedc` — initial commit
-  - `093fcb3` — initial-commit
-  - `b2d5bf6` — Initial commit
-- **Working tree:** limpo (todas as alterações commitadas).
+- **Commits recentes (não commitados):**
+  - feat: add quick-add transaction FAB to dashboard
+  - perf: parallelize queries and optimize middleware for faster navigation
+  - feat: add forgot password flow and password change in settings
+  - fix: use dynamic emailRedirectTo in signUp instead of hardcoded Vercel URL
+  - fix: add router.refresh() after bill mutations to auto-refresh UI
+  - fix: prevent horizontal overflow on mobile viewports
+  - refactor: refine dark mode palette and visual hierarchy
+  - feat: add household members section to config page
+- **Working tree:** alterações não commitadas (ver acima).
 - **Não commitar** a menos que explicitamente solicitado.
 
 ---
@@ -759,6 +822,7 @@ npm run db:studio    # Prisma Studio (GUI do banco)
 |------|------|--------|----------------------|
 | `/login` | Client | ✅ | `app/(auth)/login/page.tsx` |
 | `/cadastro` | Client | ✅ | `app/(auth)/cadastro/page.tsx` |
+| `/cadastro/reset-password` | Client | ✅ | `app/(auth)/cadastro/reset-password/page.tsx` |
 | `/` | Server | ✅ | `app/(dashboard)/page.tsx` |
 | `/transacoes` | Server→Client | ✅ | `TransactionsClient` |
 | `/contas` | Server→Client | ✅ | `ContasClient` |
@@ -810,7 +874,9 @@ Script SQL em `prisma/sql/enable_rls.sql`. Aplicar manualmente no Supabase SQL E
 ## 19. Observações Finais
 
 - A especificação original (`prompt-financeiro-familiar.md`) é **referência de design/intenção**, mas **desatualizada** em versões de libs e em alguns detalhes de implementação. Sempre prefira o código real.
-- O projeto está **~98% funcional**. Todas as telas usam dados reais com CRUD completo. Restam: aplicar RLS no Supabase, e corrigir erros lint pré-existentes no dashboard.
+- O projeto está **~99% funcional**. Todas as telas usam dados reais com CRUD completo. Restam: aplicar RLS no Supabase, corrigir erros lint pré-existentes no dashboard, e commitar as alterações pendentes.
 - A interface está visualmente alinhada à especificação (dark cards `#1a1a2e`, fundo `#f8f9fa`, barras coloridas por threshold).
-- Dark mode implementado com toggle em `/configuracoes`, persistência em cookie, e script anti-flash no root layout. Cores hardcoded substituídas por tokens semânticos (`--expense`, `--income`, `--paid`, etc.) em todos os componentes.
+- Dark mode refinado com paleta GitHub Dark: 3 camadas de profundidade, gradiente nos cards de destaque, scrollbar e inputs com estilos específicos.
+- Performance otimizada: todas as 9 páginas paralelizam queries com `Promise.all`. Middleware não executa em assets estáticos.
+- Mobile otimizado: grids colapsam, modais têm margem, regra anti-overflow global.
 - Testes automatizados (Vitest) cobrem cálculos financeiros, formatação e validações Zod — 133 testes, 12 arquivos.
