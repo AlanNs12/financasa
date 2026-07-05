@@ -15,8 +15,8 @@ const cards = [
     label: 'Receita do mês',
     icon: TrendingUp,
     color: {
-      bg: 'bg-success-50 dark:bg-success-500/10',
-      icon: 'text-success-600 dark:text-success-400',
+      bg: 'bg-[#dcfce7] dark:bg-[#22c55e]/15',
+      icon: 'text-[#16a34a] dark:text-[#4ade80]',
     },
   },
   {
@@ -24,8 +24,8 @@ const cards = [
     label: 'Gastos do mês',
     icon: TrendingDown,
     color: {
-      bg: 'bg-error-50 dark:bg-error-500/10',
-      icon: 'text-error-600 dark:text-error-400',
+      bg: 'bg-[#fee2e2] dark:bg-[#ef4444]/15',
+      icon: 'text-[#dc2626] dark:text-[#f87171]',
     },
   },
   {
@@ -33,8 +33,8 @@ const cards = [
     label: 'Saldo',
     icon: Wallet,
     color: {
-      bg: 'bg-primary/5 dark:bg-primary/10',
-      icon: 'text-primary',
+      bg: 'bg-[#dbeafe] dark:bg-[#3b82f6]/15',
+      icon: 'text-[#2563eb] dark:text-[#60a5fa]',
     },
   },
   {
@@ -42,8 +42,8 @@ const cards = [
     label: 'Contas pendentes',
     icon: Clock,
     color: {
-      bg: 'bg-warning-50 dark:bg-warning-500/10',
-      icon: 'text-warning-600 dark:text-warning-400',
+      bg: 'bg-[#fef9c3] dark:bg-[#f59e0b]/15',
+      icon: 'text-[#d97706] dark:text-[#fbbf24]',
     },
   },
 ]

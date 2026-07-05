@@ -628,17 +628,19 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 ## 8. Layout e Navegação
 
 ### Desktop
-- Sidebar fixa esquerda (240px / `w-60`), 8 itens: Home, Transações, Contas, Planejamento, Metas, Investimentos, Dívidas, Relatórios + Configurações + Sair. Item ativo com destaque azul no dark mode.
-- Conteúdo com `lg:pl-60`, `max-w-6xl mx-auto`.
+- Sidebar fixa esquerda (290px expandida, 88px colapsada, hover expande), 8 itens: Home, Transações, Contas, Planejamento, Metas, Investimentos, Dívidas, Relatórios + Calendário + Configurações + Sair. Item ativo com borda esquerda preta (`border-primary`) e fundo `bg-primary/8` (monocromático sutil).
+- Sidebar colapsada mostra apenas ícone do Logo Financasa (casa geométrica SVG).
+- Conteúdo com `lg:pl-[290px]` (expanded) ou `lg:pl-[88px]` (collapsed), `max-w-6xl mx-auto`.
 
 ### Mobile
-- Bottom nav fixa (5 itens diretos: Home, Transações, Contas, Planejamento + **"Mais"**).
-- Botão **"Mais"** abre bottom sheet (`fixed inset-0 + bg-black/40`) com: Metas, Investimentos, Dívidas, Relatórios, Configurações, Sair.
+- Bottom nav fixa (4 itens diretos: Home, Transações, Contas, Planejamento + **"Mais"**).
+- Botão **"Mais"** abre bottom sheet (`fixed inset-0 + bg-black/40`) com: Metas, Investimentos, Dívidas, Relatórios, Calendário, Configurações, Sair.
+- Item ativo com `text-foreground font-semibold` e `strokeWidth={2.5}` — destaque clean sem cor brand.
 - `pb-24` no main para não esconder conteúdo atrás da bottom nav.
 - **Regra global anti-overflow:** `html, body { overflow-x: hidden; max-width: 100vw }`.
 - **Grids responsivos:** `grid-cols-4` e `grid-cols-3` colapsam para 1-2 colunas no mobile.
 - **Modais:** container interno com `mx-4` para evitar encostar nas bordas da tela.
-- **FAB dashboard:** posicionado em `bottom-24` (acima da BottomNav) no mobile, `bottom-8` no desktop.
+- **FAB dashboard:** posicionado em `bottom-24` (acima da BottomNav) no mobile, `bottom-8` no desktop. Fundo preto `bg-primary`, ícone branco, focus ring azul.
 
 ### Header
 - Sticky top, contém `MonthSelector` (chevrons ← → + label "JUN 2026") e avatar/nome usuário.
@@ -668,52 +670,57 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ## 9. Design System (globals.css)
 
-### Paleta (`:root`)
+### Paleta monocromática (`:root` — Light Mode)
 ```css
---background: #f8f9fa;
---foreground: #111827;
---card: #ffffff;
---primary: #111827;
---secondary: #f3f4f6;
---muted-foreground: #6b7280;
---border: #e5e7eb;
---radius: 0.75rem;
+--background: #FFFFFF;
+--foreground: #0F1115;
+--card: #FFFFFF;
+--primary: #0F1115;          /* preto principal */
+--primary-foreground: #FFFFFF;
+--secondary: #F3F4F6;
+--muted: #F3F4F6;
+--muted-foreground: #6B7280;
+--border: #E5E7EB;
+--input: #F3F4F6;
+--ring: #3B82F6;             /* azul acessibilidade (foco) */
+--radius: 1rem;
 
---income: #22c55e;        /* verde entradas */
---expense: #ef4444;       /* vermelho saídas */
---paid: #bbf7d0;          /* verde claro */
---pending: #fde68a;       /* amarelo */
---overdue: #fecaca;       /* vermelho claro */
---progress-safe: #22c55e;    /* <70% */
+--income: #22C55E;           /* verde entradas */
+--expense: #EF4444;          /* vermelho saídas */
+--paid: #bbf7d0;
+--pending: #fde68a;
+--overdue: #fecaca;
+--progress-safe: #22C55E;    /* <70% */
 --progress-warning: #f59e0b; /* 70-90% */
---progress-danger: #ef4444;  /* >90% */
+--progress-danger: #EF4444;  /* >90% */
 ```
 
 ### Paleta Dark Mode (`.dark`)
 ```css
---background: #0d1117;        /* azul-preto profundo */
---foreground: #e6edf3;
---card: #161b22;              /* uma camada acima do fundo */
---muted: #21262d;             /* terceira camada para inputs/hovers */
---border: #30363d;            /* borda sutil mas visível */
---primary: #58a6ff;           /* azul claro vibrante */
---muted-foreground: #8b949e;  /* texto secundário legível */
---ring: #388bfd;
---chart-1: #58a6ff;
---chart-2: #f0883e;
---chart-3: #3fb950;
---chart-4: #f85149;
---chart-5: #bc8cff;
+--background: #0F1115;
+--foreground: #F9FAFB;
+--card: #2D2F36;
+--primary: #F9FAFB;          /* branco principal */
+--primary-foreground: #0F1115;
+--secondary: #3D3F47;
+--muted: #3D3F47;
+--muted-foreground: #9CA3AF;
+--border: rgba(255, 255, 255, 0.10);
+--input: #3D3F47;
+--ring: #60A5FA;
 ```
 
-Inspirada na paleta GitHub Dark, com 3 camadas de profundidade: fundo (#0d1117) → cards (#161b22) → inputs/secondary (#21262d).
-- Dark card destaque: `bg-[#1a1a2e]` com texto branco. No dark mode ganha gradiente `dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d]`.
-- Cards normais usam `border border-border` para definição no dark mode.
-- Inputs, selects e textareas têm `bg-input border border-border text-foreground placeholder:text-muted-foreground` via `@layer base`.
-- Scrollbar customizada com thumb `#30363d` e track `#0d1117` no dark mode.
-- **Dark mode ativo**: classe `.dark` define variáveis CSS. Toggle em `/configuracoes` via `ThemeToggle`. Script inline no root layout (`next/script` com `strategy="beforeInteractive"`) aplica classe antes da hidratação. Persiste em cookie `theme`.
-- Sidebar com item ativo destacado em azul (`#58a6ff`) com borda lateral no dark mode.
-- Font: Inter (`next/font/google`, variável `--font-sans`).
+Inspirada em paleta monocromática preto/branco/cinzas. 3 camadas de profundidade: fundo (#FFFFFF / #0F1115) → cards (#FFFFFF / #2D2F36) → inputs/secondary (#F3F4F6 / #3D3F47).
+- **Botões primários:** `bg-primary text-primary-foreground hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47]`. Focus ring azul `focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`.
+- **Sidebar item ativo:** `.menu-item-active` — borda esquerda `border-primary`, fundo `bg-primary/8`, texto `text-primary`.
+- **MonthlyBudgetCard:** gradiente `from-[#0F1115] to-[#2D2F36]` (dark mode inverte), `border-white/5`, formas decorativas `bg-white/[0.04]`.
+- **Auth panel:** fundo `bg-[#0F1115]`, logo branca centralizada, formas `bg-white/[0.03]`.
+- **Logo:** SVG casa geométrica assimétrica com janela (componente `components/shared/logo.tsx`). Variants: `auto` (currentColor), `light` (#FFFFFF), `dark` (#0F1115).
+- **Zero `brand-*`** em todo o projeto. Cores semânticas (`--income`, `--expense`, etc.) preservadas.
+- Inputs, selects e textareas têm `bg-transparent border border-border text-foreground placeholder:text-muted-foreground` via `@layer base`. Focus: `border-color: var(--ring)`.
+- Scrollbar customizada com thumb `var(--border)` e track transparente. Dark mode com thumb `#30363d`.
+- **Dark mode ativo**: classe `.dark` define variáveis CSS. Toggle em `/configuracoes` via `ThemeToggle`. Script inline no root layout aplica classe antes da hidratação. Persiste em cookie `theme`.
+- Font: Outfit (`next/font/google`, variável `--font-sans`).
 - Safe area mobile: `.safe-area-bottom`.
 
 ---
