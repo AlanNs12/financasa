@@ -33,18 +33,20 @@ interface PlanejamentoClientProps {
   totalBills: number
   month: number
   year: number
+  incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number }
 }
 
-export function PlanejamentoClient({ data, totalBills, month, year }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, totalBills, month, year, incomeData }: PlanejamentoClientProps) {
+  const { effectiveIncome: effectiveBudgetIncome, actualIncome, budgetIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
   const [editingIncome, setEditingIncome] = useState(false)
-  const [incomeValue, setIncomeValue] = useState(String(data.total_income))
+  const [incomeValue, setIncomeValue] = useState(String(effectiveBudgetIncome))
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [itemValue, setItemValue] = useState('')
   const [isPending, startTransition] = useTransition()
 
   const monthName = getMonthName(month)
-  const disponible = data.total_income - totalBills
+  const disponible = effectiveBudgetIncome - totalBills
   const warningOverBudget = data.total_planned > disponible
 
   function saveIncome() {
@@ -177,11 +179,16 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">R$</span>
               <span className="text-3xl font-bold text-foreground">
-                {formatCurrency(data.total_income).replace('R$', '').trim()}
+                {formatCurrency(effectiveBudgetIncome).replace('R$', '').trim()}
               </span>
-              {data.actual_income > 0 && data.total_income !== data.actual_income && (
+              {budgetIncome === 0 && actualIncome > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  (recebido: {formatCurrency(data.actual_income)})
+                  (recebido: {formatCurrency(actualIncome)})
+                </span>
+              )}
+              {budgetIncome > 0 && actualIncome !== budgetIncome && (
+                <span className="text-xs text-muted-foreground">
+                  (recebido: {formatCurrency(actualIncome)})
                 </span>
               )}
             </div>
@@ -212,9 +219,9 @@ export function PlanejamentoClient({ data, totalBills, month, year }: Planejamen
           </div>
         )}
 
-        {data.actual_income > 0 && (
+        {actualIncome > 0 && (
           <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-            Receita registrada em transações: {formatCurrency(data.actual_income)}
+            Receita registrada em transações: {formatCurrency(actualIncome)}
           </p>
         )}
       </div>

@@ -67,6 +67,36 @@ export async function getPlanejamentoData(
   }
 }
 
+export async function getEffectiveIncome(
+  householdId: string,
+  month: number,
+  year: number
+): Promise<{ budgetIncome: number; actualIncome: number; effectiveIncome: number }> {
+  const [budget, incomeResult] = await Promise.all([
+    prisma.budget.findFirst({
+      where: { household_id: householdId, month, year },
+      select: { total_income: true },
+    }),
+    prisma.transaction.aggregate({
+      where: {
+        household_id: householdId,
+        type: 'INCOME',
+        date: {
+          gte: new Date(year, month - 1, 1),
+          lt: new Date(year, month, 1),
+        },
+      },
+      _sum: { amount: true },
+    }),
+  ])
+
+  const budgetIncome = Number(budget?.total_income ?? 0)
+  const actualIncome = Number(incomeResult._sum.amount ?? 0)
+  const effectiveIncome = budgetIncome > 0 ? budgetIncome : actualIncome
+
+  return { budgetIncome, actualIncome, effectiveIncome }
+}
+
 export async function getBudgetWithProgress(
   householdId: string,
   month: number,
