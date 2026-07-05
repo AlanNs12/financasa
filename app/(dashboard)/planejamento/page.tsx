@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
-import { getPlanejamentoData } from '@/lib/db/queries/budget'
+import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
 import { getTotalBillsForMonth } from '@/lib/db/queries/bills'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
 import { PageHeader } from '@/components/shared/page-header'
@@ -26,14 +26,15 @@ export default async function PlanejamentoPage({
     )
   }
 
-  const [data, billsData] = await Promise.all([
+  const [data, billsData, incomeData] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
     getTotalBillsForMonth(current.householdId),
+    getEffectiveIncome(current.householdId, month, year),
   ])
 
   return (
     <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
-      <PlanejamentoClient data={data} totalBills={billsData.totalBills} month={month} year={year} />
+      <PlanejamentoClient data={data} totalBills={billsData.totalBills} month={month} year={year} incomeData={incomeData} />
     </Suspense>
   )
 }

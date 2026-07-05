@@ -55,9 +55,9 @@ export const EVENT_CONFIG: Record<CalendarEventType, {
     label: 'Conta vencida',
   },
   card_due: {
-    dot:  'bg-brand-500',
-    bg:   'bg-brand-50 dark:bg-brand-500/10',
-    text: 'text-brand-700 dark:text-brand-400',
+    dot:  'bg-primary',
+    bg:   'bg-primary/5 dark:bg-primary/10',
+    text: 'text-primary dark:text-primary',
     icon: CreditCard,
     label: 'Vencimento fatura',
   },
@@ -170,7 +170,7 @@ export function CalendarioClient({ dayMap, month, year }: CalendarioClientProps)
                     'text-left transition-colors relative',
                     !isLastCol && 'border-r',
                     isSelected
-                      ? 'bg-brand-50 dark:bg-brand-500/10'
+                      ? 'bg-primary/5 dark:bg-primary/10'
                       : events.length > 0
                       ? 'hover:bg-muted/50 cursor-pointer'
                       : 'hover:bg-muted/30 cursor-pointer'
@@ -180,9 +180,9 @@ export function CalendarioClient({ dayMap, month, year }: CalendarioClientProps)
                     'flex items-center justify-center w-7 h-7 rounded-full',
                     'text-sm font-medium mb-1.5 transition-colors',
                     isTodayDay
-                      ? 'bg-brand-500 text-white font-bold'
+                      ? 'bg-primary text-primary-foreground font-bold'
                       : isSelected
-                      ? 'bg-brand-100 dark:bg-brand-500/20 text-brand-700 dark:text-brand-400'
+                      ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary'
                       : 'text-foreground'
                   )}>
                     {day}

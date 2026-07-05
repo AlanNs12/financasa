@@ -310,7 +310,7 @@ export function SimuladorClient() {
       <button
         onClick={handleSaveAsGoal}
         disabled={isPending}
-        className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
         {isPending ? (
           <Loader2 className="w-4 h-4 animate-spin" />

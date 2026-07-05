@@ -41,7 +41,6 @@ interface NewTransactionModalProps {
 
 export function NewTransactionModal({ isOpen, onClose, categories, creditCards }: NewTransactionModalProps) {
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
-  const [showNotes, setShowNotes] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const filteredCategories = categories.filter(
@@ -178,6 +177,18 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             )}
           </div>
 
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+              Observação <span className="normal-case font-normal">(opcional)</span>
+            </label>
+            <textarea
+              {...register('notes')}
+              placeholder="Adicione uma observação sobre esta transação..."
+              rows={2}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm resize-none placeholder:text-muted-foreground focus:outline-none transition-colors"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -261,24 +272,6 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             )}
           </div>
 
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowNotes(!showNotes)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showNotes ? '- Ocultar observação' : '+ Adicionar observação'}
-            </button>
-            {showNotes && (
-              <textarea
-                {...register('notes')}
-                placeholder="Observação opcional..."
-                rows={2}
-                className="w-full mt-2 h-20 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
-              />
-            )}
-          </div>
-
           <div className="flex gap-3">
             <button
               type="button"
@@ -290,7 +283,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 h-11 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 disabled:opacity-50 transition-colors shadow-theme-xs flex items-center justify-center gap-2"
+              className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] disabled:opacity-50 transition-colors shadow-theme-xs flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Salvar

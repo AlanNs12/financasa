@@ -16,14 +16,12 @@ const SIZE_CLASSES = {
 }
 
 const AVATAR_COLORS = [
-  'from-brand-400 to-brand-600',
-  'from-purple-400 to-purple-600',
-  'from-pink-400 to-pink-600',
-  'from-emerald-400 to-emerald-600',
-  'from-amber-400 to-amber-600',
-  'from-cyan-400 to-cyan-600',
-  'from-rose-400 to-rose-600',
-  'from-indigo-400 to-indigo-600',
+  'from-[#0F1115] to-[#2D2F36]',
+  'from-[#2D2F36] to-[#4B5563]',
+  'from-[#4B5563] to-[#6B7280]',
+  'from-[#374151] to-[#1F2937]',
+  'from-[#1F2937] to-[#111827]',
+  'from-[#6B7280] to-[#374151]',
 ]
 
 function getAvatarColor(name: string): string {

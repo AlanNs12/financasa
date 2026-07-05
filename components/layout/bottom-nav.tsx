@@ -44,14 +44,16 @@ export function BottomNav() {
                 <Icon
                   size={22}
                   className={
-                    isActive ? 'text-brand-500' : 'text-muted-foreground'
+                    isActive
+                      ? 'text-foreground dark:text-foreground'
+                      : 'text-muted-foreground'
                   }
                   strokeWidth={isActive ? 2.5 : 1.8}
                 />
                 <span
                   className={cn(
-                    'text-[10px] font-medium transition-colors',
-                    isActive ? 'text-brand-500' : 'text-muted-foreground'
+                    'text-[10px] font-semibold transition-colors',
+                    isActive ? 'text-foreground' : 'text-muted-foreground font-medium'
                   )}
                 >
                   {label}

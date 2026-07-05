@@ -108,8 +108,9 @@ financasa/
 │   │   ├── configuracoes/
 │   │   │   ├── copy-button.tsx    # Botão copiar código convite (client)
 │   │   │   └── page.tsx           # Config: convite, membros da casa, aparência, cartões, senha, logout
-│   │   ├── contas/page.tsx        # Contas recorrentes (server, usa ContasClient)
-│   │   ├── dividas/page.tsx       # Dívidas (server, usa DividasClient)
+  │   │   ├── contas/page.tsx        # Contas recorrentes (server, usa ContasClient)
+  │   │   ├── calendario/page.tsx    # Calendário mensal com eventos (server)
+  │   │   ├── dividas/page.tsx       # Dívidas (server, usa DividasClient)
 │   │   ├── investimentos/
 │   │   │   ├── simulador/page.tsx # Simulador de aposentadoria (server)
 │   │   │   └── page.tsx           # Carteira de investimentos (server)
@@ -154,16 +155,19 @@ financasa/
 │   │   ├── recent-transactions.tsx
 │   │   ├── summary-cards.tsx       # Grid 4 cards (receita/gastos/saldo/pendentes)
 │   │   └── upcoming-bills.tsx
-│   ├── dividas/
-│   │   └── dividas-client.tsx     # Lista dívidas, marcar parcela paga, modal nova dívida
-│   ├── investimentos/
+  │   ├── dividas/
+  │   │   └── dividas-client.tsx     # Lista dívidas, marcar parcela paga, modal nova dívida
+  │   ├── calendario/
+  │   │   ├── calendario-client.tsx  # Calendário mensal com eventos (contas, faturas)
+  │   │   └── day-detail-panel.tsx   # Painel lateral com detalhes do dia selecionado
+  │   ├── investimentos/
 │   │   ├── investimentos-client.tsx # Carteira: resumo, pizza, por objetivo, lista, modal
 │   │   └── simulador-client.tsx     # Simulador aposentadoria com sliders + gráfico + salvar meta
 │   ├── layout/
 │   │   ├── bottom-nav.tsx         # Nav mobile (5 itens + "Mais" com bottom sheet)
 │   │   ├── header.tsx             # Header sticky com MonthSelector + avatar (props do server)
 │   │   ├── month-selector.tsx     # Seletor mês/ano via query params (?month=&year=)
-│   │   └── sidebar.tsx            # Sidebar desktop (8 itens + Config + Sair)
+│   │   └── ── sidebar.tsx            # Sidebar desktop (9 itens + Config + Sair) com Logo SVG + colapso dinâmico
 │   ├── metas/
 │   │   └── metas-client.tsx       # Lista metas, barras progresso invertidas, modal nova meta
 │   ├── planejamento/
@@ -172,13 +176,14 @@ financasa/
 │   │   ├── print-button.tsx       # Botão de impressão/PDF
 │   │   └── relatorios-client.tsx  # 3 abas com gráficos recharts
 │   ├── shared/
-│   │   ├── category-icon.tsx      # Ícone emoji com fundo colorido
-│   │   ├── empty-state.tsx
-│   │   ├── loading-skeleton.tsx
-│   │   ├── money-display.tsx      # Valor com sinal + cor (income/expense/neutral)
-│   │   ├── person-avatar.tsx      # Iniciais ou imagem
-│   │   ├── progress-bar.tsx       # Cor dinâmica + invertColors (p/ metas/investimentos)
-│   │   └── status-badge.tsx       # paid/pending/overdue/in_progress/completed/cancelled/paused
+  │   │   ├── category-icon.tsx      # Ícone emoji com fundo colorido
+  │   │   ├── empty-state.tsx
+  │   │   ├── loading-skeleton.tsx
+  │   │   ├── logo.tsx               # Logo SVG da casa geométrica Financasa (auto/light/dark)
+  │   │   ├── money-display.tsx      # Valor com sinal + cor (income/expense/neutral)
+  │   │   ├── person-avatar.tsx      # Iniciais com gradiente monocromático ou imagem
+  │   │   ├── progress-bar.tsx       # Cor dinâmica + invertColors (p/ metas/investimentos)
+  │   │   └── status-badge.tsx       # paid/pending/overdue/in_progress/completed/cancelled/paused
 │   ├── transacoes/
 │   │   ├── fab.tsx                # Botão flutuante +
 │   │   ├── new-transaction-modal.tsx  # Modal nova transação (RHF + Zod + select cartão)
@@ -250,7 +255,7 @@ financasa/
 9. **Decimal**: Prisma retorna `Decimal` para campos `@db.Decimal(10,2)`. Queries fazem `Number(t.amount)` para serializar. Conversão manual em vários lugares.
 10. **Toasts**: `sonner` (`toast.success/error`), configurado no root layout em `bottom-center`.
 11. **Sem comentários no código** (convenção do projeto).
-12. **Estilo**: Tailwind v4 (`@import "tailwindcss"` + `@theme inline` em `globals.css`). Cores via variáveis CSS. Dark card destacado usa `bg-[#1a1a2e]`.
+12. **Estilo**: Tailwind v4 (`@import "tailwindcss"` + `@theme inline` em `globals.css`). Cores via variáveis CSS. Paleta monocromática: primary #0F1115 (light) / #F9FAFB (dark). MonthlyBudgetCard com gradiente escuro (#0F1115→#2D2F36).
 13. **Dark mode**: toggle em `/configuracoes` via `ThemeToggle` (client component). Persiste em cookie. Script inline no root layout aplica classe `.dark` antes da hidratação (evita flash). `next/script` com `strategy="beforeInteractive"`.
 14. **Testes**: Vitest. Arquivos `*.test.ts` ao lado do arquivo testado. 133 testes cobrindo cálculos, formatação e validações.
 
@@ -529,7 +534,7 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - Redirecionamento via middleware.
 
 ### ✅ Dashboard / Home (`/`) — FUNCIONAL (dados reais + alertas + FAB)
-- `MonthlyBudgetCard` (dark card `#1a1a2e`): orçamento mensal, saldo, barra de progresso, link p/ planejamento.
+- `MonthlyBudgetCard` (gradiente preto/cinza escuro): orçamento mensal, saldo, barra de progresso, link p/ planejamento.
 - `SummaryCards`: grid 4 cards (receita, gastos, saldo, contas pendentes).
 - `AlertsPanel`: painel consolidado de alertas (contas a vencer, orçamento estourado, cartão perto do limite). Só aparece quando há alertas. Danger primeiro, warning depois. Clickable → tela relevante.
 - `RecentTransactions` (5 últimas) + `UpcomingBills` (3 próximas).
@@ -556,6 +561,13 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - `deleteRecurringBillAction` faz soft delete (`is_active = false`).
 - `updateRecurringBillAction` permite editar nome, valor, vencimento, recorrência e categoria.
 - `router.refresh()` após criar/pagar/editar/excluir para atualizar lista sem F5.
+
+### ✅ Calendário (`/calendario`) — FUNCIONAL
+- Calendário mensal com grid de dias e navegação entre meses.
+- Cada dia mostra dots coloridos para eventos: contas a pagar (verde), contas vencidas (vermelho), vencimento/fechamento de fatura (cinza).
+- Click em um dia abre painel lateral com lista detalhada dos eventos.
+- Dias com eventos destacados com fundo sutil (`bg-primary/5`).
+- Dia atual com fundo preto e texto branco (`bg-primary text-primary-foreground`).
 
 ### ✅ Planejamento (`/planejamento`) — FUNCIONAL
 - Card receita total do mês (editável inline).
@@ -587,7 +599,7 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - Botão "Imprimir / Salvar PDF" chama `window.print()`.
 
 ### ✅ Investimentos (`/investimentos`) — FUNCIONAL
-- Card escuro `#1a1a2e`: total investido, valor atual líquido, rentabilidade (R$ + %).
+- Card escuro com gradiente monocromático: total investido, valor atual líquido, rentabilidade (R$ + %).
 - Gráfico de pizza por tipo de ativo (recharts), cores da paleta do globals.css.
 - Seção "Por objetivo": metas com valor investido somado + "Sem objetivo" se houver.
 - Lista de investimentos individuais (nome, tipo, data, vencimento, investido/atual/ganho %).
@@ -628,20 +640,22 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 ## 8. Layout e Navegação
 
 ### Desktop
-- Sidebar fixa esquerda (240px / `w-60`), 8 itens: Home, Transações, Contas, Planejamento, Metas, Investimentos, Dívidas, Relatórios + Configurações + Sair. Item ativo com destaque azul no dark mode.
-- Conteúdo com `lg:pl-60`, `max-w-6xl mx-auto`.
+- Sidebar fixa esquerda (290px expandida, 88px colapsada, hover expande), 8 itens: Home, Transações, Contas, Planejamento, Metas, Investimentos, Dívidas, Relatórios + Calendário + Configurações + Sair. Item ativo com borda esquerda preta (`border-primary`) e fundo `bg-primary/8` (monocromático sutil).
+- Sidebar colapsada mostra apenas ícone do Logo Financasa (casa geométrica SVG).
+- Conteúdo com `lg:pl-[290px]` (expanded) ou `lg:pl-[88px]` (collapsed), `max-w-6xl mx-auto`.
 
 ### Mobile
-- Bottom nav fixa (5 itens diretos: Home, Transações, Contas, Planejamento + **"Mais"**).
-- Botão **"Mais"** abre bottom sheet (`fixed inset-0 + bg-black/40`) com: Metas, Investimentos, Dívidas, Relatórios, Configurações, Sair.
+- Bottom nav fixa (4 itens diretos: Home, Transações, Contas, Planejamento + **"Mais"**).
+- Botão **"Mais"** abre bottom sheet (`fixed inset-0 + bg-black/40`) com: Metas, Investimentos, Dívidas, Relatórios, Calendário, Configurações, Sair.
+- Item ativo com `text-foreground font-semibold` e `strokeWidth={2.5}` — destaque clean sem cor brand.
 - `pb-24` no main para não esconder conteúdo atrás da bottom nav.
 - **Regra global anti-overflow:** `html, body { overflow-x: hidden; max-width: 100vw }`.
 - **Grids responsivos:** `grid-cols-4` e `grid-cols-3` colapsam para 1-2 colunas no mobile.
 - **Modais:** container interno com `mx-4` para evitar encostar nas bordas da tela.
-- **FAB dashboard:** posicionado em `bottom-24` (acima da BottomNav) no mobile, `bottom-8` no desktop.
+- **FAB dashboard:** posicionado em `bottom-24` (acima da BottomNav) no mobile, `bottom-8` no desktop. Fundo preto `bg-primary`, ícone branco, focus ring azul.
 
 ### Header
-- Sticky top, contém `MonthSelector` (chevrons ← → + label "JUN 2026") e avatar/nome usuário.
+- Sticky top, contém botão menu (mobile) + Logo Financasa SVG (mobile) + `MonthSelector` (chevrons ← → + label "JUN 2026") + avatar/nome usuário.
 - `MonthSelector` manipula query params (`?month=&year=`) via `useRouter`.
 - Header recebe `user` como prop do Server Component layout (que busca via `getCurrentUser()`). Não usa mais Zustand.
 - `PersonAvatar` mostra iniciais do nome quando não há `avatar_url`.
@@ -668,52 +682,57 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ## 9. Design System (globals.css)
 
-### Paleta (`:root`)
+### Paleta monocromática (`:root` — Light Mode)
 ```css
---background: #f8f9fa;
---foreground: #111827;
---card: #ffffff;
---primary: #111827;
---secondary: #f3f4f6;
---muted-foreground: #6b7280;
---border: #e5e7eb;
---radius: 0.75rem;
+--background: #FFFFFF;
+--foreground: #0F1115;
+--card: #FFFFFF;
+--primary: #0F1115;          /* preto principal */
+--primary-foreground: #FFFFFF;
+--secondary: #F3F4F6;
+--muted: #F3F4F6;
+--muted-foreground: #6B7280;
+--border: #E5E7EB;
+--input: #F3F4F6;
+--ring: #3B82F6;             /* azul acessibilidade (foco) */
+--radius: 1rem;
 
---income: #22c55e;        /* verde entradas */
---expense: #ef4444;       /* vermelho saídas */
---paid: #bbf7d0;          /* verde claro */
---pending: #fde68a;       /* amarelo */
---overdue: #fecaca;       /* vermelho claro */
---progress-safe: #22c55e;    /* <70% */
+--income: #22C55E;           /* verde entradas */
+--expense: #EF4444;          /* vermelho saídas */
+--paid: #bbf7d0;
+--pending: #fde68a;
+--overdue: #fecaca;
+--progress-safe: #22C55E;    /* <70% */
 --progress-warning: #f59e0b; /* 70-90% */
---progress-danger: #ef4444;  /* >90% */
+--progress-danger: #EF4444;  /* >90% */
 ```
 
 ### Paleta Dark Mode (`.dark`)
 ```css
---background: #0d1117;        /* azul-preto profundo */
---foreground: #e6edf3;
---card: #161b22;              /* uma camada acima do fundo */
---muted: #21262d;             /* terceira camada para inputs/hovers */
---border: #30363d;            /* borda sutil mas visível */
---primary: #58a6ff;           /* azul claro vibrante */
---muted-foreground: #8b949e;  /* texto secundário legível */
---ring: #388bfd;
---chart-1: #58a6ff;
---chart-2: #f0883e;
---chart-3: #3fb950;
---chart-4: #f85149;
---chart-5: #bc8cff;
+--background: #0F1115;
+--foreground: #F9FAFB;
+--card: #2D2F36;
+--primary: #F9FAFB;          /* branco principal */
+--primary-foreground: #0F1115;
+--secondary: #3D3F47;
+--muted: #3D3F47;
+--muted-foreground: #9CA3AF;
+--border: rgba(255, 255, 255, 0.10);
+--input: #3D3F47;
+--ring: #60A5FA;
 ```
 
-Inspirada na paleta GitHub Dark, com 3 camadas de profundidade: fundo (#0d1117) → cards (#161b22) → inputs/secondary (#21262d).
-- Dark card destaque: `bg-[#1a1a2e]` com texto branco. No dark mode ganha gradiente `dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d]`.
-- Cards normais usam `border border-border` para definição no dark mode.
-- Inputs, selects e textareas têm `bg-input border border-border text-foreground placeholder:text-muted-foreground` via `@layer base`.
-- Scrollbar customizada com thumb `#30363d` e track `#0d1117` no dark mode.
-- **Dark mode ativo**: classe `.dark` define variáveis CSS. Toggle em `/configuracoes` via `ThemeToggle`. Script inline no root layout (`next/script` com `strategy="beforeInteractive"`) aplica classe antes da hidratação. Persiste em cookie `theme`.
-- Sidebar com item ativo destacado em azul (`#58a6ff`) com borda lateral no dark mode.
-- Font: Inter (`next/font/google`, variável `--font-sans`).
+Inspirada em paleta monocromática preto/branco/cinzas. 3 camadas de profundidade: fundo (#FFFFFF / #0F1115) → cards (#FFFFFF / #2D2F36) → inputs/secondary (#F3F4F6 / #3D3F47).
+- **Botões primários:** `bg-primary text-primary-foreground hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47]`. Focus ring azul `focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`.
+- **Sidebar item ativo:** `.menu-item-active` — borda esquerda `border-primary`, fundo `bg-primary/8`, texto `text-primary`.
+- **MonthlyBudgetCard:** gradiente `from-[#0F1115] to-[#2D2F36]` (dark mode inverte), `border-white/5`, formas decorativas `bg-white/[0.04]`.
+- **Auth panel:** fundo `bg-[#0F1115]`, logo branca centralizada, formas `bg-white/[0.03]`.
+- **Logo:** SVG casa geométrica assimétrica com janela (componente `components/shared/logo.tsx`). Variants: `auto` (currentColor), `light` (#FFFFFF), `dark` (#0F1115).
+- **Zero `brand-*`** em todo o projeto. Cores semânticas (`--income`, `--expense`, etc.) preservadas.
+- Inputs, selects e textareas têm `bg-transparent border border-border text-foreground placeholder:text-muted-foreground` via `@layer base`. Focus: `border-color: var(--ring)`.
+- Scrollbar customizada com thumb `var(--border)` e track transparente. Dark mode com thumb `#30363d`.
+- **Dark mode ativo**: classe `.dark` define variáveis CSS. Toggle em `/configuracoes` via `ThemeToggle`. Script inline no root layout aplica classe antes da hidratação. Persiste em cookie `theme`.
+- Font: Outfit (`next/font/google`, variável `--font-sans`).
 - Safe area mobile: `.safe-area-bottom`.
 
 ---
@@ -752,9 +771,9 @@ Inspirada na paleta GitHub Dark, com 3 camadas de profundidade: fundo (#0d1117) 
 | 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 133 testes em 12 arquivos cobrindo cálculos, formatação e validações. |
 | 14 | ~~db:push pendente~~ | **RESOLVIDO**: Models Investment, Debt, CreditCard e `category_id` em RecurringBill já estão no banco e em uso. |
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
-| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch). Total: 19 problemas (8 erros, 11 warnings). Pré-existentes, não introduzidos pelas tarefas. |
+| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch — react-hooks/error-boundaries). 8 warnings em bills-history, new-bill-modal, upcoming-bills, metas-client, person-avatar, new-transaction-modal. Total: 16 problemas (8 erros, 8 warnings). Pré-existentes, não corrigir. |
 | 17 | ~~Cores hardcoded → tokens semânticos~~ | **RESOLVIDO**: Tokens em `globals.css` (`--expense`, `--income`, `--paid`, etc.) usados nos componentes. |
-| 18 | **Dark mode refinado** | Paleta GitHub Dark (#0d1117 base, #161b22 cards, #21262d inputs, #58a6ff primary). Gradiente nos cards de destaque. Scrollbar customizada. Input base styles. Sidebar com destaque azul no item ativo. |
+| 18 | **Paleta monocromática aplicada** | Substituição completa da paleta TailAdmin (brand azul #465FFF) por paleta monocromática preto/branco/cinzas. Zero `brand-*` no código. Primary: #0F1115 light / #F9FAFB dark. Botões padronizados. Sidebar com borda esquerda. MonthlyBudgetCard com gradiente #0F1115→#2D2F36. Auth panel preto com logo branca. |
 | 19 | **Overflow horizontal mobile** | Corrigido: grids colapsam no mobile, modais com `mx-4`, regra global `overflow-x: hidden`. |
 | 20 | **FAB no dashboard** | Botão (+) fixo (`bottom-24` mobile) para criar transação via `QuickAddTransaction`. |
 | 21 | **Performance otimizada** | Configurações: 3 queries sequenciais → `Promise.all`. Middleware: matcher expandido para excluir assets estáticos e `_next/data`. Prisma singleton verificado. Todas as demais páginas já paralelizavam. |
@@ -826,6 +845,7 @@ npm run db:studio    # Prisma Studio (GUI do banco)
 | `/` | Server | ✅ | `app/(dashboard)/page.tsx` |
 | `/transacoes` | Server→Client | ✅ | `TransactionsClient` |
 | `/contas` | Server→Client | ✅ | `ContasClient` |
+| `/calendario` | Server→Client | ✅ | `CalendarioClient` |
 | `/planejamento` | Server→Client | ✅ | `PlanejamentoClient` |
 | `/metas` | Server→Client | ✅ | `MetasClient` |
 | `/investimentos` | Server→Client | ✅ | `InvestimentosClient` |
@@ -875,8 +895,9 @@ Script SQL em `prisma/sql/enable_rls.sql`. Aplicar manualmente no Supabase SQL E
 
 - A especificação original (`prompt-financeiro-familiar.md`) é **referência de design/intenção**, mas **desatualizada** em versões de libs e em alguns detalhes de implementação. Sempre prefira o código real.
 - O projeto está **~99% funcional**. Todas as telas usam dados reais com CRUD completo. Restam: aplicar RLS no Supabase, corrigir erros lint pré-existentes no dashboard, e commitar as alterações pendentes.
-- A interface está visualmente alinhada à especificação (dark cards `#1a1a2e`, fundo `#f8f9fa`, barras coloridas por threshold).
-- Dark mode refinado com paleta GitHub Dark: 3 camadas de profundidade, gradiente nos cards de destaque, scrollbar e inputs com estilos específicos.
+- A interface está visualmente alinhada à identidade monocromática: fundo branco (#FFFFFF), primary preto (#0F1115), cards brancos com borda sutil, sidebar com item ativo destacado por borda esquerda preta.
+- Dark mode: fundo #0F1115, cards #2D2F36, texto #F9FAFB. Botões primários invertem (branco com texto preto).
+- Logo SVG da casa geométrica Financasa em sidebar, header mobile e auth layout. 13 ícones PWA em `public/financasa-icons/`.
 - Performance otimizada: todas as 9 páginas paralelizam queries com `Promise.all`. Middleware não executa em assets estáticos.
-- Mobile otimizado: grids colapsam, modais têm margem, regra anti-overflow global.
+- Mobile otimizado: grids colapsam, modais têm margem, regra anti-overflow global, FAB com focus ring azul.
 - Testes automatizados (Vitest) cobrem cálculos financeiros, formatação e validações Zod — 133 testes, 12 arquivos.

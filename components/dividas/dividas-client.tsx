@@ -231,7 +231,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             action={
               <button
                 onClick={() => setShowModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Nova dívida
@@ -418,7 +418,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Salvar

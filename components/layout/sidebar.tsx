@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/lib/sidebar-context'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/actions/auth'
+import { Logo } from '@/components/shared/logo'
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -104,22 +105,19 @@ function SidebarInner({
       <div
         className={cn(
           'flex items-center h-16 px-4 border-b border-border shrink-0',
-          showLabels ? 'justify-between' : 'justify-center'
+          showLabels ? 'justify-between' : 'justify-between'
         )}
       >
-        {showLabels && (
-          <Link href="/" className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg bg-brand-500 flex items-center
-                          justify-center text-white font-bold text-sm"
-            >
-              F
-            </div>
-            <span className="text-base font-semibold text-foreground">
+        <Link href="/" className={cn('flex items-center', showLabels ? 'gap-3' : '')}
+              aria-label="Ir para o início">
+          <Logo size={showLabels ? 28 : 24} variant="auto"
+                className="text-foreground shrink-0" />
+          {showLabels && (
+            <span className="text-base font-semibold text-foreground tracking-tight">
               Financasa
             </span>
-          </Link>
-        )}
+          )}
+        </Link>
         <button
           onClick={toggleExpanded}
           aria-label={isExpanded ? 'Recolher sidebar' : 'Expandir sidebar'}
@@ -153,7 +151,7 @@ function SidebarInner({
                 size={20}
                 className={
                   isActive
-                    ? 'text-brand-500 dark:text-brand-400'
+                    ? 'text-primary'
                     : 'text-muted-foreground'
                 }
                 aria-hidden="true"
@@ -181,7 +179,7 @@ function SidebarInner({
             size={20}
             className={
               pathname === '/configuracoes'
-                ? 'text-brand-500 dark:text-brand-400'
+                ? 'text-primary'
                 : 'text-muted-foreground'
             }
             aria-hidden="true"
