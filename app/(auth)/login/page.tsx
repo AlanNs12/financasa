@@ -134,9 +134,9 @@ export default function LoginPage() {
           type="submit"
           disabled={isPending}
           className="w-full h-11 mt-6 rounded-lg bg-primary text-primary-foreground
-                     font-semibold text-sm hover:bg-primary/90 active:bg-primary/80
+                     font-semibold text-sm hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47]
                      disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-colors shadow-theme-xs"
+                     transition-colors shadow-theme-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           {isPending ? 'Entrando...' : 'Entrar'}
         </button>
@@ -172,9 +172,9 @@ export default function LoginPage() {
                 type="submit"
                 disabled={isResetPending}
                 className="w-full h-11 rounded-lg bg-primary text-primary-foreground
-                           font-semibold text-sm hover:bg-primary/90
+                           font-semibold text-sm hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47]
                            disabled:opacity-50 transition-colors shadow-theme-xs
-                           flex items-center justify-center gap-2"
+                           flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 {isResetPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isResetPending ? 'Enviando...' : 'Enviar link de recuperação'}

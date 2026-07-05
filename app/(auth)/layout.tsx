@@ -27,7 +27,7 @@ export default function AuthLayout({
       </div>
 
       <div className="hidden lg:flex flex-col items-center justify-center
-                      bg-gray-900 text-white relative overflow-hidden p-12">
+                      bg-[#0F1115] text-white relative overflow-hidden p-12">
         <div className="absolute top-0 right-0 w-80 h-80 rounded-full
                         bg-white/5 -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full
