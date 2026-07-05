@@ -14,7 +14,7 @@ export default function AuthLayout({
         <div className="mb-10">
           <Link href="/" className="flex items-center gap-3 w-fit">
             <Logo size={36} variant="auto"
-                  className="text-brand-500 dark:text-brand-400" />
+                  className="text-primary" />
             <span className="text-xl font-semibold text-foreground">
               Financasa
             </span>
@@ -27,7 +27,7 @@ export default function AuthLayout({
       </div>
 
       <div className="hidden lg:flex flex-col items-center justify-center
-                      bg-brand-500 relative overflow-hidden p-12">
+                      bg-gray-900 text-white relative overflow-hidden p-12">
         <div className="absolute top-0 right-0 w-80 h-80 rounded-full
                         bg-white/5 -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full

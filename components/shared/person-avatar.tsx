@@ -16,7 +16,7 @@ const SIZE_CLASSES = {
 }
 
 const AVATAR_COLORS = [
-  'from-brand-400 to-brand-600',
+  'from-gray-500 to-gray-800',
   'from-purple-400 to-purple-600',
   'from-pink-400 to-pink-600',
   'from-emerald-400 to-emerald-600',

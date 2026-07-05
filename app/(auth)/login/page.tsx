@@ -101,7 +101,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowResetForm(true)}
-              className="text-xs text-brand-500 hover:text-brand-600
+              className="text-xs text-primary hover:text-primary/80
                          transition-colors"
             >
               Esqueceu a senha?
@@ -133,8 +133,8 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-11 mt-6 rounded-lg bg-brand-500 text-white
-                     font-semibold text-sm hover:bg-brand-600 active:bg-brand-700
+          className="w-full h-11 mt-6 rounded-lg bg-primary text-primary-foreground
+                     font-semibold text-sm hover:bg-primary/90 active:bg-primary/80
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors shadow-theme-xs"
         >
@@ -171,8 +171,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isResetPending}
-                className="w-full h-11 rounded-lg bg-brand-500 text-white
-                           font-semibold text-sm hover:bg-brand-600
+                className="w-full h-11 rounded-lg bg-primary text-primary-foreground
+                           font-semibold text-sm hover:bg-primary/90
                            disabled:opacity-50 transition-colors shadow-theme-xs
                            flex items-center justify-center gap-2"
               >
@@ -187,7 +187,7 @@ export default function LoginPage() {
       <p className="text-center text-sm text-muted-foreground mt-6">
         Não tem uma conta?{' '}
         <Link href="/cadastro"
-              className="text-brand-500 hover:text-brand-600 font-medium
+              className="text-primary hover:text-primary/80 font-medium
                          transition-colors">
           Criar conta
         </Link>

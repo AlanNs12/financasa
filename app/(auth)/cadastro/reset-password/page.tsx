@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { Logo } from '@/components/shared/logo'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -40,10 +41,8 @@ export default function ResetPasswordPage() {
 
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center
-                            justify-center text-white font-bold text-lg shadow-theme-md">
-              F
-            </div>
+            <Logo size={36} variant="auto"
+                  className="text-primary" />
             <span className="text-xl font-semibold text-foreground">
               Financasa
             </span>
@@ -90,8 +89,8 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full h-11 rounded-lg bg-brand-500 text-white
-                       font-semibold text-sm hover:bg-brand-600 active:bg-brand-700
+            className="w-full h-11 rounded-lg bg-primary text-primary-foreground
+                       font-semibold text-sm hover:bg-primary/90 active:bg-primary/80
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors shadow-theme-xs"
           >

@@ -21,7 +21,7 @@ export function MonthlyBudgetCard({
   const percent = Math.min(100, percentage)
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white shadow-theme-lg relative overflow-hidden">
+    <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-950 p-6 text-white shadow-theme-lg relative overflow-hidden">
       <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/2" />
 

@@ -150,7 +150,7 @@ function SidebarInner({
                 size={20}
                 className={
                   isActive
-                    ? 'text-brand-500 dark:text-brand-400'
+                    ? 'text-primary'
                     : 'text-muted-foreground'
                 }
                 aria-hidden="true"
@@ -178,7 +178,7 @@ function SidebarInner({
             size={20}
             className={
               pathname === '/configuracoes'
-                ? 'text-brand-500 dark:text-brand-400'
+                ? 'text-primary'
                 : 'text-muted-foreground'
             }
             aria-hidden="true"

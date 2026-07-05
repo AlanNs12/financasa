@@ -37,10 +37,10 @@ const CONFIG: Record<
   },
   in_progress: {
     label: 'Em andamento',
-    dot: 'bg-brand-500',
+    dot: 'bg-primary',
     light:
-      'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400',
-    solid: 'bg-brand-500 text-white',
+      'bg-primary/5 text-primary dark:bg-primary/10 dark:text-primary',
+    solid: 'bg-primary text-primary-foreground',
   },
   completed: {
     label: 'Concluída',

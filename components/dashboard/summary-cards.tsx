@@ -33,8 +33,8 @@ const cards = [
     label: 'Saldo',
     icon: Wallet,
     color: {
-      bg: 'bg-brand-50 dark:bg-brand-500/10',
-      icon: 'text-brand-600 dark:text-brand-400',
+      bg: 'bg-primary/5 dark:bg-primary/10',
+      icon: 'text-primary',
     },
   },
   {

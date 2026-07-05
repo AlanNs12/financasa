@@ -187,8 +187,8 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-11 mt-6 rounded-lg bg-brand-500 text-white
-                     font-semibold text-sm hover:bg-brand-600 active:bg-brand-700
+          className="w-full h-11 mt-6 rounded-lg bg-primary text-primary-foreground
+                     font-semibold text-sm hover:bg-primary/90 active:bg-primary/80
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors shadow-theme-xs"
         >
@@ -199,7 +199,7 @@ export default function RegisterPage() {
       <p className="text-center text-sm text-muted-foreground mt-6">
         Já tem conta?{' '}
         <Link href="/login"
-              className="text-brand-500 hover:text-brand-600 font-medium
+              className="text-primary hover:text-primary/80 font-medium
                          transition-colors">
           Entrar
         </Link>

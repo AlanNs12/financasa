@@ -53,7 +53,7 @@ export function Header({ user }: HeaderProps) {
       <Link href="/"
             className="lg:hidden flex items-center gap-2 shrink-0">
         <Logo size={24} variant="auto"
-              className="text-brand-500 dark:text-brand-400" />
+              className="text-primary" />
       </Link>
 
       <div className="flex-1 flex items-center justify-center lg:justify-start">
@@ -73,7 +73,7 @@ export function Header({ user }: HeaderProps) {
             size="sm"
           />
           <span className="hidden md:block text-sm font-medium text-foreground
-                           max-w-[160px] truncate group-hover:text-brand-500
+                           max-w-[160px] truncate group-hover:text-primary
                            transition-colors">
             {user?.name || 'Usuário'}
           </span>

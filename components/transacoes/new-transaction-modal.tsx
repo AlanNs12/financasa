@@ -290,7 +290,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 h-11 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 disabled:opacity-50 transition-colors shadow-theme-xs flex items-center justify-center gap-2"
+              className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-theme-xs flex items-center justify-center gap-2"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Salvar
