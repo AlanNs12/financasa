@@ -6,6 +6,7 @@ import { CreditCardsManager } from '@/components/configuracoes/credit-cards-mana
 import { ThemeToggle } from '@/components/configuracoes/theme-toggle'
 import { HouseholdMembers } from '@/components/configuracoes/household-members'
 import { PasswordManager } from '@/components/configuracoes/password-manager'
+import { DangerZone } from '@/components/configuracoes/danger-zone'
 import { PageHeader } from '@/components/shared/page-header'
 
 export default async function ConfiguracoesPage() {
@@ -62,6 +63,8 @@ export default async function ConfiguracoesPage() {
           </form>
         </div>
       </div>
+
+      <DangerZone />
     </div>
   )
 }
