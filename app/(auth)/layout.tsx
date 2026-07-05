@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Logo } from '@/components/shared/logo'
 
 export default function AuthLayout({
   children,
@@ -12,10 +13,8 @@ export default function AuthLayout({
                       bg-background">
         <div className="mb-10">
           <Link href="/" className="flex items-center gap-3 w-fit">
-            <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center
-                            justify-center text-white font-bold text-lg shadow-theme-md">
-              F
-            </div>
+            <Logo size={36} variant="auto"
+                  className="text-brand-500 dark:text-brand-400" />
             <span className="text-xl font-semibold text-foreground">
               Financasa
             </span>
@@ -39,7 +38,7 @@ export default function AuthLayout({
         <div className="relative z-10 text-center text-white max-w-sm">
           <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center
                           justify-center mx-auto mb-8 shadow-theme-lg">
-            <span className="text-4xl font-bold">F</span>
+            <Logo size={52} variant="light" />
           </div>
           <h2 className="text-3xl font-bold mb-4 leading-tight">
             Controle financeiro para sua família

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { MonthSelector } from './month-selector'
 import { PersonAvatar } from '@/components/shared/person-avatar'
 import { useSidebar } from '@/lib/sidebar-context'
+import { Logo } from '@/components/shared/logo'
 
 function MonthSelectorFallback() {
   const now = new Date()
@@ -51,10 +52,8 @@ export function Header({ user }: HeaderProps) {
 
       <Link href="/"
             className="lg:hidden flex items-center gap-2 shrink-0">
-        <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center
-                        justify-center text-white font-bold text-xs">
-          F
-        </div>
+        <Logo size={24} variant="auto"
+              className="text-brand-500 dark:text-brand-400" />
       </Link>
 
       <div className="flex-1 flex items-center justify-center lg:justify-start">

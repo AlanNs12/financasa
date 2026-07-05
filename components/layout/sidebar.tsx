@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/lib/sidebar-context'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/actions/auth'
+import { Logo } from '@/components/shared/logo'
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -109,12 +110,8 @@ function SidebarInner({
       >
         {showLabels && (
           <Link href="/" className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg bg-brand-500 flex items-center
-                          justify-center text-white font-bold text-sm"
-            >
-              F
-            </div>
+            <Logo size={28} variant="auto"
+                  className="text-foreground dark:text-foreground" />
             <span className="text-base font-semibold text-foreground">
               Financasa
             </span>
