@@ -105,18 +105,19 @@ function SidebarInner({
       <div
         className={cn(
           'flex items-center h-16 px-4 border-b border-border shrink-0',
-          showLabels ? 'justify-between' : 'justify-center'
+          showLabels ? 'justify-between' : 'justify-between'
         )}
       >
-        {showLabels && (
-          <Link href="/" className="flex items-center gap-2.5">
-            <Logo size={28} variant="auto"
-                  className="text-foreground dark:text-foreground" />
-            <span className="text-base font-semibold text-foreground">
+        <Link href="/" className={cn('flex items-center', showLabels ? 'gap-3' : '')}
+              aria-label="Ir para o início">
+          <Logo size={showLabels ? 28 : 24} variant="auto"
+                className="text-foreground shrink-0" />
+          {showLabels && (
+            <span className="text-base font-semibold text-foreground tracking-tight">
               Financasa
             </span>
-          </Link>
-        )}
+          )}
+        </Link>
         <button
           onClick={toggleExpanded}
           aria-label={isExpanded ? 'Recolher sidebar' : 'Expandir sidebar'}

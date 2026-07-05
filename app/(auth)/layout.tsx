@@ -27,37 +27,37 @@ export default function AuthLayout({
       </div>
 
       <div className="hidden lg:flex flex-col items-center justify-center
-                      bg-[#0F1115] text-white relative overflow-hidden p-12">
+                      bg-[#0F1115] relative overflow-hidden p-12">
         <div className="absolute top-0 right-0 w-80 h-80 rounded-full
-                        bg-white/5 -translate-y-1/2 translate-x-1/2" />
+                        bg-white/[0.03] -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full
-                        bg-white/5 translate-y-1/2 -translate-x-1/2" />
-        <div className="absolute top-1/2 left-1/4 w-32 h-32 rounded-full
-                        bg-white/10 -translate-y-1/2" />
+                        bg-white/[0.03] translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-1/2 right-1/4 w-48 h-48 rounded-full
+                        bg-white/[0.02] -translate-y-1/2" />
 
         <div className="relative z-10 text-center text-white max-w-sm">
-          <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center
-                          justify-center mx-auto mb-8 shadow-theme-lg">
-            <Logo size={52} variant="light" />
+          <div className="flex justify-center mb-8">
+            <Logo size={56} variant="light" />
           </div>
-          <h2 className="text-3xl font-bold mb-4 leading-tight">
+          <h2 className="text-3xl font-bold mb-4 leading-tight tracking-tight">
             Controle financeiro para sua família
           </h2>
-          <p className="text-white/75 text-base leading-relaxed">
-            Planeje, acompanhe e realize seus objetivos financeiros
-            juntos, de forma simples e organizada.
+          <p className="text-white/50 text-base leading-relaxed">
+            Planeje, acompanhe e realize seus objetivos
+            financeiros juntos, de forma simples e organizada.
           </p>
 
-          <div className="grid grid-cols-3 gap-4 mt-10">
+          <div className="grid grid-cols-3 gap-3 mt-10">
             {[
               { icon: '📊', label: 'Relatórios' },
               { icon: '🎯', label: 'Metas' },
               { icon: '💰', label: 'Investimentos' },
             ].map(({ icon, label }) => (
               <div key={label}
-                   className="bg-white/10 rounded-xl p-3 text-center">
+                   className="bg-white/[0.06] border border-white/10 rounded-xl
+                              p-3 text-center">
                 <div className="text-2xl mb-1">{icon}</div>
-                <div className="text-xs text-white/80 font-medium">{label}</div>
+                <div className="text-xs text-white/60 font-medium">{label}</div>
               </div>
             ))}
           </div>
