@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { TransactionList } from '@/components/transacoes/transaction-list'
 import { NewTransactionModal } from '@/components/transacoes/new-transaction-modal'
+import { TransactionDetailModal } from '@/components/transacoes/transaction-detail-modal'
 import { Fab } from '@/components/transacoes/fab'
 
 interface Transaction {
@@ -11,8 +12,10 @@ interface Transaction {
   amount: number
   type: 'INCOME' | 'EXPENSE'
   date: string
+  created_at: string
+  notes: string | null
   category: { name: string; icon: string; color: string } | null
-  user?: { name: string } | null
+  user?: { name: string; avatar_url: string | null } | null
   payment_method: string
 }
 
@@ -40,16 +43,26 @@ interface TransactionsClientProps {
 
 export function TransactionsClient({ transactions, categories, creditCards, month, year }: TransactionsClientProps) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
 
   return (
     <>
-      <TransactionList transactions={transactions} month={month} year={year} />
+      <TransactionList
+        transactions={transactions}
+        month={month}
+        year={year}
+        onSelectTransaction={setSelectedTransaction}
+      />
       <Fab onClick={() => setModalOpen(true)} />
       <NewTransactionModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         categories={categories}
         creditCards={creditCards}
+      />
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        onClose={() => setSelectedTransaction(null)}
       />
     </>
   )

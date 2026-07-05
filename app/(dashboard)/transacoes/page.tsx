@@ -38,8 +38,10 @@ export default async function TransacoesPage({
     amount: t.amount,
     type: t.type as 'INCOME' | 'EXPENSE',
     date: t.date,
-    category: t.category ?? null,
-    user: t.user ?? null,
+    created_at: t.created_at,
+    notes: t.notes ?? null,
+    category: t.category ? { name: t.category.name, icon: t.category.icon, color: t.category.color } : null,
+    user: t.user ? { name: t.user.name, avatar_url: t.user.avatar_url ?? null } : null,
     payment_method: t.payment_method,
   }))
 

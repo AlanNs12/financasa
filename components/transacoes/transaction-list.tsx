@@ -17,8 +17,10 @@ interface TransactionItem {
   amount: number
   type: 'INCOME' | 'EXPENSE'
   date: string
+  created_at: string
+  notes: string | null
   category: { name: string; icon: string; color: string } | null
-  user?: { name: string } | null
+  user?: { name: string; avatar_url: string | null } | null
   payment_method: string
 }
 
@@ -26,6 +28,7 @@ interface TransactionListProps {
   transactions: TransactionItem[]
   month: number
   year: number
+  onSelectTransaction: (t: TransactionItem) => void
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -37,7 +40,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BOLETO: 'Boleto',
 }
 
-export function TransactionList({ transactions, month, year }: TransactionListProps) {
+export function TransactionList({ transactions, month, year, onSelectTransaction }: TransactionListProps) {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
   const [showFilters, setShowFilters] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<TransactionItem | null>(null)
@@ -145,10 +148,15 @@ export function TransactionList({ transactions, month, year }: TransactionListPr
                 {txs.map((tx, idx) => (
                   <div
                     key={tx.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onSelectTransaction(tx)}
+                    onKeyDown={e => e.key === 'Enter' && onSelectTransaction(tx)}
                     className={cn(
-                      'flex items-center gap-3 p-3 transition-colors',
+                      'flex items-center gap-3 p-3 transition-colors cursor-pointer hover:bg-muted/50 group',
                       idx < txs.length - 1 && 'border-b border-border'
                     )}
+                    aria-label={`Ver detalhes: ${tx.description}`}
                   >
                     <CategoryIcon category={tx.category} size="sm" />
                     <div className="flex-1 min-w-0">
@@ -173,7 +181,7 @@ export function TransactionList({ transactions, month, year }: TransactionListPr
                       />
                       {tx.user && <PersonAvatar user={tx.user} size="sm" />}
                       <button
-                        onClick={() => setPendingDelete(tx)}
+                        onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
                         className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                         aria-label="Excluir transação"
                       >

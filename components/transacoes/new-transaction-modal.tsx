@@ -41,7 +41,6 @@ interface NewTransactionModalProps {
 
 export function NewTransactionModal({ isOpen, onClose, categories, creditCards }: NewTransactionModalProps) {
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
-  const [showNotes, setShowNotes] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const filteredCategories = categories.filter(
@@ -178,6 +177,18 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             )}
           </div>
 
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+              Observação <span className="normal-case font-normal">(opcional)</span>
+            </label>
+            <textarea
+              {...register('notes')}
+              placeholder="Adicione uma observação sobre esta transação..."
+              rows={2}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm resize-none placeholder:text-muted-foreground focus:outline-none transition-colors"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -258,24 +269,6 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             )}
             {errors.category_id && (
               <p className="text-error-500 text-xs mt-1">{errors.category_id.message}</p>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowNotes(!showNotes)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showNotes ? '- Ocultar observação' : '+ Adicionar observação'}
-            </button>
-            {showNotes && (
-              <textarea
-                {...register('notes')}
-                placeholder="Observação opcional..."
-                rows={2}
-                className="w-full mt-2 h-20 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
-              />
             )}
           </div>
 
