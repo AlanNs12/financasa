@@ -20,7 +20,7 @@ interface TransactionItem {
   created_at: string
   notes: string | null
   category: { name: string; icon: string; color: string } | null
-  user?: { name: string; avatar_url: string | null } | null
+  user: { name: string; avatar_url: string | null } | null
   payment_method: string
 }
 

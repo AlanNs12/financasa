@@ -31,12 +31,7 @@ export const metadata: Metadata = {
       { url: "/financasa-icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/financasa-icons/icon-384x384.png", sizes: "384x384", type: "image/png" },
       { url: "/financasa-icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-      {
-        url: "/financasa-icons/icon-512x512-maskable.png",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
-      },
+      { url: "/financasa-icons/icon-512x512-maskable.png", sizes: "512x512", type: "image/png" },
     ],
   },
 }
