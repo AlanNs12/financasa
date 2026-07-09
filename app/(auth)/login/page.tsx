@@ -14,6 +14,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const confirmed = searchParams.get('confirmed')
   const registered = searchParams.get('registered') === 'true'
+  const deleted = searchParams.get('deleted') === 'true'
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -64,6 +65,18 @@ export default function LoginPage() {
           Entre com seu email e senha para acessar
         </p>
       </div>
+
+      {deleted && (
+        <div className="p-4 rounded-xl bg-[#f3f4f6] dark:bg-[#2D2F36]
+                        border border-border mb-6">
+          <p className="text-sm text-foreground font-medium">
+            Conta apagada com sucesso.
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Todos os seus dados foram removidos permanentemente.
+          </p>
+        </div>
+      )}
 
       {registered && (
         <div className="flex items-start gap-3 p-4 rounded-xl
