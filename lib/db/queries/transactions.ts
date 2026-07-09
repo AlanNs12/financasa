@@ -72,3 +72,32 @@ export async function deleteTransaction(
   })
   return result.count
 }
+
+export async function updateTransaction(
+  id: string,
+  householdId: string,
+  data: {
+    description: string
+    amount: number
+    type: 'INCOME' | 'EXPENSE'
+    date: Date
+    category_id: string
+    payment_method: string
+    notes?: string
+    credit_card_id?: string
+  }
+) {
+  return prisma.transaction.updateMany({
+    where: { id, household_id: householdId },
+    data: {
+      description: data.description,
+      amount: data.amount,
+      type: data.type,
+      date: data.date,
+      category_id: data.category_id,
+      payment_method: data.payment_method as PaymentMethod,
+      notes: data.notes,
+      credit_card_id: data.credit_card_id || null,
+    },
+  })
+}

@@ -52,6 +52,7 @@ export interface Transaction {
   payment_method: PaymentMethod
   notes?: string | null
   recurring_bill_id?: string | null
+  credit_card_id?: string | null
   created_at: string
   updated_at: string
   category?: Category

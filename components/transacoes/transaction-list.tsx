@@ -5,7 +5,7 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
 import { PersonAvatar } from '@/components/shared/person-avatar'
-import { Filter, Trash2, AlertTriangle, Loader2, Download } from 'lucide-react'
+import { Filter, Trash2, Pencil, AlertTriangle, Loader2, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { deleteTransactionAction } from '@/app/actions/transactions'
 import { exportTransactionsCsvAction } from '@/app/actions/export'
@@ -19,9 +19,11 @@ interface TransactionItem {
   date: string
   created_at: string
   notes: string | null
+  category_id: string
+  payment_method: string
+  credit_card_id?: string | null
   category: { name: string; icon: string; color: string } | null
   user: { name: string; avatar_url: string | null } | null
-  payment_method: string
 }
 
 interface TransactionListProps {
@@ -29,6 +31,7 @@ interface TransactionListProps {
   month: number
   year: number
   onSelectTransaction: (t: TransactionItem) => void
+  onEdit: (t: TransactionItem) => void
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -40,7 +43,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BOLETO: 'Boleto',
 }
 
-export function TransactionList({ transactions, month, year, onSelectTransaction }: TransactionListProps) {
+export function TransactionList({ transactions, month, year, onSelectTransaction, onEdit }: TransactionListProps) {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
   const [showFilters, setShowFilters] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<TransactionItem | null>(null)
@@ -180,6 +183,13 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                         size="sm"
                       />
                       {tx.user && <PersonAvatar user={tx.user} size="sm" />}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onEdit(tx) }}
+                        aria-label="Editar transação"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
                         className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
