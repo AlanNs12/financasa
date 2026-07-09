@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
 import { getTotalBillsForMonth } from '@/lib/db/queries/bills'
+import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
 import { PageHeader } from '@/components/shared/page-header'
 
@@ -26,15 +27,35 @@ export default async function PlanejamentoPage({
     )
   }
 
-  const [data, billsData, incomeData] = await Promise.all([
+  const [data, billsData, incomeData, allTransactions] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
     getTotalBillsForMonth(current.householdId),
     getEffectiveIncome(current.householdId, month, year),
+    getTransactionsByMonth(current.householdId, month, year),
   ])
+
+  const clientTransactions = allTransactions.map((t) => ({
+    id: t.id,
+    description: t.description,
+    amount: t.amount,
+    type: t.type as 'INCOME' | 'EXPENSE',
+    date: t.date,
+    category_id: t.category_id,
+    payment_method: t.payment_method,
+    notes: t.notes ?? null,
+    user: t.user ? { name: t.user.name } : { name: 'Usuário' },
+  }))
 
   return (
     <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
-      <PlanejamentoClient data={data} totalBills={billsData.totalBills} month={month} year={year} incomeData={incomeData} />
+      <PlanejamentoClient
+        data={data}
+        totalBills={billsData.totalBills}
+        month={month}
+        year={year}
+        incomeData={incomeData}
+        allTransactions={clientTransactions}
+      />
     </Suspense>
   )
 }
