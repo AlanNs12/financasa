@@ -6,13 +6,16 @@ export async function getDashboardSummary(
   month: number,
   year: number
 ): Promise<DashboardSummary> {
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 1)
 
   const transactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,
-      date: { gte: startDate, lte: endDate },
+      OR: [
+        { billing_month: month, billing_year: year },
+        { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+      ],
     },
   })
 

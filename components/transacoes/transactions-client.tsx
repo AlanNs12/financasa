@@ -17,6 +17,8 @@ interface Transaction {
   category_id: string
   payment_method: string
   credit_card_id?: string | null
+  billing_month?: number | null
+  billing_year?: number | null
   category: { name: string; icon: string; color: string } | null
   user: { name: string; avatar_url: string | null } | null
 }
@@ -33,6 +35,7 @@ interface CreditCard {
   id: string
   name: string
   issuer: string | null
+  closing_day: number | null
 }
 
 interface TransactionsClientProps {

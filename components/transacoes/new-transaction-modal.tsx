@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { transactionSchema, type TransactionOutput } from '@/lib/validations/transaction'
 import { createTransactionAction, updateTransactionAction } from '@/app/actions/transactions'
+import { previewBillingPeriod, getBillingLabel } from '@/lib/calculations/billing'
 import { toast } from 'sonner'
 
 interface Category {
@@ -21,6 +22,7 @@ interface CreditCard {
   id: string
   name: string
   issuer: string | null
+  closing_day: number | null
 }
 
 const PAYMENT_METHODS = [
@@ -91,14 +93,14 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     getValues,
     formState: { errors },
   } = useForm<TransactionOutput>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(transactionSchema) as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     defaultValues: editingTransaction ? (defaultValues as any) : defaultValues,
   })
 
   const categoryId = watch('category_id')
   const paymentMethod = watch('payment_method')
+  const creditCardId = watch('credit_card_id')
+  const dateValue = watch('date')
 
   useEffect(() => {
     if (editingTransaction) {
@@ -111,7 +113,6 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
         payment_method: editingTransaction.payment_method,
         notes: editingTransaction.notes ?? '',
         credit_card_id: editingTransaction.credit_card_id ?? '',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
     } else if (isOpen) {
       setType('EXPENSE')
@@ -119,10 +120,23 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
         date: new Date().toISOString().split('T')[0],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
     }
   }, [editingTransaction, isOpen, reset])
+
+  const billingPreview = paymentMethod === 'CREDIT_CARD' && creditCardId
+    ? (() => {
+        const card = creditCards.find(c => c.id === creditCardId)
+        return previewBillingPeriod(dateValue, card?.closing_day ?? null)
+      })()
+    : null
+
+  const purchaseMonth = dateValue
+    ? new Date(dateValue + 'T12:00:00').getMonth() + 1
+    : null
+  const isBillingNextMonth = billingPreview
+    ? billingPreview.billingMonth !== purchaseMonth
+    : false
 
   function handleFormSubmit() {
     const values = getValues()
@@ -162,7 +176,16 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
           return
         }
 
-        toast.success('Transação criada com sucesso!')
+        if (result?.billingMoved && result.billingMonth && result.billingYear) {
+          toast.success(
+            `Transação criada! Lançada na fatura de ${getBillingLabel({
+              billingMonth: result.billingMonth,
+              billingYear: result.billingYear,
+            })}`
+          )
+        } else {
+          toast.success('Transação criada!')
+        }
       }
 
       reset()
@@ -319,6 +342,40 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
               </select>
             </div>
           )}
+
+          {billingPreview && (() => {
+            const card = creditCards.find(c => c.id === creditCardId)
+            return (
+              <div className={`flex items-start gap-2.5 p-3 rounded-xl text-xs
+                               border transition-colors ${
+                isBillingNextMonth
+                  ? 'bg-[#fef9c3] dark:bg-[#f59e0b]/10 border-[#fde68a] dark:border-[#f59e0b]/25'
+                  : 'bg-[#f0fdf4] dark:bg-[#22c55e]/10 border-[#bbf7d0] dark:border-[#22c55e]/25'
+              }`}>
+                <span className="text-base shrink-0 mt-0.5">
+                  {isBillingNextMonth ? '⚠️' : '✓'}
+                </span>
+                <div>
+                  <p className={`font-semibold ${
+                    isBillingNextMonth
+                      ? 'text-[#d97706] dark:text-[#fbbf24]'
+                      : 'text-[#15803d] dark:text-[#4ade80]'
+                  }`}>
+                    {isBillingNextMonth
+                      ? `Lançado na fatura de ${getBillingLabel(billingPreview)}`
+                      : `Fatura de ${getBillingLabel(billingPreview)}`
+                    }
+                  </p>
+                  {isBillingNextMonth && card?.closing_day && (
+                    <p className="text-[#92400e] dark:text-[#fcd34d] mt-0.5 leading-relaxed">
+                      A data da compra é após o fechamento (dia {card.closing_day}).
+                      Esta despesa aparecerá nos gastos de {getBillingLabel(billingPreview)}.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
 
           <div>
             <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">

@@ -33,13 +33,16 @@ export async function getCalendarData(
     dayMap[day].push(event)
   }
 
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 1)
+
   const transactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,
-      date: {
-        gte: new Date(year, month - 1, 1),
-        lt: new Date(year, month, 1),
-      },
+      OR: [
+        { billing_month: month, billing_year: year },
+        { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+      ],
     },
     include: { category: true },
     orderBy: { date: 'asc' },

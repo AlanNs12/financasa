@@ -116,7 +116,7 @@ export default async function DashboardPage({
 
         <QuickAddTransaction
           categories={categories.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color, type: c.type }))}
-          creditCards={creditCards.map((c) => ({ id: c.id, name: c.name, issuer: c.issuer ?? null }))}
+          creditCards={creditCards.map((c) => ({ id: c.id, name: c.name, issuer: c.issuer ?? null, closing_day: c.closing_day ?? null }))}
         />
       </div>
     )

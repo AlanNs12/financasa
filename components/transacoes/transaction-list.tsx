@@ -22,6 +22,8 @@ interface TransactionItem {
   category_id: string
   payment_method: string
   credit_card_id?: string | null
+  billing_month?: number | null
+  billing_year?: number | null
   category: { name: string; icon: string; color: string } | null
   user: { name: string; avatar_url: string | null } | null
 }
@@ -42,6 +44,8 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BANK_TRANSFER: 'Transferência',
   BOLETO: 'Boleto',
 }
+
+const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 export function TransactionList({ transactions, month, year, onSelectTransaction, onEdit }: TransactionListProps) {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
@@ -182,6 +186,15 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                         type={tx.type === 'INCOME' ? 'income' : 'expense'}
                         size="sm"
                       />
+                      {tx.payment_method === 'CREDIT_CARD' &&
+                       tx.billing_month != null &&
+                       tx.billing_month !== new Date(tx.date).getMonth() + 1 && (
+                        <span className="text-[10px] text-[#d97706] dark:text-[#fbbf24]
+                                         bg-[#fef9c3] dark:bg-[#f59e0b]/10
+                                         px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                          Fatura {MONTH_ABBR[tx.billing_month - 1]}
+                        </span>
+                      )}
                       {tx.user && <PersonAvatar user={tx.user} size="sm" />}
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit(tx) }}

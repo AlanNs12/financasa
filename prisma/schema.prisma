@@ -75,6 +75,8 @@ model Transaction {
   amount            Decimal         @db.Decimal(10, 2)
   description       String
   date              DateTime        @db.Date
+  billing_month     Int?
+  billing_year      Int?
   payment_method    PaymentMethod   @default(PIX)
   notes             String?
   recurring_bill_id String?
