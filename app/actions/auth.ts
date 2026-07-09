@@ -68,7 +68,7 @@ export async function signUp(formData: FormData) {
   }
 
   if (!data.session) {
-    return { error: 'Conta criada! Verifique seu email para confirmar o cadastro antes de fazer login.' }
+    redirect('/login?registered=true')
   }
 
   revalidatePath('/', 'layout')

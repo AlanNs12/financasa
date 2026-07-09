@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const confirmed = searchParams.get('confirmed')
+  const registered = searchParams.get('registered') === 'true'
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -63,6 +64,23 @@ export default function LoginPage() {
           Entre com seu email e senha para acessar
         </p>
       </div>
+
+      {registered && (
+        <div className="flex items-start gap-3 p-4 rounded-xl
+                        bg-[#dcfce7] dark:bg-[#22c55e]/10
+                        border border-[#bbf7d0] dark:border-[#22c55e]/25 mb-6">
+          <span className="text-[#16a34a] text-lg shrink-0">✓</span>
+          <div>
+            <p className="text-sm font-semibold text-[#15803d] dark:text-[#4ade80]">
+              Conta criada com sucesso!
+            </p>
+            <p className="text-xs text-[#166534] dark:text-[#86efac] mt-0.5">
+              Enviamos um email de confirmação. Verifique sua caixa de entrada
+              (e a pasta de spam) antes de fazer login.
+            </p>
+          </div>
+        </div>
+      )}
 
       {confirmed === 'true' && (
         <div className="mb-4 p-3 rounded-lg bg-success-50 border border-success-500/30 text-success-600 text-sm flex items-center gap-2">
