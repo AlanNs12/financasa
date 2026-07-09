@@ -3,6 +3,7 @@ import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
 import { getTotalBillsForMonth } from '@/lib/db/queries/bills'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
+import { prisma } from '@/lib/db/prisma'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
 import { PageHeader } from '@/components/shared/page-header'
 
@@ -27,9 +28,26 @@ export default async function PlanejamentoPage({
     )
   }
 
+  const existingBudget = await prisma.budget.findUnique({
+    where: {
+      household_id_month_year: { household_id: current.householdId, month, year },
+    },
+  })
+
+  if (!existingBudget) {
+    await prisma.budget.create({
+      data: {
+        household_id: current.householdId,
+        month,
+        year,
+        total_income: 0,
+      },
+    })
+  }
+
   const [data, billsData, incomeData, allTransactions] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
-    getTotalBillsForMonth(current.householdId),
+    getTotalBillsForMonth(current.householdId, month, year),
     getEffectiveIncome(current.householdId, month, year),
     getTransactionsByMonth(current.householdId, month, year),
   ])

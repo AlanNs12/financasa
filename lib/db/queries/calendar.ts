@@ -62,6 +62,10 @@ export async function getCalendarData(
     where: {
       household_id: householdId,
       is_active: true,
+      OR: [
+        { start_year: { lt: year } },
+        { start_year: year, start_month: { lte: month } },
+      ],
     },
     include: {
       monthlyStatus: {

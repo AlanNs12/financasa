@@ -107,6 +107,8 @@ model RecurringBill {
   user               User        @relation(fields: [user_id], references: [id])
   name               String
   amount             Decimal     @db.Decimal(10, 2)
+  start_month        Int         @default(1)
+  start_year         Int         @default(2025)
   due_day            Int
   recurrence         Recurrence  @default(MONTHLY)
   category_id        String?
