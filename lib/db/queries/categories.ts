@@ -32,3 +32,36 @@ export async function createDefaultCategories(householdId: string) {
     })),
   })
 }
+
+export async function createCategory(data: {
+  household_id: string
+  name: string
+  icon: string
+  color: string
+  type: 'INCOME' | 'EXPENSE'
+}) {
+  return prisma.category.create({ data })
+}
+
+export async function updateCategory(
+  id: string,
+  householdId: string,
+  data: { name: string; icon: string; color: string }
+) {
+  return prisma.category.updateMany({
+    where: { id, household_id: householdId },
+    data,
+  })
+}
+
+export async function deleteCategory(id: string, householdId: string) {
+  const hasTransactions = await prisma.transaction.count({
+    where: { category_id: id }
+  })
+  if (hasTransactions > 0) {
+    throw new Error('Categoria em uso — não pode ser apagada')
+  }
+  return prisma.category.deleteMany({
+    where: { id, household_id: householdId, is_default: false }
+  })
+}
