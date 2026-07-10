@@ -12,6 +12,12 @@ export async function getRecurringBills(householdId: string, month?: number, yea
         { is_active: true },
         { monthlyStatus: { some: { month: targetMonth, year: targetYear } } },
       ],
+      AND: {
+        OR: [
+          { start_year: { lt: targetYear } },
+          { start_year: targetYear, start_month: { lte: targetMonth } },
+        ],
+      },
     },
     include: {
       user: { select: { id: true, name: true, avatar_url: true } },
@@ -123,6 +129,8 @@ export async function createRecurringBill(data: {
   user_id: string
   name: string
   amount: number
+  start_month: number
+  start_year: number
   due_day: number
   recurrence: Recurrence
   category_id?: string | null
@@ -135,6 +143,8 @@ export async function createRecurringBill(data: {
       user_id: data.user_id,
       name: data.name,
       amount: data.amount,
+      start_month: data.start_month,
+      start_year: data.start_year,
       due_day: data.due_day,
       recurrence: data.recurrence,
       category_id: data.category_id ?? null,
@@ -252,9 +262,19 @@ export async function createTransactionFromBill(
   return true
 }
 
-export async function getTotalBillsForMonth(householdId: string) {
+export async function getTotalBillsForMonth(householdId: string, month?: number, year?: number) {
+  const targetMonth = month ?? new Date().getMonth() + 1
+  const targetYear = year ?? new Date().getFullYear()
+
   const result = await prisma.recurringBill.aggregate({
-    where: { household_id: householdId, is_active: true },
+    where: {
+      household_id: householdId,
+      is_active: true,
+      OR: [
+        { start_year: { lt: targetYear } },
+        { start_year: targetYear, start_month: { lte: targetMonth } },
+      ],
+    },
     _sum: { amount: true },
     _count: true,
   })

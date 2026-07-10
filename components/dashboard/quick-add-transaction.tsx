@@ -17,6 +17,7 @@ interface CreditCard {
   id: string
   name: string
   issuer: string | null
+  closing_day: number | null
 }
 
 interface QuickAddTransactionProps {

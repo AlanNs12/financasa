@@ -60,6 +60,11 @@ export function SummaryCards({
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => {
         const Icon = card.icon
+        const isBalance = card.key === 'balance'
+        const balancePositive = balance >= 0
+        const iconBg = balancePositive ? '#dcfce720' : '#fee2e220'
+        const iconColor = balancePositive ? '#16a34a' : '#dc2626'
+        const valueColor = balancePositive ? '#22C55E' : '#EF4444'
         return (
           <div
             key={card.key}
@@ -72,11 +77,19 @@ export function SummaryCards({
                   'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
                   card.color.bg
                 )}
+                style={isBalance ? { backgroundColor: iconBg } : undefined}
               >
-                <Icon size={18} className={card.color.icon} />
+                <Icon
+                  size={18}
+                  className={card.color.icon}
+                  style={isBalance ? { color: iconColor } : undefined}
+                />
               </div>
             </div>
-            <p className="text-2xl font-bold text-foreground mb-1 tabular-nums">
+            <p
+              className="text-2xl font-bold mb-1 tabular-nums"
+              style={{ color: isBalance ? valueColor : undefined }}
+            >
               {formatCurrency(values[card.key])}
             </p>
             <p className="text-sm text-muted-foreground">{card.label}</p>

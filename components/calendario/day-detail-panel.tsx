@@ -175,11 +175,21 @@ function EventGroup({ title, events, showAmount }: EventGroupProps) {
                 <p className="text-sm font-medium text-foreground truncate">
                   {event.label}
                 </p>
-                {event.sublabel && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {event.sublabel}
-                  </p>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {event.sublabel && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {event.sublabel}
+                    </p>
+                  )}
+                  {event.billingMoved && (
+                    <span className="text-[10px] text-[#d97706] dark:text-[#fbbf24]
+                                     bg-[#fef9c3] dark:bg-[#f59e0b]/10
+                                     px-1.5 py-0.5 rounded-full font-medium shrink-0
+                                     whitespace-nowrap">
+                      fatura
+                    </span>
+                  )}
+                </div>
               </div>
 
               {showAmount && event.amount !== undefined && event.amount > 0 && (

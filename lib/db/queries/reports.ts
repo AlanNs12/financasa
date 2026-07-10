@@ -15,14 +15,17 @@ export async function getExpensesByCategory(
   month: number,
   year: number
 ): Promise<ExpenseByCategory[]> {
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 1)
 
   const transactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,
       type: 'EXPENSE',
-      date: { gte: startDate, lte: endDate },
+      OR: [
+        { billing_month: month, billing_year: year },
+        { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+      ],
     },
     include: {
       category: { select: { id: true, name: true, icon: true, color: true } },
@@ -83,12 +86,27 @@ export async function getMonthlyEvolution(
   }
 
   const startDate = new Date(currentYear, currentMonth - 1 - (monthsBack - 1), 1)
-  const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59)
+  const endDate = new Date(currentYear, currentMonth, 1)
+
+  const targetMonths = points.map((p) => ({ month: p.month, year: p.year }))
 
   const transactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,
-      date: { gte: startDate, lte: endDate },
+      OR: [
+        { billing_month: null, date: { gte: startDate, lt: endDate } },
+        ...targetMonths.map(({ month: m, year: y }) => ({
+          billing_month: m,
+          billing_year: y,
+        })),
+      ],
+    },
+    select: {
+      type: true,
+      amount: true,
+      date: true,
+      billing_month: true,
+      billing_year: true,
     },
   })
 
@@ -98,9 +116,16 @@ export async function getMonthlyEvolution(
   }
 
   for (const t of transactions) {
-    const d = new Date(t.date)
-    const m = d.getMonth() + 1
-    const y = d.getFullYear()
+    let m: number
+    let y: number
+    if (t.billing_month != null && t.billing_year != null) {
+      m = t.billing_month
+      y = t.billing_year
+    } else {
+      const d = new Date(t.date)
+      m = d.getMonth() + 1
+      y = d.getFullYear()
+    }
     const p = map.get(`${y}-${m}`)
     if (!p) continue
     const amount = Number(t.amount)

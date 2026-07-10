@@ -1,12 +1,13 @@
 ﻿'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { X, ArrowUpCircle, ArrowDownCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { transactionSchema, type TransactionOutput } from '@/lib/validations/transaction'
-import { createTransactionAction } from '@/app/actions/transactions'
+import { createTransactionAction, updateTransactionAction } from '@/app/actions/transactions'
+import { previewBillingPeriod, getBillingLabel } from '@/lib/calculations/billing'
 import { toast } from 'sonner'
 
 interface Category {
@@ -21,6 +22,7 @@ interface CreditCard {
   id: string
   name: string
   issuer: string | null
+  closing_day: number | null
 }
 
 const PAYMENT_METHODS = [
@@ -39,13 +41,48 @@ interface NewTransactionModalProps {
   creditCards: CreditCard[]
 }
 
-export function NewTransactionModal({ isOpen, onClose, categories, creditCards }: NewTransactionModalProps) {
-  const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
+interface NewTransactionModalProps {
+  isOpen: boolean
+  onClose: () => void
+  categories: Category[]
+  creditCards: CreditCard[]
+  editingTransaction?: {
+    id: string
+    description: string
+    amount: number
+    type: 'INCOME' | 'EXPENSE'
+    date: string
+    category_id: string
+    payment_method: string
+    notes: string | null
+    credit_card_id?: string | null
+  }
+}
+
+export function NewTransactionModal({ isOpen, onClose, categories, creditCards, editingTransaction }: NewTransactionModalProps) {
+  const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
 
   const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === 'BOTH'
   )
+
+  const defaultValues = editingTransaction
+    ? {
+        type: editingTransaction.type as 'INCOME' | 'EXPENSE',
+        amount: editingTransaction.amount,
+        description: editingTransaction.description,
+        date: editingTransaction.date.split('T')[0],
+        category_id: editingTransaction.category_id,
+        payment_method: editingTransaction.payment_method,
+        notes: editingTransaction.notes ?? '',
+        credit_card_id: editingTransaction.credit_card_id ?? '',
+      }
+    : {
+        type: 'EXPENSE' as const,
+        payment_method: 'PIX' as const,
+        date: new Date().toISOString().split('T')[0],
+      }
 
   const {
     register,
@@ -56,38 +93,107 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
     getValues,
     formState: { errors },
   } = useForm<TransactionOutput>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(transactionSchema) as any,
-    defaultValues: {
-      type: 'EXPENSE',
-      payment_method: 'PIX',
-      date: new Date().toISOString().split('T')[0],
-    },
+    defaultValues: editingTransaction ? (defaultValues as any) : defaultValues,
   })
 
   const categoryId = watch('category_id')
   const paymentMethod = watch('payment_method')
+  const creditCardId = watch('credit_card_id')
+  const dateValue = watch('date')
+
+  useEffect(() => {
+    if (editingTransaction) {
+      setType(editingTransaction.type)
+      reset({
+        amount: editingTransaction.amount,
+        description: editingTransaction.description,
+        date: editingTransaction.date.split('T')[0],
+        category_id: editingTransaction.category_id,
+        payment_method: editingTransaction.payment_method,
+        notes: editingTransaction.notes ?? '',
+        credit_card_id: editingTransaction.credit_card_id ?? '',
+      } as any)
+    } else if (isOpen) {
+      setType('EXPENSE')
+      reset({
+        type: 'EXPENSE' as const,
+        payment_method: 'PIX' as const,
+        date: new Date().toISOString().split('T')[0],
+      } as any)
+    }
+  }, [editingTransaction, isOpen, reset])
+
+  useEffect(() => {
+    if (paymentMethod !== 'CREDIT_CARD') {
+      setValue('credit_card_id', '')
+    }
+  }, [paymentMethod, setValue])
+
+  const billingPreview = paymentMethod === 'CREDIT_CARD' && creditCardId
+    ? (() => {
+        const card = creditCards.find(c => c.id === creditCardId)
+        return previewBillingPeriod(dateValue, card?.closing_day ?? null)
+      })()
+    : null
+
+  const purchaseMonth = dateValue
+    ? new Date(dateValue + 'T12:00:00').getMonth() + 1
+    : null
+  const isBillingNextMonth = billingPreview
+    ? billingPreview.billingMonth !== purchaseMonth
+    : false
 
   function handleFormSubmit() {
     const values = getValues()
     startTransition(async () => {
-      const result = await createTransactionAction({
-        type,
-        description: values.description,
-        amount: Number(values.amount) || 0,
-        date: values.date,
-        category_id: values.category_id,
-        payment_method: values.payment_method,
-        notes: values.notes || undefined,
-        credit_card_id: values.credit_card_id || undefined,
-      })
+      if (editingTransaction) {
+        const result = await updateTransactionAction(editingTransaction.id, {
+          type,
+          description: values.description,
+          amount: Number(values.amount) || 0,
+          date: values.date,
+          category_id: values.category_id,
+          payment_method: values.payment_method,
+          notes: values.notes || undefined,
+          credit_card_id: values.credit_card_id || undefined,
+        })
 
-      if (result?.error) {
-        toast.error('Erro ao salvar. Verifique os campos.')
-        return
+        if (result?.error) {
+          toast.error('Erro ao salvar. Verifique os campos.')
+          return
+        }
+
+        toast.success('Transação atualizada!')
+      } else {
+        const result = await createTransactionAction({
+          type,
+          description: values.description,
+          amount: Number(values.amount) || 0,
+          date: values.date,
+          category_id: values.category_id,
+          payment_method: values.payment_method,
+          notes: values.notes || undefined,
+          credit_card_id: values.credit_card_id || undefined,
+        })
+
+        if (result?.error) {
+          toast.error('Erro ao salvar. Verifique os campos.')
+          return
+        }
+
+        if (result?.billingMoved && result.billingMonth && result.billingYear) {
+          toast.success(
+            `Transação criada! Lançada na fatura de ${getBillingLabel({
+              billingMonth: result.billingMonth,
+              billingYear: result.billingYear,
+            })}`
+          )
+        } else {
+          toast.success('Transação criada!')
+        }
       }
 
-      toast.success('Transação criada com sucesso!')
       reset()
       onClose()
     })
@@ -101,7 +207,9 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
 
       <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-theme-lg border border-border max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
-          <h2 className="text-base font-semibold text-foreground">Nova transação</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {editingTransaction ? 'Editar transação' : 'Nova transação'}
+          </h2>
           <button
             onClick={onClose}
             aria-label="Fechar"
@@ -120,7 +228,9 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
                 onClick={() => {
                   setType(t)
                   setValue('type', t)
-                  setValue('category_id', '')
+                  if (!editingTransaction) {
+                    setValue('category_id', '')
+                  }
                 }}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all',
@@ -220,24 +330,71 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
             </div>
           </div>
 
-          {paymentMethod === 'CREDIT_CARD' && creditCards.length > 0 && (
+          {paymentMethod === 'CREDIT_CARD' && (
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
                 Qual cartão?
               </label>
-              <select
-                {...register('credit_card_id')}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none transition-colors"
-              >
-                <option value="">Selecione o cartão</option>
-                {creditCards.map((card) => (
-                  <option key={card.id} value={card.id}>
-                    {card.name}{card.issuer ? ` · ${card.issuer}` : ''}
-                  </option>
-                ))}
-              </select>
+              {creditCards.length === 0 ? (
+                <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Nenhum cartão cadastrado.{' '}
+                    <a href="/configuracoes" className="text-primary underline">
+                      Cadastrar cartão
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                <select
+                  {...register('credit_card_id')}
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors appearance-none"
+                >
+                  <option value="">Selecione um cartão</option>
+                  {creditCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.name}
+                      {card.issuer ? ` — ${card.issuer}` : ''}
+                      {card.closing_day ? ` (fecha dia ${card.closing_day})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
+
+          {billingPreview && (() => {
+            const card = creditCards.find(c => c.id === creditCardId)
+            return (
+              <div className={`flex items-start gap-2.5 p-3 rounded-xl text-xs
+                               border transition-colors ${
+                isBillingNextMonth
+                  ? 'bg-[#fef9c3] dark:bg-[#f59e0b]/10 border-[#fde68a] dark:border-[#f59e0b]/25'
+                  : 'bg-[#f0fdf4] dark:bg-[#22c55e]/10 border-[#bbf7d0] dark:border-[#22c55e]/25'
+              }`}>
+                <span className="text-base shrink-0 mt-0.5">
+                  {isBillingNextMonth ? '⚠️' : '✓'}
+                </span>
+                <div>
+                  <p className={`font-semibold ${
+                    isBillingNextMonth
+                      ? 'text-[#d97706] dark:text-[#fbbf24]'
+                      : 'text-[#15803d] dark:text-[#4ade80]'
+                  }`}>
+                    {isBillingNextMonth
+                      ? `Lançado na fatura de ${getBillingLabel(billingPreview)}`
+                      : `Fatura de ${getBillingLabel(billingPreview)}`
+                    }
+                  </p>
+                  {isBillingNextMonth && card?.closing_day && (
+                    <p className="text-[#92400e] dark:text-[#fcd34d] mt-0.5 leading-relaxed">
+                      A data da compra é após o fechamento (dia {card.closing_day}).
+                      Esta despesa aparecerá nos gastos de {getBillingLabel(billingPreview)}.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
 
           <div>
             <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
@@ -286,7 +443,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards }
               className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] disabled:opacity-50 transition-colors shadow-theme-xs flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              Salvar
+              {editingTransaction ? 'Salvar alterações' : 'Salvar'}
             </button>
           </div>
         </form>

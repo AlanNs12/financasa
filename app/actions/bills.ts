@@ -42,6 +42,8 @@ export async function createRecurringBillAction(data: {
   bill_type: 'fixa' | 'parcelada'
   installment_total?: number
   category_id?: string
+  current_month?: number
+  current_year?: number
 }) {
   const current = await getCurrentUserHousehold()
   if (!current) {
@@ -54,12 +56,16 @@ export async function createRecurringBillAction(data: {
 
   const isParcelada = data.bill_type === 'parcelada'
   const installmentTotal = isParcelada && data.installment_total ? data.installment_total : null
+  const startMonth = data.current_month ?? new Date().getMonth() + 1
+  const startYear = data.current_year ?? new Date().getFullYear()
 
   await createRecurringBill({
     household_id: current.householdId,
     user_id: current.userId,
     name: data.name,
     amount: data.amount,
+    start_month: startMonth,
+    start_year: startYear,
     due_day: data.due_day,
     recurrence: data.recurrence as Recurrence,
     category_id: data.category_id ?? null,

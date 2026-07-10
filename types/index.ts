@@ -49,9 +49,12 @@ export interface Transaction {
   amount: number
   description: string
   date: string
+  billing_month?: number | null
+  billing_year?: number | null
   payment_method: PaymentMethod
   notes?: string | null
   recurring_bill_id?: string | null
+  credit_card_id?: string | null
   created_at: string
   updated_at: string
   category?: Category

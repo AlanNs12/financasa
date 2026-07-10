@@ -14,6 +14,8 @@ export type CreateTransactionInput = {
   notes?: string
   recurring_bill_id?: string
   credit_card_id?: string
+  billing_month?: number | null
+  billing_year?: number | null
 }
 
 export async function getTransactionsByMonth(
@@ -21,13 +23,16 @@ export async function getTransactionsByMonth(
   month: number,
   year: number
 ): Promise<Transaction[]> {
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 1)
 
   const transactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,
-      date: { gte: startDate, lte: endDate },
+      OR: [
+        { billing_month: month, billing_year: year },
+        { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+      ],
     },
     include: {
       category: { select: { id: true, name: true, icon: true, color: true } },
@@ -36,12 +41,14 @@ export async function getTransactionsByMonth(
     orderBy: { date: 'desc' },
   })
 
-  return transactions.map((t: { amount: { toString: () => string }; created_at: Date; updated_at: Date; date: Date }) => ({
+  return transactions.map((t: { amount: { toString: () => string }; created_at: Date; updated_at: Date; date: Date; billing_month: number | null; billing_year: number | null }) => ({
     ...t,
     amount: Number(t.amount),
     created_at: t.created_at.toISOString(),
     updated_at: t.updated_at.toISOString(),
     date: t.date.toISOString(),
+    billing_month: t.billing_month,
+    billing_year: t.billing_year,
   })) as unknown as Transaction[]
 }
 
@@ -59,6 +66,8 @@ export async function createTransaction(data: CreateTransactionInput) {
       notes: data.notes,
       recurring_bill_id: data.recurring_bill_id,
       credit_card_id: data.credit_card_id,
+      billing_month: data.billing_month,
+      billing_year: data.billing_year,
     },
   })
 }
@@ -71,4 +80,37 @@ export async function deleteTransaction(
     where: { id, household_id: householdId },
   })
   return result.count
+}
+
+export async function updateTransaction(
+  id: string,
+  householdId: string,
+  data: {
+    description: string
+    amount: number
+    type: 'INCOME' | 'EXPENSE'
+    date: Date
+    category_id: string
+    payment_method: string
+    notes?: string
+    credit_card_id?: string
+    billing_month?: number | null
+    billing_year?: number | null
+  }
+) {
+  return prisma.transaction.updateMany({
+    where: { id, household_id: householdId },
+    data: {
+      description: data.description,
+      amount: data.amount,
+      type: data.type,
+      date: data.date,
+      category_id: data.category_id,
+      payment_method: data.payment_method as PaymentMethod,
+      notes: data.notes,
+      credit_card_id: data.credit_card_id || null,
+      billing_month: data.billing_month,
+      billing_year: data.billing_year,
+    },
+  })
 }

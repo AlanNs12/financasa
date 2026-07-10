@@ -335,6 +335,8 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
             onClose={handleModalClose}
             categories={categories}
             editingBill={editingBill}
+            currentMonth={month}
+            currentYear={year}
           />
 
           {deletingBill && (

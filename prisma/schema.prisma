@@ -9,68 +9,56 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  supabase_id  String   @unique
-  name         String
-  email        String   @unique
-  avatar_url   String?
-  household_id String
-  household    Household @relation(fields: [household_id], references: [id])
-  created_at   DateTime @default(now())
-
-  transactions     Transaction[]
-  recurringBills   RecurringBill[]
-  budgetGoals      BudgetGoal[]
-  financialGoals   FinancialGoal[]
-  investments      Investment[]
+  id             String          @id @default(uuid())
+  supabase_id    String          @unique
+  name           String
+  email          String          @unique
+  avatar_url     String?
+  household_id   String
+  created_at     DateTime        @default(now())
+  budgetGoals    BudgetGoal?
+  financialGoals FinancialGoal[]
+  investments    Investment[]
+  recurringBills RecurringBill[]
+  transactions   Transaction[]
+  household      Household       @relation(fields: [household_id], references: [id])
 }
 
 model Household {
-  id          String   @id @default(uuid())
-  name        String   @default("Nossa Casa")
-  invite_code String   @unique
-  created_at  DateTime @default(now())
-
-  users            User[]
-  transactions     Transaction[]
-  recurringBills   RecurringBill[]
-  budgets          Budget[]
-  financialGoals   FinancialGoal[]
-  categories       Category[]
-  investments      Investment[]
-  debts            Debt[]
-  creditCards      CreditCard[]
+  id             String          @id @default(uuid())
+  name           String          @default("Nossa Casa")
+  invite_code    String          @unique
+  created_at     DateTime        @default(now())
+  budgets        Budget[]
+  categories     Category[]
+  creditCards    CreditCard[]
+  debts          Debt[]
+  financialGoals FinancialGoal[]
+  investments    Investment[]
+  recurringBills RecurringBill[]
+  transactions   Transaction[]
+  users          User[]
 }
 
 model Category {
-  id           String       @id @default(uuid())
-  household_id String?
-  household    Household?   @relation(fields: [household_id], references: [id])
-  name         String
-  icon         String
-  color        String
-  type         CategoryType @default(EXPENSE)
-  is_default   Boolean      @default(false)
-
-  transactions   Transaction[]
-  recurringBills RecurringBill[]
+  id             String          @id @default(uuid())
+  household_id   String?
+  name           String
+  icon           String
+  color          String
+  type           CategoryType    @default(EXPENSE)
+  is_default     Boolean         @default(false)
   budgetItems    BudgetItem[]
-}
-
-enum CategoryType {
-  INCOME
-  EXPENSE
-  BOTH
+  household      Household?      @relation(fields: [household_id], references: [id])
+  recurringBills RecurringBill[]
+  transactions   Transaction[]
 }
 
 model Transaction {
   id                String          @id @default(uuid())
   household_id      String
-  household         Household       @relation(fields: [household_id], references: [id])
   user_id           String
-  user              User            @relation(fields: [user_id], references: [id])
   category_id       String
-  category          Category        @relation(fields: [category_id], references: [id])
   type              TransactionType
   amount            Decimal         @db.Decimal(10, 2)
   description       String
@@ -78,11 +66,162 @@ model Transaction {
   payment_method    PaymentMethod   @default(PIX)
   notes             String?
   recurring_bill_id String?
-  recurring_bill    RecurringBill?  @relation(fields: [recurring_bill_id], references: [id])
-  credit_card_id    String?
-  credit_card       CreditCard?     @relation(fields: [credit_card_id], references: [id])
   created_at        DateTime        @default(now())
   updated_at        DateTime        @updatedAt
+  credit_card_id    String?
+  billing_month     Int?
+  billing_year      Int?
+  category          Category        @relation(fields: [category_id], references: [id])
+  credit_card       CreditCard?     @relation(fields: [credit_card_id], references: [id])
+  household         Household       @relation(fields: [household_id], references: [id])
+  recurring_bill    RecurringBill?  @relation(fields: [recurring_bill_id], references: [id])
+  user              User            @relation(fields: [user_id], references: [id])
+}
+
+model RecurringBill {
+  id                  String              @id @default(uuid())
+  household_id        String
+  user_id             String
+  name                String
+  amount              Decimal             @db.Decimal(10, 2)
+  due_day             Int
+  recurrence          Recurrence          @default(MONTHLY)
+  is_active           Boolean             @default(true)
+  created_at          DateTime            @default(now())
+  installment_current Int?
+  installment_total   Int?
+  category_id         String?
+  start_month         Int                 @default(1)
+  start_year          Int                 @default(2025)
+  monthlyStatus       BillMonthlyStatus[]
+  category            Category?           @relation(fields: [category_id], references: [id])
+  household           Household           @relation(fields: [household_id], references: [id])
+  user                User                @relation(fields: [user_id], references: [id])
+  transactions        Transaction[]
+}
+
+model BillMonthlyStatus {
+  id                String        @id @default(uuid())
+  recurring_bill_id String
+  month             Int
+  year              Int
+  status            BillStatus    @default(PENDING)
+  paid_at           DateTime?
+  paid_amount       Decimal?      @db.Decimal(10, 2)
+  recurring_bill    RecurringBill @relation(fields: [recurring_bill_id], references: [id])
+
+  @@unique([recurring_bill_id, month, year])
+}
+
+model Budget {
+  id           String       @id @default(uuid())
+  household_id String
+  month        Int
+  year         Int
+  total_income Decimal      @default(0) @db.Decimal(10, 2)
+  created_at   DateTime     @default(now())
+  household    Household    @relation(fields: [household_id], references: [id])
+  items        BudgetItem[]
+
+  @@unique([household_id, month, year])
+}
+
+model BudgetItem {
+  id          String   @id @default(uuid())
+  budget_id   String
+  category_id String
+  planned     Decimal  @db.Decimal(10, 2)
+  budget      Budget   @relation(fields: [budget_id], references: [id])
+  category    Category @relation(fields: [category_id], references: [id])
+
+  @@unique([budget_id, category_id])
+}
+
+model FinancialGoal {
+  id             String       @id @default(uuid())
+  household_id   String
+  user_id        String
+  name           String
+  description    String?
+  target_amount  Decimal      @db.Decimal(10, 2)
+  current_amount Decimal      @default(0) @db.Decimal(10, 2)
+  deadline       DateTime?    @db.Date
+  status         GoalStatus   @default(IN_PROGRESS)
+  icon           String?
+  color          String?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+  household      Household    @relation(fields: [household_id], references: [id])
+  user           User         @relation(fields: [user_id], references: [id])
+  investments    Investment[]
+}
+
+model BudgetGoal {
+  id             String   @id @default(uuid())
+  user_id        String   @unique
+  monthly_income Decimal  @db.Decimal(10, 2)
+  updated_at     DateTime @updatedAt
+  user           User     @relation(fields: [user_id], references: [id])
+}
+
+model Investment {
+  id               String         @id @default(uuid())
+  household_id     String
+  user_id          String
+  name             String
+  asset_type       InvestmentType
+  goal_id          String?
+  rate_description String?
+  applied_at       DateTime       @db.Date
+  maturity_at      DateTime?      @db.Date
+  gross_invested   Decimal        @db.Decimal(10, 2)
+  gross_current    Decimal        @db.Decimal(10, 2)
+  net_current      Decimal        @db.Decimal(10, 2)
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  goal             FinancialGoal? @relation(fields: [goal_id], references: [id])
+  household        Household      @relation(fields: [household_id], references: [id])
+  user             User           @relation(fields: [user_id], references: [id])
+}
+
+model Debt {
+  id                 String    @id @default(uuid())
+  household_id       String
+  institution        String
+  product            String
+  classification     DebtType
+  down_payment       Decimal?  @db.Decimal(10, 2)
+  principal_amount   Decimal   @db.Decimal(10, 2)
+  started_at         DateTime  @db.Date
+  interest_rate      Decimal   @db.Decimal(5, 2)
+  cet_rate           Decimal?  @db.Decimal(5, 2)
+  installment_amount Decimal   @db.Decimal(10, 2)
+  installment_total  Int
+  installment_paid   Int       @default(0)
+  is_settled         Boolean   @default(false)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  household          Household @relation(fields: [household_id], references: [id])
+}
+
+model CreditCard {
+  id           String        @id @default(uuid())
+  household_id String
+  name         String
+  issuer       String?
+  spending_cap Decimal?      @db.Decimal(10, 2)
+  closing_day  Int?
+  due_day      Int?
+  is_active    Boolean       @default(true)
+  created_at   DateTime      @default(now())
+  household    Household     @relation(fields: [household_id], references: [id])
+  transactions Transaction[]
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+  BOTH
 }
 
 enum TransactionType {
@@ -99,46 +238,12 @@ enum PaymentMethod {
   BOLETO
 }
 
-model RecurringBill {
-  id                 String      @id @default(uuid())
-  household_id       String
-  household          Household   @relation(fields: [household_id], references: [id])
-  user_id            String
-  user               User        @relation(fields: [user_id], references: [id])
-  name               String
-  amount             Decimal     @db.Decimal(10, 2)
-  due_day            Int
-  recurrence         Recurrence  @default(MONTHLY)
-  category_id        String?
-  category           Category?   @relation(fields: [category_id], references: [id])
-  is_active          Boolean     @default(true)
-  installment_total  Int?
-  installment_current Int?
-  created_at         DateTime    @default(now())
-
-  monthlyStatus BillMonthlyStatus[]
-  transactions  Transaction[]
-}
-
 enum Recurrence {
   MONTHLY
   BIMONTHLY
   QUARTERLY
   SEMIANNUAL
   ANNUAL
-}
-
-model BillMonthlyStatus {
-  id                String        @id @default(uuid())
-  recurring_bill_id String
-  recurring_bill    RecurringBill @relation(fields: [recurring_bill_id], references: [id])
-  month             Int
-  year              Int
-  status            BillStatus    @default(PENDING)
-  paid_at           DateTime?
-  paid_amount       Decimal?      @db.Decimal(10, 2)
-
-  @@unique([recurring_bill_id, month, year])
 }
 
 enum BillStatus {
@@ -148,84 +253,11 @@ enum BillStatus {
   SKIPPED
 }
 
-model Budget {
-  id           String   @id @default(uuid())
-  household_id String
-  household    Household @relation(fields: [household_id], references: [id])
-  month        Int
-  year         Int
-  total_income Decimal  @db.Decimal(10, 2) @default(0)
-  created_at   DateTime @default(now())
-
-  items BudgetItem[]
-
-  @@unique([household_id, month, year])
-}
-
-model BudgetItem {
-  id          String   @id @default(uuid())
-  budget_id   String
-  budget      Budget   @relation(fields: [budget_id], references: [id])
-  category_id String
-  category    Category @relation(fields: [category_id], references: [id])
-  planned     Decimal  @db.Decimal(10, 2)
-
-  @@unique([budget_id, category_id])
-}
-
-model FinancialGoal {
-  id             String     @id @default(uuid())
-  household_id   String
-  household      Household  @relation(fields: [household_id], references: [id])
-  user_id        String
-  user           User       @relation(fields: [user_id], references: [id])
-  name           String
-  description    String?
-  target_amount  Decimal    @db.Decimal(10, 2)
-  current_amount Decimal    @db.Decimal(10, 2) @default(0)
-  deadline       DateTime?  @db.Date
-  status         GoalStatus @default(IN_PROGRESS)
-  icon           String?
-  color          String?
-  created_at     DateTime   @default(now())
-  updated_at     DateTime   @updatedAt
-
-  investments    Investment[]
-}
-
 enum GoalStatus {
   IN_PROGRESS
   COMPLETED
   PAUSED
   CANCELLED
-}
-
-model BudgetGoal {
-  id             String   @id @default(uuid())
-  user_id        String   @unique
-  user           User     @relation(fields: [user_id], references: [id])
-  monthly_income Decimal  @db.Decimal(10, 2)
-  updated_at     DateTime @updatedAt
-}
-
-model Investment {
-  id                String           @id @default(uuid())
-  household_id      String
-  household         Household        @relation(fields: [household_id], references: [id])
-  user_id           String
-  user              User             @relation(fields: [user_id], references: [id])
-  name              String
-  asset_type        InvestmentType
-  goal_id           String?
-  goal              FinancialGoal?   @relation(fields: [goal_id], references: [id])
-  rate_description  String?
-  applied_at        DateTime         @db.Date
-  maturity_at       DateTime?        @db.Date
-  gross_invested    Decimal          @db.Decimal(10, 2)
-  gross_current     Decimal          @db.Decimal(10, 2)
-  net_current       Decimal          @db.Decimal(10, 2)
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @updatedAt
 }
 
 enum InvestmentType {
@@ -238,26 +270,6 @@ enum InvestmentType {
   OUTROS
 }
 
-model Debt {
-  id                  String      @id @default(uuid())
-  household_id        String
-  household           Household   @relation(fields: [household_id], references: [id])
-  institution         String
-  product              String
-  classification      DebtType
-  down_payment         Decimal?    @db.Decimal(10, 2)
-  principal_amount     Decimal     @db.Decimal(10, 2)
-  started_at           DateTime    @db.Date
-  interest_rate        Decimal     @db.Decimal(5, 2)
-  cet_rate             Decimal?    @db.Decimal(5, 2)
-  installment_amount   Decimal     @db.Decimal(10, 2)
-  installment_total    Int
-  installment_paid     Int         @default(0)
-  is_settled           Boolean     @default(false)
-  created_at           DateTime    @default(now())
-  updated_at           DateTime    @updatedAt
-}
-
 enum DebtType {
   EMPRESTIMO_PESSOAL
   FINANCIAMENTO_VEICULO
@@ -265,19 +277,4 @@ enum DebtType {
   CARTAO_PARCELADO
   CONSIGINADO
   OUTROS
-}
-
-model CreditCard {
-  id            String        @id @default(uuid())
-  household_id  String
-  household     Household     @relation(fields: [household_id], references: [id])
-  name          String
-  issuer        String?
-  spending_cap  Decimal?      @db.Decimal(10, 2)
-  closing_day   Int?
-  due_day       Int?
-  is_active     Boolean       @default(true)
-  created_at    DateTime      @default(now())
-
-  transactions  Transaction[]
 }

@@ -6,6 +6,7 @@ import { ProgressBar } from '@/components/shared/progress-bar'
 import { upsertBudgetItemAction, updateBudgetIncomeAction } from '@/app/actions/budget'
 import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
+import { CategoryDetailPanel } from '@/components/planejamento/category-detail-panel'
 import { Pencil, Check, X, Loader2, Download, AlertTriangle } from 'lucide-react'
 
 interface PlanejamentoItem {
@@ -34,9 +35,20 @@ interface PlanejamentoClientProps {
   month: number
   year: number
   incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number }
+  allTransactions: Array<{
+    id: string
+    description: string
+    amount: number
+    type: 'INCOME' | 'EXPENSE'
+    date: string
+    category_id: string
+    payment_method: string
+    notes: string | null
+    user: { name: string }
+  }>
 }
 
-export function PlanejamentoClient({ data, totalBills, month, year, incomeData }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, totalBills, month, year, incomeData, allTransactions }: PlanejamentoClientProps) {
   const { effectiveIncome: effectiveBudgetIncome, actualIncome, budgetIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
   const [editingIncome, setEditingIncome] = useState(false)
@@ -44,6 +56,13 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData }
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [itemValue, setItemValue] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [selectedCategory, setSelectedCategory] = useState<{
+    id: string
+    name: string
+    icon: string
+    color: string
+    planned: number
+  } | null>(null)
 
   const monthName = getMonthName(month)
   const disponible = effectiveBudgetIncome - totalBills
@@ -247,7 +266,21 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData }
           const isEditing = editingItem === item.id
 
           return (
-            <div key={item.id} className="bg-card rounded-2xl border border-border p-4">
+            <div
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedCategory({
+                id: item.id,
+                name: item.name,
+                icon: item.icon,
+                color: item.color,
+                planned: item.planned,
+              })}
+              onKeyDown={e => { if (e.key === 'Enter') setSelectedCategory({ id: item.id, name: item.name, icon: item.icon, color: item.color, planned: item.planned }) }}
+              className="bg-card rounded-2xl border border-border p-4 cursor-pointer hover:bg-muted/40 transition-colors group"
+              aria-label={`Ver detalhes da categoria ${item.name}`}
+            >
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xl">{item.icon}</span>
                 <div className="flex-1">
@@ -267,7 +300,7 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData }
                         }}
                       />
                       <button
-                        onClick={saveItem}
+                        onClick={(e) => { e.stopPropagation(); saveItem() }}
                         disabled={isPending}
                         aria-label="Confirmar valor"
                         className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 transition-colors"
@@ -275,7 +308,7 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData }
                         {isPending ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <Check size={18} />}
                       </button>
                       <button
-                        onClick={cancelEdit}
+                        onClick={(e) => { e.stopPropagation(); cancelEdit() }}
                         aria-label="Cancelar edição"
                         className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 transition-colors"
                       >
@@ -313,7 +346,7 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData }
                     {Math.round(item.percentage)}%
                   </span>
                   <button
-                    onClick={() => startEditItem(item)}
+                    onClick={(e) => { e.stopPropagation(); startEditItem(item) }}
                     aria-label="Editar planejamento"
                     className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent dark:hover:bg-gray-800 transition-colors"
                   >
@@ -326,6 +359,12 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData }
           )
         })}
       </div>
+
+      <CategoryDetailPanel
+        category={selectedCategory}
+        transactions={allTransactions}
+        onClose={() => setSelectedCategory(null)}
+      />
     </div>
   )
 }

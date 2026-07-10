@@ -99,14 +99,17 @@ export async function getActiveAlerts(
   })
 
   if (budget) {
-    const startDate = new Date(year, month - 1, 1)
-    const endDate = new Date(year, month, 0, 23, 59, 59)
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 1)
 
     const transactions = await prisma.transaction.findMany({
       where: {
         household_id: householdId,
-        date: { gte: startDate, lte: endDate },
         type: 'EXPENSE',
+        OR: [
+          { billing_month: month, billing_year: year },
+          { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+        ],
       },
       select: { category_id: true, amount: true },
     })

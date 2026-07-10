@@ -5,14 +5,17 @@ export async function getPlanejamentoData(
   month: number,
   year: number
 ) {
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 1)
 
   const [transactions, categories, budget] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         household_id: householdId,
-        date: { gte: startDate, lte: endDate },
+        OR: [
+          { billing_month: month, billing_year: year },
+          { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+        ],
       },
     }),
     prisma.category.findMany({
@@ -81,10 +84,16 @@ export async function getEffectiveIncome(
       where: {
         household_id: householdId,
         type: 'INCOME',
-        date: {
-          gte: new Date(year, month - 1, 1),
-          lt: new Date(year, month, 1),
-        },
+        OR: [
+          { billing_month: month, billing_year: year },
+          {
+            billing_month: null,
+            date: {
+              gte: new Date(year, month - 1, 1),
+              lt: new Date(year, month, 1),
+            },
+          },
+        ],
       },
       _sum: { amount: true },
     }),
@@ -102,8 +111,8 @@ export async function getBudgetWithProgress(
   month: number,
   year: number
 ) {
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const monthStart = new Date(year, month - 1, 1)
+  const monthEnd = new Date(year, month, 1)
 
   const budget = await prisma.budget.findUnique({
     where: {
@@ -123,8 +132,11 @@ export async function getBudgetWithProgress(
   const transactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,
-      date: { gte: startDate, lte: endDate },
       type: 'EXPENSE',
+      OR: [
+        { billing_month: month, billing_year: year },
+        { billing_month: null, date: { gte: monthStart, lt: monthEnd } },
+      ],
     },
   })
 

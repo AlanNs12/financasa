@@ -40,9 +40,11 @@ interface NewBillModalProps {
   onClose: () => void
   categories: Category[]
   editingBill?: EditingBill | null
+  currentMonth?: number
+  currentYear?: number
 }
 
-export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBillModalProps) {
+export function NewBillModal({ isOpen, onClose, categories, editingBill, currentMonth, currentYear }: NewBillModalProps) {
   const isEditing = !!editingBill
 
   const [icon, setIcon] = useState('🏠')
@@ -122,6 +124,8 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill }: NewBi
           bill_type: billType,
           installment_total: billType === 'parcelada' ? Number(data.installment_total) : undefined,
           category_id: categoryId || undefined,
+          current_month: currentMonth,
+          current_year: currentYear,
         })
 
         if (result?.error) {

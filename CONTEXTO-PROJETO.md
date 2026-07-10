@@ -128,19 +128,24 @@ financasa/
 │   │   ├── auth.ts                # signIn, signUp, signOut, resetPasswordAction, updatePasswordAction
 │   │   ├── bills.ts               # markBillAsPaidAction, createRecurringBillAction, deleteRecurringBillAction, updateRecurringBillAction
 │   │   ├── budget.ts              # updateBudgetIncomeAction, upsertBudgetItemAction
+│   │   ├── categories.ts          # createCategoryAction, deleteCategoryAction
 │   │   ├── credit-cards.ts        # createCreditCardAction, updateCreditCardAction, deleteCreditCardAction
 │   │   ├── debts.ts               # createDebtAction, updateDebtAction, payInstallmentAction, deleteDebtAction
 │   │   ├── export.ts              # exportTransactionsCsvAction, exportPlanningCsvAction
 │   │   ├── goals.ts               # createGoalAction, updateGoalAction, addGoalAmountAction, deleteGoalAction
+│   │   ├── household.ts           # clearHouseholdDataAction, deleteAccountAction
 │   │   ├── investments.ts         # createInvestmentAction, updateInvestmentAction, deleteInvestmentAction
 │   │   ├── theme.ts               # setThemeAction (cookie de tema)
-│   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction (revalidate / e /transacoes)
+│   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction, updateTransactionAction
 │   ├── globals.css                # Tema Tailwind v4 + variáveis CSS + .dark
-│   ├── layout.tsx                 # Root layout (Inter, Toaster sonner, script anti-flash dark mode)
+│   ├── layout.tsx                 # Root layout (Outfit, Toaster sonner, script anti-flash dark mode)
+│   ├── manifest.ts                # Web manifest PWA (ícones, nome, cores)
 │   └── favicon.ico
 ├── components/
 │   ├── configuracoes/
+│   │   ├── category-manager.tsx     # CRUD categorias personalizadas com emoji + color picker
 │   │   ├── credit-cards-manager.tsx # Gestão de cartões de crédito (CRUD + modal)
+│   │   ├── danger-zone.tsx          # Zona de perigo: limpar dados + excluir conta
 │   │   ├── household-members.tsx    # Lista membros da casa (avatar, nome, email, "Você")
 │   │   ├── password-manager.tsx     # Seção expansível "Alterar senha"
 │   │   └── theme-toggle.tsx         # Toggle dark/light mode (client)
@@ -164,31 +169,37 @@ financasa/
 │   │   ├── investimentos-client.tsx # Carteira: resumo, pizza, por objetivo, lista, modal
 │   │   └── simulador-client.tsx     # Simulador aposentadoria com sliders + gráfico + salvar meta
 │   ├── layout/
+│   │   ├── backdrop.tsx           # Overlay escuro para sidebar mobile
 │   │   ├── bottom-nav.tsx         # Nav mobile (5 itens + "Mais" com bottom sheet)
 │   │   ├── header.tsx             # Header sticky com MonthSelector + avatar (props do server)
+│   │   ├── main-content.tsx       # Wrapper que responde ao expandir/colapsar da sidebar
 │   │   ├── month-selector.tsx     # Seletor mês/ano via query params (?month=&year=)
-│   │   └── ── sidebar.tsx            # Sidebar desktop (9 itens + Config + Sair) com Logo SVG + colapso dinâmico
+│   │   └── sidebar.tsx            # Sidebar desktop (9 itens + Config + Sair) com Logo SVG + colapso dinâmico
 │   ├── metas/
 │   │   └── metas-client.tsx       # Lista metas, barras progresso invertidas, modal nova meta
 │   ├── planejamento/
-│   │   └── planejamento-client.tsx # Edição inline + botão exportar CSV
+│   │   ├── category-detail-panel.tsx # Modal com transações do mês por categoria
+│   │   └── planejamento-client.tsx   # Edição inline + botão exportar CSV
 │   ├── relatorios/
 │   │   ├── print-button.tsx       # Botão de impressão/PDF
 │   │   └── relatorios-client.tsx  # 3 abas com gráficos recharts
 │   ├── shared/
-  │   │   ├── category-icon.tsx      # Ícone emoji com fundo colorido
-  │   │   ├── empty-state.tsx
-  │   │   ├── loading-skeleton.tsx
-  │   │   ├── logo.tsx               # Logo SVG da casa geométrica Financasa (auto/light/dark)
-  │   │   ├── money-display.tsx      # Valor com sinal + cor (income/expense/neutral)
-  │   │   ├── person-avatar.tsx      # Iniciais com gradiente monocromático ou imagem
-  │   │   ├── progress-bar.tsx       # Cor dinâmica + invertColors (p/ metas/investimentos)
-  │   │   └── status-badge.tsx       # paid/pending/overdue/in_progress/completed/cancelled/paused
+│   │   ├── category-icon.tsx      # Ícone emoji com fundo colorido
+│   │   ├── empty-state.tsx
+│   │   ├── loading-skeleton.tsx
+│   │   ├── logo.tsx               # Logo SVG da casa geométrica Financasa (auto/light/dark)
+│   │   ├── money-display.tsx      # Valor com sinal + cor (income/expense/neutral)
+│   │   ├── page-card.tsx          # Container de card com title/desc/action slot
+│   │   ├── page-header.tsx        # Título + descrição + ação opcional
+│   │   ├── person-avatar.tsx      # Iniciais com gradiente monocromático ou imagem
+│   │   ├── progress-bar.tsx       # Cor dinâmica + invertColors (p/ metas/investimentos)
+│   │   └── status-badge.tsx       # paid/pending/overdue/in_progress/completed/cancelled/paused
 │   ├── transacoes/
-│   │   ├── fab.tsx                # Botão flutuante +
-│   │   ├── new-transaction-modal.tsx  # Modal nova transação (RHF + Zod + select cartão)
-│   │   ├── transaction-list.tsx   # Lista + filtro + botão delete + exportar CSV
-│   │   └── transactions-client.tsx   # Orquestra lista + FAB + modal
+│   │   ├── fab.tsx                   # Botão flutuante +
+│   │   ├── new-transaction-modal.tsx # Modal nova/editar transação (RHF + Zod + select cartão)
+│   │   ├── transaction-detail-modal.tsx # Modal detalhe da transação com todos os campos
+│   │   ├── transaction-list.tsx      # Lista + filtro + botão delete + exportar CSV
+│   │   └── transactions-client.tsx   # Orquestra lista + FAB + modais
 │   └── ui/
 │       └── button.tsx             # Botão shadcn (base-ui/react) — ÚNICO primitivo shadcn
 ├── lib/
@@ -201,15 +212,16 @@ financasa/
 │   │   └── queries/
 │   │       ├── alerts.ts          # getActiveAlerts (contas, orçamento, cartões)
 │   │       ├── bills.ts           # getRecurringBills, getBillsHistory, createRecurringBill, updateBillStatus, createTransactionFromBill, getTotalBillsForMonth, deleteRecurringBill, updateRecurringBill
-│   │       ├── budget.ts          # getPlanejamentoData, getBudgetWithProgress
-│   │       ├── categories.ts      # getCategories, createDefaultCategories (12 categorias seed)
+│   │       ├── budget.ts          # getPlanejamentoData, getEffectiveIncome, getBudgetWithProgress
+│   │       ├── calendar.ts        # getCalendarData (eventos por dia: transações, contas, cartões)
+│   │       ├── categories.ts      # getCategories, createDefaultCategories (12 categorias seed), createCategory, updateCategory, deleteCategory
 │   │       ├── credit-cards.ts    # getCreditCards, getCreditCardSpending, getCreditCardsWithSpending, CRUD
 │   │       ├── dashboard.ts       # getDashboardSummary (não usado diretamente)
 │   │       ├── debts.ts           # getDebts, getDebtsSummary, createDebt, updateDebt, payInstallment, deleteDebt
 │   │       ├── goals.ts           # getFinancialGoals, createFinancialGoal, updateFinancialGoal, addAmountToGoal, deleteFinancialGoal
 │   │       ├── investments.ts     # getInvestments, getInvestmentsSummary, getInvestmentsByGoal, CRUD
 │   │       ├── reports.ts         # getExpensesByCategory, getMonthlyEvolution, getPlannedVsActual
-│   │       ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction
+│   │       ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction, updateTransaction
 │   │       └── user.ts            # getCurrentUserHousehold, getCurrentUser, createUserAndHousehold, joinHouseholdByInviteCode, getHouseholdInviteCode, getHouseholdMembers
 │   ├── supabase/
 │   │   ├── client.ts             # createBrowserClient
@@ -224,17 +236,19 @@ financasa/
 │   │   ├── investment.ts         # investmentSchema
 │   │   └── transaction.ts        # transactionSchema (com credit_card_id opcional)
 │   ├── format.ts                 # formatCurrency, formatDate, formatDateFull, formatPercentage, getMonthName, getMonthAbbr
-│   └── utils.ts                  # cn() (clsx + tailwind-merge)
+│   ├── sidebar-context.tsx        # SidebarProvider + useSidebar (expand/hover/mobile states)
+│   └── utils.ts                   # cn() (clsx + tailwind-merge)
 ├── prisma/
 │   ├── schema.prisma             # Schema completo (ver seção 6)
 │   ├── seed.ts                   # Seed: 1 household, 2 users, 12 categorias, 15 transações, 4 contas, 1 budget, 2 metas
 │   └── sql/
-│       └── enable_rls.sql        # RLS policies (aplicar manualmente no Supabase)
+│       ├── backfill_bill_start.sql  # Backfill start_month/year a partir de created_at
+│       └── enable_rls.sql           # RLS policies (aplicar manualmente no Supabase)
 ├── types/
 │   └── index.ts                  # Tipos TS globais (Transaction, Category, Investment, Debt, CreditCard, etc.)
 ├── vitest.config.ts              # Config Vitest com path alias @
 ├── middleware.ts                 # Protege rotas; redireciona /login se sem user
-├── AGENTS.md                     # Regras: Next.js 16 breaking changes
+├── AGENTS.md                     # Regras: Next.js 16, paleta monocromática, componentes principais, erros pré-existentes, comandos (79 linhas)
 ├── CLAUDE.md                     # Apenas @AGENTS.md
 ├── prompt-financeiro-familiar.md # Especificação original (DESATUALIZADA em versões — ver seção 2)
 └── README.md                     # Documentação completa do projeto
@@ -365,6 +379,8 @@ model RecurringBill {
   is_active          Boolean     @default(true)
   installment_total  Int?
   installment_current Int?
+  start_month        Int         @default(1)
+  start_year         Int         @default(2025)
   created_at         DateTime    @default(now())
 
   monthlyStatus BillMonthlyStatus[]
@@ -543,14 +559,16 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ### ✅ Transações (`/transacoes`) — FUNCIONAL
 - Lista agrupada por data, filtro por tipo (Todos/Entradas/Saídas).
+- Click em item → `TransactionDetailModal` com todos os detalhes (categoria, data, hora, pagamento, observações, usuário).
+- Botão **editar** no detail modal: abre `NewTransactionModal` preenchido com dados atuais (`updateTransactionAction`).
 - Botão **delete** com modal de confirmação em cada item.
 - Botão **Exportar CSV** (separador `;`, BOM UTF-8, compatível com Excel brasileiro).
 - FAB + modal nova transação (RHF + Zod + Server Action).
 - Toggle Entrada/Saída, valor, descrição, data, categoria (grid de ícones), pagamento, observação.
 - Select **"Qual cartão?"** quando payment_method é CREDIT_CARD (populado com cartões ativos).
-- `deleteTransactionAction` valida household no server (`deleteMany` com `household_id`).
 
-### ✅ Contas (`/contas`) — FUNCIONAL (router.refresh após mutações)
+### ✅ Contas (`/contas`) — FUNCIONAL
+- `start_month`/`start_year`: contas só aparecem a partir do mês de criação (não retroagem).
 - Dark card resumo do mês (total/pago/restante + barra).
 - Tab **"Este mês"** / **"Histórico"** (histórico expansível dos últimos 6 meses).
 - Lista de contas com status badge (Pago/Pendente/Atrasado).
@@ -570,8 +588,9 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - Dia atual com fundo preto e texto branco (`bg-primary text-primary-foreground`).
 
 ### ✅ Planejamento (`/planejamento`) — FUNCIONAL
-- Card receita total do mês (editável inline).
+- Card receita total do mês (editável inline). `getEffectiveIncome`: se `budget.total_income` = 0, usa renda real das transações como fallback.
 - Lista de categorias com gasto vs planejado + barra colorida.
+- Click em categoria → `CategoryDetailPanel`: modal com transações do mês daquela categoria + barra de progresso do orçamento.
 - Edição inline do valor planejado por categoria.
 - Botão **Exportar CSV**.
 - Server actions `updateBudgetIncomeAction` e `upsertBudgetItemAction`.
@@ -633,6 +652,8 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - **Toggle de tema** (claro/escuro) com persistência em cookie + script anti-flash no root layout.
 - **Alterar senha**: seção expansível com nova senha/confirmação, chama `updatePasswordAction`.
 - **Gestão de cartões de crédito**: lista cartões, criar/editar/desativar (soft delete), modal com nome, emissor, teto de gasto, dia de fechamento, dia de vencimento.
+- **Categorias personalizadas**: `CategoryManager` com grid de 24 emojis, 10 cores predefinidas + color picker, criar/deletar categorias (bloqueia exclusão se houver transações vinculadas).
+- **Zona de perigo** (`DangerZone`): "Limpar todos os dados" (digitar `apagartudo` para confirmar, chama `clearHouseholdDataAction`) e "Excluir conta" (digitar `apagarconta`, chama `deleteAccountAction`, que deleta tudo + usuário Supabase Auth).
 - Logout.
 
 ---
@@ -773,30 +794,58 @@ Inspirada em paleta monocromática preto/branco/cinzas. 3 camadas de profundidad
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
 | 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch — react-hooks/error-boundaries). 8 warnings em bills-history, new-bill-modal, upcoming-bills, metas-client, person-avatar, new-transaction-modal. Total: 16 problemas (8 erros, 8 warnings). Pré-existentes, não corrigir. |
 | 17 | ~~Cores hardcoded → tokens semânticos~~ | **RESOLVIDO**: Tokens em `globals.css` (`--expense`, `--income`, `--paid`, etc.) usados nos componentes. |
-| 18 | **Paleta monocromática aplicada** | Substituição completa da paleta TailAdmin (brand azul #465FFF) por paleta monocromática preto/branco/cinzas. Zero `brand-*` no código. Primary: #0F1115 light / #F9FAFB dark. Botões padronizados. Sidebar com borda esquerda. MonthlyBudgetCard com gradiente #0F1115→#2D2F36. Auth panel preto com logo branca. |
-| 19 | **Overflow horizontal mobile** | Corrigido: grids colapsam no mobile, modais com `mx-4`, regra global `overflow-x: hidden`. |
-| 20 | **FAB no dashboard** | Botão (+) fixo (`bottom-24` mobile) para criar transação via `QuickAddTransaction`. |
-| 21 | **Performance otimizada** | Configurações: 3 queries sequenciais → `Promise.all`. Middleware: matcher expandido para excluir assets estáticos e `_next/data`. Prisma singleton verificado. Todas as demais páginas já paralelizavam. |
-| 22 | **router.refresh nas contas** | Criar/pagar/editar/excluir contas agora atualiza a lista sem F5. |
-| 23 | **Recuperação de senha** | Login com "Esqueceu sua senha?" → modal → email → `/cadastro/reset-password`. |
-| 24 | **Alterar senha em /configuracoes** | Seção expansível `PasswordManager` com nova senha/confirmação. |
-| 25 | **Membros da casa** | Seção `HouseholdMembers` em /configuracoes com avatar, nome, email, "Você". |
+| 18 | ~~Paleta monocromática aplicada~~ | **RESOLVIDO**: Substituição completa da paleta TailAdmin (brand azul #465FFF) por paleta monocromática preto/branco/cinzas. Zero `brand-*` no código. Primary: #0F1115 light / #F9FAFB dark. Botões padronizados. Sidebar com borda esquerda. MonthlyBudgetCard com gradiente #0F1115→#2D2F36. Auth panel preto com logo branca. |
+| 19 | ~~Overflow horizontal mobile~~ | **RESOLVIDO**: Grids colapsam no mobile, modais com `mx-4`, regra global `overflow-x: hidden`. |
+| 20 | ~~FAB no dashboard~~ | **RESOLVIDO**: `QuickAddTransaction` — botão (+) fixo para criar transação sem sair do dashboard. |
+| 21 | ~~Performance otimizada~~ | **RESOLVIDO**: Configurações: 3 queries sequenciais → `Promise.all`. Middleware: matcher expandido para excluir assets estáticos e `_next/data`. Prisma singleton verificado. Todas as demais páginas já paralelizavam. |
+| 22 | ~~router.refresh nas contas~~ | **RESOLVIDO**: Criar/pagar/editar/excluir contas agora atualiza a lista sem F5. |
+| 23 | ~~Recuperação de senha~~ | **RESOLVIDO**: Login com "Esqueceu sua senha?" → modal → email → `/cadastro/reset-password`. |
+| 24 | ~~Alterar senha em /configuracoes~~ | **RESOLVIDO**: Seção expansível `PasswordManager` com nova senha/confirmação. |
+| 25 | ~~Membros da casa~~ | **RESOLVIDO**: Seção `HouseholdMembers` em /configuracoes com avatar, nome, email, "Você". |
+| 26 | ~~Calendário mensal~~ | **RESOLVIDO**: Rota `/calendario` com grid de dias, dots coloridos por tipo de evento, painel lateral com detalhes do dia. |
+| 27 | ~~Editar transação~~ | **RESOLVIDO**: `updateTransactionAction` + `NewTransactionModal` com modo edição (preenche formulário). |
+| 28 | ~~Detalhe da transação~~ | **RESOLVIDO**: `TransactionDetailModal` ao clicar item na lista, mostra todos os campos. |
+| 29 | ~~Categorias personalizadas~~ | **RESOLVIDO**: `CategoryManager` em /configuracoes com emoji picker (24 opções) + color picker (10 predefinidas + custom). |
+| 30 | ~~Painel de detalhe por categoria~~ | **RESOLVIDO**: `CategoryDetailPanel` no planejamento: modal com transações do mês por categoria. |
+| 31 | ~~Fallback renda no orçamento~~ | **RESOLVIDO**: `getEffectiveIncome`: usa renda real das transações quando `budget.total_income = 0`. |
+| 32 | ~~Zona de perigo~~ | **RESOLVIDO**: `DangerZone` com "Limpar todos os dados" e "Excluir conta" (confirmação por texto + exclusão do Supabase Auth). |
+| 33 | ~~start_month/year em contas~~ | **RESOLVIDO**: `RecurringBill` com `start_month`/`start_year` — contas só aparecem a partir do mês de criação. SQL de backfill incluído. |
+| 34 | **Deploy Vercel pendente** | Projeto nunca foi deployado. Configurar Vercel + variáveis de ambiente + aplicar RLS no Supabase antes do deploy.
 
 ---
 
 ## 13. Estado do Git
 
 - **Branch:** `develop`, em dia com `origin/develop`.
-- **Commits recentes (não commitados):**
-  - feat: add quick-add transaction FAB to dashboard
-  - perf: parallelize queries and optimize middleware for faster navigation
-  - feat: add forgot password flow and password change in settings
-  - fix: use dynamic emailRedirectTo in signUp instead of hardcoded Vercel URL
-  - fix: add router.refresh() after bill mutations to auto-refresh UI
-  - fix: prevent horizontal overflow on mobile viewports
-  - refactor: refine dark mode palette and visual hierarchy
-  - feat: add household members section to config page
-- **Working tree:** alterações não commitadas (ver acima).
+- **Working tree:** limpo (todas as alterações commitadas).
+- **Commits (38 no total):**
+  - `be9d69f` — feat: start_month/year on RecurringBill — bills only appear from their creation month
+  - `6b2f143` — feat: custom category creation with emoji and color picker in /configuracoes
+  - `1ee0fa4` — feat: category detail panel with monthly transactions in planejamento
+  - `891b258` — feat: edit transaction via existing modal with pre-filled data
+  - `f5de4bf` — feat: delete account action with confirmation modal in DangerZone
+  - `c7c81b7` — feat: redirect signup to /login with success banner
+  - `5ec7249` — fix: resolve Next.js 16 build error — move maskable icon to web manifest
+  - `af071af` — feat: add danger zone with clear all data action in settings
+  - `5c7082a` — feat: add transaction detail modal with clickable list items
+  - `01bd99b` — feat: use transaction income as fallback when budget income is unset
+  - `fd7809a` — fix: restore semantic icon colors in summary cards
+  - `ac1ce36` — add favicon (13 arquivos PWA + metadata)
+  - `8c4de7d` — style: polimento final da identidade monocromática Financasa
+  - `b3316b2` — refactor: limpeza total de brand-*, padronização monocromática de botões e avatares
+  - `70d6802` — refactor: substitui paleta TailAdmin (brand azul) por paleta monocromática Financasa
+  - `dcf0b11` — feat: adiciona logo SVG geométrico Financasa
+  - `41e5689` — feat: adicionar rota /calendario com calendário mensal interativo
+  - `1eaf518` — feat: polir modais, FAB e bottom nav com visual TailAdmin consistente
+  - `e8f7b9a` — feat: redesenhar dashboard com PageCard, PageHeader e cards visuais
+  - `7677878` — feat: atualizar átomos de UI com design system — badges, progress, empty states
+  - `05e1d09` — feat: redesenhar telas de auth com layout split-screen
+  - `8cf484e` — feat: redesenhar header com zonas separadas e pill month-selector
+  - `90a2693` — feat: adotar tokens de design — font Outfit, brand colors, sombras, radius e focus-ring
+  - `d79facc` — perf: parallelize queries and optimize middleware for faster navigation
+  - `ea39c62` — feat: add quick-add transaction FAB to dashboard
+  - `a9f1ed3` — feat: add forgot password flow and password change in settings
+  - `...` — commits anteriores até `b2d5bf6` (Initial commit)
 - **Não commitar** a menos que explicitamente solicitado.
 
 ---
@@ -894,10 +943,12 @@ Script SQL em `prisma/sql/enable_rls.sql`. Aplicar manualmente no Supabase SQL E
 ## 19. Observações Finais
 
 - A especificação original (`prompt-financeiro-familiar.md`) é **referência de design/intenção**, mas **desatualizada** em versões de libs e em alguns detalhes de implementação. Sempre prefira o código real.
-- O projeto está **~99% funcional**. Todas as telas usam dados reais com CRUD completo. Restam: aplicar RLS no Supabase, corrigir erros lint pré-existentes no dashboard, e commitar as alterações pendentes.
+- O projeto está **~99% funcional**. Todas as telas usam dados reais com CRUD completo. Restam: aplicar RLS no Supabase, corrigir erros lint pré-existentes no dashboard, e realizar deploy no Vercel.
 - A interface está visualmente alinhada à identidade monocromática: fundo branco (#FFFFFF), primary preto (#0F1115), cards brancos com borda sutil, sidebar com item ativo destacado por borda esquerda preta.
 - Dark mode: fundo #0F1115, cards #2D2F36, texto #F9FAFB. Botões primários invertem (branco com texto preto).
 - Logo SVG da casa geométrica Financasa em sidebar, header mobile e auth layout. 13 ícones PWA em `public/financasa-icons/`.
-- Performance otimizada: todas as 9 páginas paralelizam queries com `Promise.all`. Middleware não executa em assets estáticos.
+- Performance otimizada: todas as páginas paralelizam queries com `Promise.all`. Middleware não executa em assets estáticos.
 - Mobile otimizado: grids colapsam, modais têm margem, regra anti-overflow global, FAB com focus ring azul.
+- Sidebar com colapso dinâmico (290px/88px) via `SidebarContext`, overlay para mobile.
+- Categorias personalizadas com emoji + color picker. Zona de perigo com exclusão total de dados e conta.
 - Testes automatizados (Vitest) cobrem cálculos financeiros, formatação e validações Zod — 133 testes, 12 arquivos.

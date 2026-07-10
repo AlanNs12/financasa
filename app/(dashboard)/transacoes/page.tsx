@@ -40,9 +40,13 @@ export default async function TransacoesPage({
     date: t.date,
     created_at: t.created_at,
     notes: t.notes ?? null,
+    category_id: t.category_id,
+    payment_method: t.payment_method,
+    credit_card_id: t.credit_card_id ?? null,
+    billing_month: t.billing_month ?? null,
+    billing_year: t.billing_year ?? null,
     category: t.category ? { name: t.category.name, icon: t.category.icon, color: t.category.color } : null,
     user: t.user ? { name: t.user.name, avatar_url: t.user.avatar_url ?? null } : null,
-    payment_method: t.payment_method,
   }))
 
   const clientCategories = categories.map((c) => ({
@@ -57,6 +61,7 @@ export default async function TransacoesPage({
     id: c.id,
     name: c.name,
     issuer: c.issuer ?? null,
+    closing_day: c.closing_day ?? null,
   }))
 
   return (
