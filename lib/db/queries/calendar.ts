@@ -17,6 +17,7 @@ export interface CalendarEvent {
   amount?: number
   categoryIcon?: string
   categoryColor?: string
+  billingMoved?: boolean
 }
 
 export type CalendarDayMap = Record<number, CalendarEvent[]>
@@ -49,15 +50,26 @@ export async function getCalendarData(
   })
 
   for (const t of transactions) {
-    const day = new Date(t.date).getUTCDate()
+    const dateStr = t.date instanceof Date
+      ? t.date.toISOString().split('T')[0]
+      : String(t.date).split('T')[0]
+    const day = parseInt(dateStr.split('-')[2], 10)
+    const purchaseMonth = parseInt(dateStr.split('-')[1], 10)
+
+    const billingMoved = t.billing_month != null &&
+      t.billing_month !== purchaseMonth
+
     addEvent(day, {
       id: t.id,
       type: t.type === 'INCOME' ? 'income' : 'expense',
       label: t.description,
-      sublabel: t.category.name,
+      sublabel: billingMoved
+        ? `${t.category.name} · Fatura`
+        : t.category.name,
       amount: Number(t.amount),
       categoryIcon: t.category.icon,
       categoryColor: t.category.color,
+      billingMoved,
     })
   }
 

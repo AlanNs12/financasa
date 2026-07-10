@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "backfill:billing": "tsx scripts/backfill-billing.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
