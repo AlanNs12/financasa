@@ -124,6 +124,12 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     }
   }, [editingTransaction, isOpen, reset])
 
+  useEffect(() => {
+    if (paymentMethod !== 'CREDIT_CARD') {
+      setValue('credit_card_id', '')
+    }
+  }, [paymentMethod, setValue])
+
   const billingPreview = paymentMethod === 'CREDIT_CARD' && creditCardId
     ? (() => {
         const card = creditCards.find(c => c.id === creditCardId)
@@ -324,22 +330,35 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
             </div>
           </div>
 
-          {paymentMethod === 'CREDIT_CARD' && creditCards.length > 0 && (
+          {paymentMethod === 'CREDIT_CARD' && (
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
                 Qual cartão?
               </label>
-              <select
-                {...register('credit_card_id')}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none transition-colors"
-              >
-                <option value="">Selecione o cartão</option>
-                {creditCards.map((card) => (
-                  <option key={card.id} value={card.id}>
-                    {card.name}{card.issuer ? ` · ${card.issuer}` : ''}
-                  </option>
-                ))}
-              </select>
+              {creditCards.length === 0 ? (
+                <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Nenhum cartão cadastrado.{' '}
+                    <a href="/configuracoes" className="text-primary underline">
+                      Cadastrar cartão
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                <select
+                  {...register('credit_card_id')}
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors appearance-none"
+                >
+                  <option value="">Selecione um cartão</option>
+                  {creditCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.name}
+                      {card.issuer ? ` — ${card.issuer}` : ''}
+                      {card.closing_day ? ` (fecha dia ${card.closing_day})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 
