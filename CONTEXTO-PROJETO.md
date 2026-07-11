@@ -70,9 +70,10 @@
   "test:watch": "vitest",
   "db:generate": "prisma generate",
   "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+  "db:seed": "tsx prisma/seed.ts",
+  "backfill:billing": "tsx scripts/backfill-billing.ts",
+  "db:studio": "prisma studio",
+  "postinstall": "prisma generate"
 }
 ```
 
@@ -135,6 +136,7 @@ financasa/
 │   │   ├── goals.ts               # createGoalAction, updateGoalAction, addGoalAmountAction, deleteGoalAction
 │   │   ├── household.ts           # clearHouseholdDataAction, deleteAccountAction
 │   │   ├── investments.ts         # createInvestmentAction, updateInvestmentAction, deleteInvestmentAction
+│   │   ├── recurring-incomes.ts   # createRecurringIncomeAction, deleteRecurringIncomeAction
 │   │   ├── theme.ts               # setThemeAction (cookie de tema)
 │   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction, updateTransactionAction
 │   ├── globals.css                # Tema Tailwind v4 + variáveis CSS + .dark
@@ -152,7 +154,8 @@ financasa/
 │   ├── contas/
 │   │   ├── bills-history.tsx      # Histórico expansível por mês
 │   │   ├── contas-client.tsx      # Tab "Este mês" / "Histórico", dark card resumo
-│   │   └── new-bill-modal.tsx     # Modal nova conta (fixa OU parcelada)
+│   │   ├── new-bill-modal.tsx     # Modal nova conta (fixa OU parcelada)
+│   │   └── recurring-income-section.tsx # Seção de receitas recorrentes (CRUD)
 │   ├── dashboard/
 │   │   ├── alerts-panel.tsx       # Painel de alertas consolidado (contas, orçamento, cartões)
 │   │   ├── monthly-budget-card.tsx # Dark card principal do dashboard
@@ -204,6 +207,7 @@ financasa/
 │       └── button.tsx             # Botão shadcn (base-ui/react) — ÚNICO primitivo shadcn
 ├── lib/
 │   ├── calculations/
+│   │   ├── billing.ts           # calculateBillingPeriod, getBillingMonthLabel
 │   │   ├── debts.ts              # calculateDebtProgress, calculateDebtsSummary, calculateInstallmentPayoff
 │   │   ├── investments.ts        # calculateInvestmentsSummary, calculateInvestmentGain
 │   │   └── retirement.ts         # calculateCompoundGrowth, applyRegressiveTax, calculateNetResult, runSimulation
@@ -221,8 +225,9 @@ financasa/
 │   │       ├── goals.ts           # getFinancialGoals, createFinancialGoal, updateFinancialGoal, addAmountToGoal, deleteFinancialGoal
 │   │       ├── investments.ts     # getInvestments, getInvestmentsSummary, getInvestmentsByGoal, CRUD
 │   │       ├── reports.ts         # getExpensesByCategory, getMonthlyEvolution, getPlannedVsActual
-│   │       ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction, updateTransaction
-│   │       └── user.ts            # getCurrentUserHousehold, getCurrentUser, createUserAndHousehold, joinHouseholdByInviteCode, getHouseholdInviteCode, getHouseholdMembers
+│   │   ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction, updateTransaction
+│   │   ├── recurring-incomes.ts # getRecurringIncomes, createRecurringIncome, deleteRecurringIncome
+│   │   └── user.ts            # getCurrentUserHousehold, getCurrentUser, createUserAndHousehold, joinHouseholdByInviteCode, getHouseholdInviteCode, getHouseholdMembers
 │   ├── supabase/
 │   │   ├── client.ts             # createBrowserClient
 │   │   └── server.ts             # createServerClient (cookies)
@@ -234,6 +239,7 @@ financasa/
 │   │   ├── debt.ts               # debtSchema
 │   │   ├── goal.ts               # goalSchema
 │   │   ├── investment.ts         # investmentSchema
+│   │   ├── recurring-income.ts   # recurringIncomeSchema
 │   │   └── transaction.ts        # transactionSchema (com credit_card_id opcional)
 │   ├── format.ts                 # formatCurrency, formatDate, formatDateFull, formatPercentage, getMonthName, getMonthAbbr
 │   ├── sidebar-context.tsx        # SidebarProvider + useSidebar (expand/hover/mobile states)
@@ -244,6 +250,8 @@ financasa/
 │   └── sql/
 │       ├── backfill_bill_start.sql  # Backfill start_month/year a partir de created_at
 │       └── enable_rls.sql           # RLS policies (aplicar manualmente no Supabase)
+├── scripts/
+│   └── backfill-billing.ts       # Backfill billing_month/year em transações com cartão de crédito
 ├── types/
 │   └── index.ts                  # Tipos TS globais (Transaction, Category, Investment, Debt, CreditCard, etc.)
 ├── vitest.config.ts              # Config Vitest com path alias @
@@ -271,7 +279,7 @@ financasa/
 11. **Sem comentários no código** (convenção do projeto).
 12. **Estilo**: Tailwind v4 (`@import "tailwindcss"` + `@theme inline` em `globals.css`). Cores via variáveis CSS. Paleta monocromática: primary #0F1115 (light) / #F9FAFB (dark). MonthlyBudgetCard com gradiente escuro (#0F1115→#2D2F36).
 13. **Dark mode**: toggle em `/configuracoes` via `ThemeToggle` (client component). Persiste em cookie. Script inline no root layout aplica classe `.dark` antes da hidratação (evita flash). `next/script` com `strategy="beforeInteractive"`.
-14. **Testes**: Vitest. Arquivos `*.test.ts` ao lado do arquivo testado. 133 testes cobrindo cálculos, formatação e validações.
+14. **Testes**: Vitest. Arquivos `*.test.ts` ao lado do arquivo testado. 142 testes em 13 arquivos cobrindo cálculos, formatação e validações.
 
 ---
 
@@ -357,6 +365,8 @@ model Transaction {
   recurring_bill    RecurringBill?  @relation(fields: [recurring_bill_id], references: [id])
   credit_card_id    String?
   credit_card       CreditCard?     @relation(fields: [credit_card_id], references: [id])
+  billing_month     Int?
+  billing_year      Int?
   created_at        DateTime        @default(now())
   updated_at        DateTime        @updatedAt
 }
@@ -403,6 +413,22 @@ model BillMonthlyStatus {
 }
 
 enum BillStatus { PENDING; PAID; OVERDUE; SKIPPED }
+
+model RecurringIncome {
+  id           String     @id @default(uuid())
+  household_id String
+  user_id      String
+  household    Household  @relation(fields: [household_id], references: [id])
+  user         User       @relation(fields: [user_id], references: [id])
+  name         String
+  amount       Decimal    @db.Decimal(10, 2)
+  recurrence   Recurrence @default(MONTHLY)
+  start_month  Int
+  start_year   Int
+  is_active    Boolean    @default(true)
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+}
 
 model Budget {
   id           String   @id @default(uuid())
@@ -569,6 +595,7 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ### ✅ Contas (`/contas`) — FUNCIONAL
 - `start_month`/`start_year`: contas só aparecem a partir do mês de criação (não retroagem).
+- Seção **Receitas recorrentes**: CRUD de receitas fixas mensais (salário, freelance, etc.) com modal para criar/deletar. Lançamento automático de transação de entrada via `createRecurringIncomeAction`.
 - Dark card resumo do mês (total/pago/restante + barra).
 - Tab **"Este mês"** / **"Histórico"** (histórico expansível dos últimos 6 meses).
 - Lista de contas com status badge (Pago/Pendente/Atrasado).
@@ -579,6 +606,7 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 - `deleteRecurringBillAction` faz soft delete (`is_active = false`).
 - `updateRecurringBillAction` permite editar nome, valor, vencimento, recorrência e categoria.
 - `router.refresh()` após criar/pagar/editar/excluir para atualizar lista sem F5.
+- **Ciclo de fatura de cartão**: transações com cartão de crédito registram `billing_month`/`billing_year` para agrupamento por fatura. Script de backfill disponível (`backfill:billing`).
 
 ### ✅ Calendário (`/calendario`) — FUNCIONAL
 - Calendário mensal com grid de dias e navegação entre meses.
@@ -792,7 +820,7 @@ Inspirada em paleta monocromática preto/branco/cinzas. 3 camadas de profundidad
 | 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 133 testes em 12 arquivos cobrindo cálculos, formatação e validações. |
 | 14 | ~~db:push pendente~~ | **RESOLVIDO**: Models Investment, Debt, CreditCard e `category_id` em RecurringBill já estão no banco e em uso. |
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
-| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch — react-hooks/error-boundaries). 8 warnings em bills-history, new-bill-modal, upcoming-bills, metas-client, person-avatar, new-transaction-modal. Total: 16 problemas (8 erros, 8 warnings). Pré-existentes, não corrigir. |
+| 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch — react-hooks/error-boundaries). `components/transacoes/new-transaction-modal.tsx` tem 4 erros (`@typescript-eslint/no-explicit-any`). 8 warnings em bills-history, new-bill-modal, upcoming-bills, metas-client, person-avatar, new-transaction-modal. Total: 20 problemas (12 erros, 8 warnings). Pré-existentes, não corrigir. |
 | 17 | ~~Cores hardcoded → tokens semânticos~~ | **RESOLVIDO**: Tokens em `globals.css` (`--expense`, `--income`, `--paid`, etc.) usados nos componentes. |
 | 18 | ~~Paleta monocromática aplicada~~ | **RESOLVIDO**: Substituição completa da paleta TailAdmin (brand azul #465FFF) por paleta monocromática preto/branco/cinzas. Zero `brand-*` no código. Primary: #0F1115 light / #F9FAFB dark. Botões padronizados. Sidebar com borda esquerda. MonthlyBudgetCard com gradiente #0F1115→#2D2F36. Auth panel preto com logo branca. |
 | 19 | ~~Overflow horizontal mobile~~ | **RESOLVIDO**: Grids colapsam no mobile, modais com `mx-4`, regra global `overflow-x: hidden`. |
@@ -818,7 +846,11 @@ Inspirada em paleta monocromática preto/branco/cinzas. 3 camadas de profundidad
 
 - **Branch:** `develop`, em dia com `origin/develop`.
 - **Working tree:** limpo (todas as alterações commitadas).
-- **Commits (38 no total):**
+- **Commits (47 no total):**
+  - `211e3af` — Merge pull request #5 from AlanNs12/develop
+  - `1979152` — fix: ciclo de fatura — seletor de cartão, backfill e badge no calendário
+  - `f061afc` — fix: corrige seletor de cartão no modal de transação para permitir cálculo de billing
+  - `03399aa` — feat: ciclo de fatura de cartão de crédito com billing_month/billing_year
   - `be9d69f` — feat: start_month/year on RecurringBill — bills only appear from their creation month
   - `6b2f143` — feat: custom category creation with emoji and color picker in /configuracoes
   - `1ee0fa4` — feat: category detail panel with monthly transactions in planejamento
@@ -951,4 +983,4 @@ Script SQL em `prisma/sql/enable_rls.sql`. Aplicar manualmente no Supabase SQL E
 - Mobile otimizado: grids colapsam, modais têm margem, regra anti-overflow global, FAB com focus ring azul.
 - Sidebar com colapso dinâmico (290px/88px) via `SidebarContext`, overlay para mobile.
 - Categorias personalizadas com emoji + color picker. Zona de perigo com exclusão total de dados e conta.
-- Testes automatizados (Vitest) cobrem cálculos financeiros, formatação e validações Zod — 133 testes, 12 arquivos.
+- Testes automatizados (Vitest) cobrem cálculos financeiros, formatação e validações Zod — 142 testes, 13 arquivos.
