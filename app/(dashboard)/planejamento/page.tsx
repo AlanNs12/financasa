@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
-import { getTotalBillsForMonth } from '@/lib/db/queries/bills'
+import { getRecurringBills } from '@/lib/db/queries/bills'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { prisma } from '@/lib/db/prisma'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
@@ -45,12 +45,16 @@ export default async function PlanejamentoPage({
     })
   }
 
-  const [data, billsData, incomeData, allTransactions] = await Promise.all([
+  const [data, bills, incomeData, allTransactions] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
-    getTotalBillsForMonth(current.householdId, month, year),
+    getRecurringBills(current.householdId, month, year),
     getEffectiveIncome(current.householdId, month, year),
     getTransactionsByMonth(current.householdId, month, year),
   ])
+
+  const totalPaidBills = bills
+    .filter((b) => b.monthlyStatus?.[0]?.status === 'PAID')
+    .reduce((s, b) => s + b.amount, 0)
 
   const clientTransactions = allTransactions.map((t) => ({
     id: t.id,
@@ -68,7 +72,7 @@ export default async function PlanejamentoPage({
     <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
       <PlanejamentoClient
         data={data}
-        totalBills={billsData.totalBills}
+        totalPaidBills={totalPaidBills}
         month={month}
         year={year}
         incomeData={incomeData}

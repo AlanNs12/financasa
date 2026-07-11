@@ -31,7 +31,7 @@ interface PlanejamentoData {
 
 interface PlanejamentoClientProps {
   data: PlanejamentoData
-  totalBills: number
+  totalPaidBills: number
   month: number
   year: number
   incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number }
@@ -48,7 +48,7 @@ interface PlanejamentoClientProps {
   }>
 }
 
-export function PlanejamentoClient({ data, totalBills, month, year, incomeData, allTransactions }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, totalPaidBills, month, year, incomeData, allTransactions }: PlanejamentoClientProps) {
   const { effectiveIncome: effectiveBudgetIncome, actualIncome, budgetIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
   const [editingIncome, setEditingIncome] = useState(false)
@@ -65,8 +65,10 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData, 
   } | null>(null)
 
   const monthName = getMonthName(month)
-  const disponible = effectiveBudgetIncome - totalBills
-  const warningOverBudget = data.total_planned > disponible
+  const saldoReal = actualIncome - data.total_spent
+  const totalVariableExpenses = data.total_spent - totalPaidBills
+  const naoAlocado = effectiveBudgetIncome - data.total_planned
+  const warningOverBudget = data.total_planned > effectiveBudgetIncome
 
   function saveIncome() {
     const val = Number(incomeValue)
@@ -212,28 +214,45 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData, 
               )}
             </div>
 
-            {totalBills > 0 && (
+            {(totalPaidBills > 0 || data.total_spent > 0) && (
               <>
-                <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
-                  <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {formatCurrency(totalBills)}
-                  </span>
-                </div>
+                {totalPaidBills > 0 && (
+                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                    <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {formatCurrency(totalPaidBills)}
+                    </span>
+                  </div>
+                )}
+
+                {totalVariableExpenses > 0 && (
+                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                    <span className="text-sm text-muted-foreground">(-) Gastos variáveis</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {formatCurrency(totalVariableExpenses)}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">(=) Disponível</span>
+                  <span className="text-sm font-semibold text-foreground">(=) Saldo real</span>
                   <span
                     className="text-xl font-bold"
-                    style={{ color: disponible >= 0 ? 'var(--income)' : 'var(--expense)' }}
+                    style={{ color: saldoReal >= 0 ? '#22C55E' : '#EF4444' }}
                   >
-                    {formatCurrency(disponible)}
+                    {formatCurrency(saldoReal)}
                   </span>
-                  {disponible < 0 && (
-                    <AlertTriangle className="w-4 h-4" style={{ color: 'var(--expense)' }} />
+                  {saldoReal < 0 && (
+                    <AlertTriangle className="w-4 h-4" style={{ color: '#EF4444' }} />
                   )}
                 </div>
               </>
+            )}
+
+            {effectiveBudgetIncome > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Orçamento não alocado: {formatCurrency(naoAlocado)}
+              </p>
             )}
           </div>
         )}
@@ -253,11 +272,11 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData, 
           </span>
         </div>
 
-        {warningOverBudget && totalBills > 0 && (
+        {warningOverBudget && effectiveBudgetIncome > 0 && (
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
-              Total planejado ({formatCurrency(data.total_planned)}) maior que o disponível ({formatCurrency(disponible)})
+              Total planejado ({formatCurrency(data.total_planned)}) maior que a receita ({formatCurrency(effectiveBudgetIncome)})
             </span>
           </div>
         )}
