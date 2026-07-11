@@ -7,7 +7,7 @@ import { upsertBudgetItemAction, updateBudgetIncomeAction } from '@/app/actions/
 import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 import { CategoryDetailPanel } from '@/components/planejamento/category-detail-panel'
-import { Pencil, Check, X, Loader2, Download, AlertTriangle } from 'lucide-react'
+import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp } from 'lucide-react'
 
 interface PlanejamentoItem {
   id: string
@@ -34,7 +34,7 @@ interface PlanejamentoClientProps {
   totalPaidBills: number
   month: number
   year: number
-  incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number }
+  incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number; expectedIncome: number }
   allTransactions: Array<{
     id: string
     description: string
@@ -46,10 +46,18 @@ interface PlanejamentoClientProps {
     notes: string | null
     user: { name: string }
   }>
+  monthIncomes: Array<{
+    id: string
+    name: string
+    amount: number
+    recurrence: string
+    start_month: number
+    start_year: number
+  }>
 }
 
-export function PlanejamentoClient({ data, totalPaidBills, month, year, incomeData, allTransactions }: PlanejamentoClientProps) {
-  const { effectiveIncome: effectiveBudgetIncome, actualIncome, budgetIncome } = incomeData
+export function PlanejamentoClient({ data, totalPaidBills, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
+  const { effectiveIncome: effectiveBudgetIncome, actualIncome, expectedIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
   const [editingIncome, setEditingIncome] = useState(false)
   const [incomeValue, setIncomeValue] = useState(String(effectiveBudgetIncome))
@@ -65,7 +73,8 @@ export function PlanejamentoClient({ data, totalPaidBills, month, year, incomeDa
   } | null>(null)
 
   const monthName = getMonthName(month)
-  const saldoReal = actualIncome - data.total_spent
+  const baseIncome = actualIncome > 0 ? actualIncome : expectedIncome
+  const saldoReal = baseIncome - data.total_spent
   const totalVariableExpenses = data.total_spent - totalPaidBills
   const naoAlocado = effectiveBudgetIncome - data.total_planned
   const warningOverBudget = data.total_planned > effectiveBudgetIncome
@@ -202,16 +211,15 @@ export function PlanejamentoClient({ data, totalPaidBills, month, year, incomeDa
               <span className="text-3xl font-bold text-foreground">
                 {formatCurrency(effectiveBudgetIncome).replace('R$', '').trim()}
               </span>
-              {budgetIncome === 0 && actualIncome > 0 && (
+              {actualIncome > 0 ? (
                 <span className="text-xs text-muted-foreground">
                   (recebido: {formatCurrency(actualIncome)})
                 </span>
-              )}
-              {budgetIncome > 0 && actualIncome !== budgetIncome && (
-                <span className="text-xs text-muted-foreground">
-                  (recebido: {formatCurrency(actualIncome)})
+              ) : expectedIncome > 0 ? (
+                <span className="text-xs text-[#f59e0b]">
+                  (previsto: {formatCurrency(expectedIncome)})
                 </span>
-              )}
+              ) : null}
             </div>
 
             {(totalPaidBills > 0 || data.total_spent > 0) && (
@@ -257,10 +265,33 @@ export function PlanejamentoClient({ data, totalPaidBills, month, year, incomeDa
           </div>
         )}
 
-        {actualIncome > 0 && (
-          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-            Receita registrada em transações: {formatCurrency(actualIncome)}
-          </p>
+        {monthIncomes.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Receitas previstas este mês
+            </p>
+            {monthIncomes.map((income) => (
+              <div key={income.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={13} className="text-[#22C55E] shrink-0" />
+                  <span className="text-xs text-foreground">{income.name}</span>
+                </div>
+                <span className="text-xs font-medium text-[#22C55E]">
+                  +{formatCurrency(income.amount)}
+                </span>
+              </div>
+            ))}
+            {actualIncome > 0 && expectedIncome > 0 && actualIncome !== expectedIncome && (
+              <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                <span className="text-xs text-muted-foreground">Recebido vs esperado</span>
+                <span
+                  className={`text-xs font-semibold ${actualIncome >= expectedIncome ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}
+                >
+                  {formatCurrency(actualIncome)} / {formatCurrency(expectedIncome)}
+                </span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

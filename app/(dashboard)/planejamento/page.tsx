@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
 import { getRecurringBills } from '@/lib/db/queries/bills'
+import { getRecurringIncomesForMonth } from '@/lib/db/queries/recurring-incomes'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { prisma } from '@/lib/db/prisma'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
@@ -45,11 +46,12 @@ export default async function PlanejamentoPage({
     })
   }
 
-  const [data, bills, incomeData, allTransactions] = await Promise.all([
+  const [data, bills, incomeData, allTransactions, monthIncomes] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
     getRecurringBills(current.householdId, month, year),
     getEffectiveIncome(current.householdId, month, year),
     getTransactionsByMonth(current.householdId, month, year),
+    getRecurringIncomesForMonth(current.householdId, month, year),
   ])
 
   const totalPaidBills = bills
@@ -68,6 +70,15 @@ export default async function PlanejamentoPage({
     user: t.user ? { name: t.user.name } : { name: 'Usuário' },
   }))
 
+  const clientMonthIncomes = monthIncomes.map((i) => ({
+    id: i.id,
+    name: i.name,
+    amount: i.amount,
+    recurrence: i.recurrence as string,
+    start_month: i.start_month,
+    start_year: i.start_year,
+  }))
+
   return (
     <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
       <PlanejamentoClient
@@ -77,6 +88,7 @@ export default async function PlanejamentoPage({
         year={year}
         incomeData={incomeData}
         allTransactions={clientTransactions}
+        monthIncomes={clientMonthIncomes}
       />
     </Suspense>
   )
