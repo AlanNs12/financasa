@@ -19,9 +19,10 @@ model User {
   budgetGoals    BudgetGoal?
   financialGoals FinancialGoal[]
   investments    Investment[]
-  recurringBills RecurringBill[]
-  transactions   Transaction[]
-  household      Household       @relation(fields: [household_id], references: [id])
+  recurringBills   RecurringBill[]
+  recurringIncomes RecurringIncome[]
+  transactions     Transaction[]
+  household        Household       @relation(fields: [household_id], references: [id])
 }
 
 model Household {
@@ -31,12 +32,13 @@ model Household {
   created_at     DateTime        @default(now())
   budgets        Budget[]
   categories     Category[]
-  creditCards    CreditCard[]
-  debts          Debt[]
-  financialGoals FinancialGoal[]
-  investments    Investment[]
-  recurringBills RecurringBill[]
-  transactions   Transaction[]
+  creditCards      CreditCard[]
+  debts            Debt[]
+  financialGoals   FinancialGoal[]
+  investments      Investment[]
+  recurringBills   RecurringBill[]
+  recurringIncomes RecurringIncome[]
+  transactions     Transaction[]
   users          User[]
 }
 
@@ -98,6 +100,22 @@ model RecurringBill {
   household           Household           @relation(fields: [household_id], references: [id])
   user                User                @relation(fields: [user_id], references: [id])
   transactions        Transaction[]
+}
+
+model RecurringIncome {
+  id           String     @id @default(uuid())
+  household_id String
+  user_id      String
+  name         String
+  amount       Decimal    @db.Decimal(10, 2)
+  recurrence   Recurrence @default(MONTHLY)
+  start_month  Int
+  start_year   Int
+  is_active    Boolean    @default(true)
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+  household    Household  @relation(fields: [household_id], references: [id])
+  user         User       @relation(fields: [user_id], references: [id])
 }
 
 model BillMonthlyStatus {

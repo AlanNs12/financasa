@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma'
+import { getTotalExpectedIncomeForMonth } from './recurring-incomes'
 
 export async function getPlanejamentoData(
   householdId: string,
@@ -74,8 +75,13 @@ export async function getEffectiveIncome(
   householdId: string,
   month: number,
   year: number
-): Promise<{ budgetIncome: number; actualIncome: number; effectiveIncome: number }> {
-  const [budget, incomeResult] = await Promise.all([
+): Promise<{
+  budgetIncome: number
+  actualIncome: number
+  effectiveIncome: number
+  expectedIncome: number
+}> {
+  const [budget, incomeResult, expectedIncome] = await Promise.all([
     prisma.budget.findFirst({
       where: { household_id: householdId, month, year },
       select: { total_income: true },
@@ -97,13 +103,17 @@ export async function getEffectiveIncome(
       },
       _sum: { amount: true },
     }),
+    getTotalExpectedIncomeForMonth(householdId, month, year),
   ])
 
   const budgetIncome = Number(budget?.total_income ?? 0)
   const actualIncome = Number(incomeResult._sum.amount ?? 0)
-  const effectiveIncome = budgetIncome > 0 ? budgetIncome : actualIncome
+  const effectiveIncome =
+    budgetIncome > 0 ? budgetIncome
+      : actualIncome > 0 ? actualIncome
+        : expectedIncome
 
-  return { budgetIncome, actualIncome, effectiveIncome }
+  return { budgetIncome, actualIncome, effectiveIncome, expectedIncome }
 }
 
 export async function getBudgetWithProgress(
