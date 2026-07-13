@@ -9,6 +9,13 @@ interface MonthlyBudgetCardProps {
   spent: number
   totalBudget: number
   percentage: number
+  expectedBudget?: {
+    expectedIncome: number
+    totalBills: number
+    totalCommitted: number
+    expectedAvailable: number
+    hasExpectedData: boolean
+  }
 }
 
 export function MonthlyBudgetCard({
@@ -17,6 +24,7 @@ export function MonthlyBudgetCard({
   spent,
   totalBudget,
   percentage,
+  expectedBudget,
 }: MonthlyBudgetCardProps) {
   const percent = Math.min(100, percentage)
 
@@ -67,6 +75,50 @@ export function MonthlyBudgetCard({
         >
           Ver detalhes &rarr;
         </Link>
+
+        {expectedBudget?.hasExpectedData && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-white/50 text-xs font-medium uppercase tracking-wide mb-3">
+              Orçamento esperado
+            </p>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-white/60">Receita prevista</span>
+                <span className="text-white/90 font-medium">
+                  +{formatCurrency(expectedBudget.expectedIncome)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-white/60">(-) Contas fixas</span>
+                <span className="text-white/70">
+                  -{formatCurrency(expectedBudget.totalBills)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-white/60">(-) Gastos comprometidos</span>
+                <span className="text-white/70">
+                  -{formatCurrency(expectedBudget.totalCommitted)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs pt-1.5 border-t border-white/10">
+                <span className="text-white/80 font-medium">
+                  (=) Disponível esperado
+                </span>
+                <span
+                  className="font-bold"
+                  style={{
+                    color:
+                      expectedBudget.expectedAvailable >= 0
+                        ? '#4ade80'
+                        : '#f87171',
+                  }}
+                >
+                  {formatCurrency(expectedBudget.expectedAvailable)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

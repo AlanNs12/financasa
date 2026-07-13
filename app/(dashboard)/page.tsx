@@ -12,6 +12,7 @@ import { getBudgetWithProgress } from '@/lib/db/queries/budget'
 import { getActiveAlerts } from '@/lib/db/queries/alerts'
 import { getCategories } from '@/lib/db/queries/categories'
 import { getCreditCards } from '@/lib/db/queries/credit-cards'
+import { getExpectedBudget } from '@/lib/db/queries/expected-budget'
 
 const now = new Date()
 
@@ -38,13 +39,14 @@ export default async function DashboardPage({
   }
 
   try {
-    const [transactions, bills, budget, alerts, categories, creditCards] = await Promise.all([
+    const [transactions, bills, budget, alerts, categories, creditCards, expectedBudget] = await Promise.all([
       getTransactionsByMonth(current.householdId, currentMonth, currentYear),
       getRecurringBills(current.householdId, currentMonth, currentYear),
       getBudgetWithProgress(current.householdId, currentMonth, currentYear),
       getActiveAlerts(current.householdId, currentMonth, currentYear),
       getCategories(current.householdId),
       getCreditCards(current.householdId, false),
+      getExpectedBudget(current.householdId, currentMonth, currentYear),
     ])
 
     const income = transactions
@@ -98,6 +100,7 @@ export default async function DashboardPage({
           spent={expenses}
           totalBudget={totalBudget}
           percentage={percentage}
+          expectedBudget={expectedBudget}
         />
 
         <SummaryCards
