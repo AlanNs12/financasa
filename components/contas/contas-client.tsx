@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { NewBillModal } from '@/components/contas/new-bill-modal'
 import { BillsHistory } from '@/components/contas/bills-history'
+import { RecurringIncomeSection } from '@/components/contas/recurring-income-section'
 import { Fab } from '@/components/transacoes/fab'
 import { markBillAsPaidAction, deleteRecurringBillAction } from '@/app/actions/bills'
 import { toast } from 'sonner'
@@ -51,6 +52,8 @@ interface ContasClientProps {
   month: number
   year: number
   categories: { id: string; name: string; icon: string }[]
+  recurringIncomes: RecurringIncomeItem[]
+  monthIncomes: RecurringIncomeItem[]
 }
 
 interface EditingBill {
@@ -64,7 +67,16 @@ interface EditingBill {
   category_id?: string | null
 }
 
-type Tab = 'current' | 'history'
+interface RecurringIncomeItem {
+  id: string
+  name: string
+  amount: number
+  recurrence: string
+  start_month: number
+  start_year: number
+}
+
+type Tab = 'current' | 'history' | 'incomes'
 
 const RECURRENCE_LABELS: Record<string, string> = {
   MONTHLY: 'Mensal',
@@ -116,7 +128,7 @@ function mapBillToEditing(bill: Bill): EditingBill {
   }
 }
 
-export function ContasClient({ bills, history, month, year, categories }: ContasClientProps) {
+export function ContasClient({ bills, history, month, year, categories, recurringIncomes, monthIncomes }: ContasClientProps) {
   const router = useRouter()
   const [expandedBill, setExpandedBill] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -198,6 +210,16 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
           }`}
         >
           Histórico
+        </button>
+        <button
+          onClick={() => setActiveTab('incomes')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'incomes'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Receitas fixas
         </button>
       </div>
 
@@ -369,9 +391,16 @@ export function ContasClient({ bills, history, month, year, categories }: Contas
             </div>
           )}
         </>
-      ) : (
+      ) : activeTab === 'history' ? (
         <BillsHistory
           history={history}
+          currentMonth={month}
+          currentYear={year}
+        />
+      ) : (
+        <RecurringIncomeSection
+          recurringIncomes={recurringIncomes}
+          monthIncomes={monthIncomes}
           currentMonth={month}
           currentYear={year}
         />

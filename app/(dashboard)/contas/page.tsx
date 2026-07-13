@@ -1,6 +1,7 @@
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getRecurringBills, getBillsHistory } from '@/lib/db/queries/bills'
 import { getCategories } from '@/lib/db/queries/categories'
+import { getRecurringIncomes, getRecurringIncomesForMonth } from '@/lib/db/queries/recurring-incomes'
 import { ContasClient } from '@/components/contas/contas-client'
 import { PageHeader } from '@/components/shared/page-header'
 
@@ -25,10 +26,12 @@ export default async function ContasPage({
     )
   }
 
-  const [bills, history, categories] = await Promise.all([
+  const [bills, history, categories, recurringIncomes, monthIncomes] = await Promise.all([
     getRecurringBills(current.householdId, month, year),
     getBillsHistory(current.householdId),
     getCategories(current.householdId),
+    getRecurringIncomes(current.householdId),
+    getRecurringIncomesForMonth(current.householdId, month, year),
   ])
 
   const clientBills = bills.map((b) => ({
@@ -50,6 +53,24 @@ export default async function ContasPage({
     .filter((c) => c.type === 'EXPENSE' || c.type === 'BOTH')
     .map((c) => ({ id: c.id, name: c.name, icon: c.icon }))
 
+  const clientIncomes = recurringIncomes.map((i) => ({
+    id: i.id,
+    name: i.name,
+    amount: i.amount,
+    recurrence: i.recurrence as string,
+    start_month: i.start_month,
+    start_year: i.start_year,
+  }))
+
+  const clientMonthIncomes = monthIncomes.map((i) => ({
+    id: i.id,
+    name: i.name,
+    amount: i.amount,
+    recurrence: i.recurrence as string,
+    start_month: i.start_month,
+    start_year: i.start_year,
+  }))
+
   return (
     <ContasClient
       bills={clientBills}
@@ -57,6 +78,8 @@ export default async function ContasPage({
       month={month}
       year={year}
       categories={expenseCategories}
+      recurringIncomes={clientIncomes}
+      monthIncomes={clientMonthIncomes}
     />
   )
 }

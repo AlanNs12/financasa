@@ -1,9 +1,12 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
 import { PageCard } from '@/components/shared/page-card'
+import { useBalanceVisibility } from '@/lib/balance-visibility-context'
 
 interface RecentTransaction {
   id: string
@@ -25,6 +28,8 @@ interface RecentTransactionsProps {
 export function RecentTransactions({
   transactions,
 }: RecentTransactionsProps) {
+  const { isHidden } = useBalanceVisibility()
+
   return (
     <PageCard
       title="Últimas transações"
@@ -65,11 +70,17 @@ export function RecentTransactions({
                   </span>
                 </div>
               </div>
-              <MoneyDisplay
-                amount={tx.amount}
-                type={tx.type === 'INCOME' ? 'income' : 'expense'}
-                size="sm"
-              />
+              {isHidden ? (
+                <span className="tracking-widest text-muted-foreground font-bold text-sm transition-all duration-200">
+                  ••••••
+                </span>
+              ) : (
+                <MoneyDisplay
+                  amount={tx.amount}
+                  type={tx.type === 'INCOME' ? 'income' : 'expense'}
+                  size="sm"
+                />
+              )}
             </div>
           ))}
         </div>

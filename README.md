@@ -4,7 +4,7 @@ App web privado de controle financeiro familiar.
 
 ## Stack
 
-Next.js 16, React 19, Prisma 6, Supabase, Tailwind v4, Zustand, RHF + Zod.
+Next.js 16, React 19 (React Compiler), Prisma 6, Supabase, Tailwind v4, RHF + Zod.
 
 ## Getting Started
 
@@ -87,8 +87,9 @@ lib/validations/goal.ts      → lib/validations/goal.test.ts
 - `lib/calculations/retirement.ts` — juros compostos, tabela regressiva de IR, cenários VGBL/PGBL/Outros.
 - `lib/calculations/debts.ts` — paid_amount, remaining_amount, progress_pct, payoff de parcelas.
 - `lib/calculations/investments.ts` — resumo da carteira, % por tipo de ativo, ganho individual.
+- `lib/calculations/billing.ts` — cálculo de período de fatura, label do mês de fatura.
 - `lib/format.ts` — formatCurrency, formatPercentage, getMonthName, getMonthAbbr.
-- `lib/validations/*.ts` — todos os schemas Zod (transaction, investment, goal, debt, credit-card, bill, auth, budget).
+- `lib/validations/*.ts` — todos os schemas Zod (transaction, investment, goal, debt, credit-card, bill, recurring-income, auth, budget).
 
 ## Scripts
 
@@ -102,6 +103,7 @@ lib/validations/goal.ts      → lib/validations/goal.test.ts
 | `npm run db:generate` | Gera o Prisma Client |
 | `npm run db:push` | Aplica o schema no banco |
 | `npm run db:seed` | Popula dados de exemplo |
+| `npm run backfill:billing` | Backfill billing_month/year em transações com cartão |
 | `npm run db:studio` | Abre o Prisma Studio |
 
 ## Segurança — Row Level Security (RLS)

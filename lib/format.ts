@@ -39,3 +39,26 @@ export function getMonthAbbr(month: number): string {
   ]
   return names[month - 1] || ''
 }
+
+export function getDefaultTransactionDate(
+  selectedMonth: number,
+  selectedYear: number
+): string {
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  if (selectedYear === currentYear && selectedMonth === currentMonth) {
+    return now.toISOString().split('T')[0]
+  }
+
+  if (
+    selectedYear > currentYear ||
+    (selectedYear === currentYear && selectedMonth > currentMonth)
+  ) {
+    return `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
+  }
+
+  const lastDay = new Date(selectedYear, selectedMonth, 0).getDate()
+  return `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${lastDay}`
+}

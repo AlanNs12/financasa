@@ -75,5 +75,5 @@ Projeto Next.js 16 + React 19 + Tailwind v4. App de controle financeiro familiar
 ```bash
 npm run lint     # ESLint
 npm run build    # Next.js build (Turbopack)
-npm run test     # Vitest (133 testes, 12 suites)
+npm run test     # Vitest (142 testes, 13 suites)
 ```

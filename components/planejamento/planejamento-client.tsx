@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { formatCurrency, getMonthName } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { upsertBudgetItemAction, updateBudgetIncomeAction } from '@/app/actions/budget'
+import { confirmRecurringIncomeAction, unconfirmRecurringIncomeAction } from '@/app/actions/recurring-incomes'
 import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 import { CategoryDetailPanel } from '@/components/planejamento/category-detail-panel'
-import { Pencil, Check, X, Loader2, Download, AlertTriangle } from 'lucide-react'
+import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp } from 'lucide-react'
 
 interface PlanejamentoItem {
   id: string
@@ -31,10 +33,11 @@ interface PlanejamentoData {
 
 interface PlanejamentoClientProps {
   data: PlanejamentoData
-  totalBills: number
+  totalPaidBills: number
+  totalPendingBills: number
   month: number
   year: number
-  incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number }
+  incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number; expectedIncome: number }
   allTransactions: Array<{
     id: string
     description: string
@@ -46,16 +49,31 @@ interface PlanejamentoClientProps {
     notes: string | null
     user: { name: string }
   }>
+  monthIncomes: Array<{
+    id: string
+    name: string
+    amount: number
+    recurrence: string
+    start_month: number
+    start_year: number
+    confirmed: boolean
+    confirmedAmount: number | null
+    confirmedTransactionId: string | null
+  }>
 }
 
-export function PlanejamentoClient({ data, totalBills, month, year, incomeData, allTransactions }: PlanejamentoClientProps) {
-  const { effectiveIncome: effectiveBudgetIncome, actualIncome, budgetIncome } = incomeData
+export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
+  const router = useRouter()
+  const { effectiveIncome: effectiveBudgetIncome, actualIncome, expectedIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
   const [editingIncome, setEditingIncome] = useState(false)
   const [incomeValue, setIncomeValue] = useState(String(effectiveBudgetIncome))
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [itemValue, setItemValue] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [confirmingIncomeId, setConfirmingIncomeId] = useState<string | null>(null)
+  const [confirmAmount, setConfirmAmount] = useState('')
+  const [isConfirming, startConfirmTransition] = useTransition()
   const [selectedCategory, setSelectedCategory] = useState<{
     id: string
     name: string
@@ -65,8 +83,24 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData, 
   } | null>(null)
 
   const monthName = getMonthName(month)
-  const disponible = effectiveBudgetIncome - totalBills
-  const warningOverBudget = data.total_planned > disponible
+  const baseIncome = actualIncome > 0 ? actualIncome : expectedIncome
+  const saldoReal = baseIncome - data.total_spent
+  const totalVariableExpenses = data.total_spent - totalPaidBills
+  const naoAlocado = effectiveBudgetIncome - data.total_planned
+  const warningOverBudget = data.total_planned > effectiveBudgetIncome
+
+  const totalConfirmedIncome = monthIncomes
+    .filter(i => i.confirmed)
+    .reduce((s, i) => s + (i.confirmedAmount ?? 0), 0)
+
+  const totalPendingExpectedIncome = monthIncomes
+    .filter(i => !i.confirmed)
+    .reduce((s, i) => s + i.amount, 0)
+
+  const saldoPrevisto =
+    saldoReal +
+    totalPendingExpectedIncome -
+    totalPendingBills
 
   function saveIncome() {
     const val = Number(incomeValue)
@@ -200,48 +234,257 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData, 
               <span className="text-3xl font-bold text-foreground">
                 {formatCurrency(effectiveBudgetIncome).replace('R$', '').trim()}
               </span>
-              {budgetIncome === 0 && actualIncome > 0 && (
+              {actualIncome > 0 ? (
                 <span className="text-xs text-muted-foreground">
                   (recebido: {formatCurrency(actualIncome)})
                 </span>
-              )}
-              {budgetIncome > 0 && actualIncome !== budgetIncome && (
-                <span className="text-xs text-muted-foreground">
-                  (recebido: {formatCurrency(actualIncome)})
+              ) : expectedIncome > 0 ? (
+                <span className="text-xs text-[#f59e0b]">
+                  (previsto: {formatCurrency(expectedIncome)})
                 </span>
-              )}
+              ) : null}
             </div>
 
-            {totalBills > 0 && (
+            {(totalPaidBills > 0 || data.total_spent > 0) && (
               <>
-                <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
-                  <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {formatCurrency(totalBills)}
-                  </span>
-                </div>
+                {totalPaidBills > 0 && (
+                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                    <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {formatCurrency(totalPaidBills)}
+                    </span>
+                  </div>
+                )}
+
+                {totalVariableExpenses > 0 && (
+                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                    <span className="text-sm text-muted-foreground">(-) Gastos variáveis</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {formatCurrency(totalVariableExpenses)}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">(=) Disponível</span>
+                  <span className="text-sm font-semibold text-foreground">(=) Saldo real</span>
                   <span
                     className="text-xl font-bold"
-                    style={{ color: disponible >= 0 ? 'var(--income)' : 'var(--expense)' }}
+                    style={{ color: saldoReal >= 0 ? '#22C55E' : '#EF4444' }}
                   >
-                    {formatCurrency(disponible)}
+                    {formatCurrency(saldoReal)}
                   </span>
-                  {disponible < 0 && (
-                    <AlertTriangle className="w-4 h-4" style={{ color: 'var(--expense)' }} />
+                  {saldoReal < 0 && (
+                    <AlertTriangle className="w-4 h-4" style={{ color: '#EF4444' }} />
                   )}
                 </div>
+
+                {(totalPendingExpectedIncome > 0 || totalPendingBills > 0) && (
+                  <div className="flex items-center gap-2 mt-1 pl-1">
+                    <div className="w-0.5 h-4 bg-border self-stretch mr-1" />
+                    <span className="text-xs text-muted-foreground">Saldo previsto</span>
+                    <span
+                      className="text-sm font-semibold tabular-nums"
+                      style={{ color: saldoPrevisto >= 0 ? '#22C55E' : '#EF4444' }}
+                    >
+                      {saldoPrevisto < 0 ? '-' : ''}
+                      {formatCurrency(Math.abs(saldoPrevisto))}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      (se tudo planejado ocorrer)
+                    </span>
+                  </div>
+                )}
               </>
+            )}
+
+            {effectiveBudgetIncome > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Orçamento não alocado: {formatCurrency(naoAlocado)}
+              </p>
             )}
           </div>
         )}
 
-        {actualIncome > 0 && (
-          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-            Receita registrada em transações: {formatCurrency(actualIncome)}
-          </p>
+        {monthIncomes.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Receitas previstas este mês
+            </p>
+            {monthIncomes.map((income) => (
+              <div key={income.id} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={13}
+                    className={income.confirmed
+                      ? 'text-[#22C55E]'
+                      : 'text-muted-foreground'}
+                  />
+                  <span className={`text-sm flex-1 ${
+                    income.confirmed ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
+                    {income.name}
+                  </span>
+
+                  {income.confirmed ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-[#22C55E]">
+                        +{formatCurrency(income.confirmedAmount!)}
+                      </span>
+                      {income.confirmedAmount !== income.amount && (
+                        <span className="text-[10px] text-muted-foreground line-through">
+                          {formatCurrency(income.amount)}
+                        </span>
+                      )}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium
+                                       bg-[#dcfce7] dark:bg-[#22c55e]/15
+                                       text-[#15803d] dark:text-[#4ade80]">
+                        ✓ recebido
+                      </span>
+                      <button
+                        onClick={() => {
+                          setConfirmingIncomeId(income.id)
+                          setConfirmAmount(String(income.confirmedAmount))
+                        }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground
+                                   underline underline-offset-2 transition-colors"
+                      >
+                        editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!income.confirmedTransactionId) return
+                          if (!confirm('Desfazer recebimento?')) return
+                          startConfirmTransition(async () => {
+                            const r = await unconfirmRecurringIncomeAction(
+                              income.confirmedTransactionId!
+                            )
+                            if (r?.error) toast.error(r.error)
+                            else toast.success('Recebimento desfeito')
+                          })
+                        }}
+                        className="text-[10px] text-muted-foreground hover:text-[#EF4444]
+                                   transition-colors"
+                        aria-label="Desfazer recebimento"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        +{formatCurrency(income.amount)}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setConfirmingIncomeId(income.id)
+                          setConfirmAmount(String(income.amount))
+                        }}
+                        className="text-[10px] px-2 py-1 rounded-lg font-medium
+                                   border border-[#22C55E]/40 text-[#16a34a] dark:text-[#4ade80]
+                                   hover:bg-[#dcfce7] dark:hover:bg-[#22c55e]/10
+                                   transition-colors whitespace-nowrap"
+                      >
+                        Confirmar recebimento
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {confirmingIncomeId === income.id && (
+                  <div className="ml-5 flex items-center gap-2 p-3 rounded-xl
+                                  bg-[#f0fdf4] dark:bg-[#22c55e]/8
+                                  border border-[#bbf7d0] dark:border-[#22c55e]/25">
+                    <div className="flex-1">
+                      <label className="text-[10px] font-medium text-[#15803d] dark:text-[#4ade80]
+                                        uppercase tracking-wide block mb-1">
+                        Valor recebido
+                        {income.amount !== Number(confirmAmount || '0') && Number(confirmAmount) > 0 && (
+                          <span className="ml-1 text-[#f59e0b] normal-case font-normal">
+                            (diferente do previsto: {formatCurrency(income.amount)})
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="number"
+                        value={confirmAmount}
+                        onChange={e => setConfirmAmount(e.target.value)}
+                        placeholder={String(income.amount)}
+                        min="0.01"
+                        step="0.01"
+                        autoFocus
+                        className="w-full h-9 px-3 rounded-lg border border-[#bbf7d0]
+                                   dark:border-[#22c55e]/25 bg-white dark:bg-background
+                                   text-foreground text-sm font-medium
+                                   focus:outline-none focus:border-[#22C55E] transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <button
+                        disabled={isConfirming || !confirmAmount || Number(confirmAmount) <= 0}
+                        onClick={() => {
+                          startConfirmTransition(async () => {
+                            const today = new Date().toISOString().split('T')[0]
+                            const r = await confirmRecurringIncomeAction(
+                              income.id,
+                              Number(confirmAmount),
+                              today,
+                              month,
+                              year
+                            )
+                            if (r?.error) {
+                              toast.error(r.error)
+                            } else {
+                              toast.success(
+                                Number(confirmAmount) !== income.amount
+                                  ? `Recebido ${formatCurrency(Number(confirmAmount))} (planejado: ${formatCurrency(income.amount)})`
+                                  : `${income.name} confirmado!`
+                              )
+                              setConfirmingIncomeId(null)
+                              router.refresh()
+                            }
+                          })
+                        }}
+                        className="h-9 px-3 rounded-lg bg-[#22C55E] text-white text-xs
+                                   font-semibold hover:bg-[#16a34a] disabled:opacity-50
+                                   transition-colors whitespace-nowrap"
+                      >
+                        {isConfirming ? '...' : 'Confirmar'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmingIncomeId(null)}
+                        className="h-9 px-3 rounded-lg border border-border text-xs
+                                   text-muted-foreground hover:bg-muted transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {totalPendingExpectedIncome === 0 && totalConfirmedIncome > 0 ? (
+              <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                <span className="text-xs text-[#15803d] dark:text-[#4ade80] font-medium">
+                  ✓ Todas as receitas confirmadas
+                </span>
+                <span className="text-xs font-semibold text-[#22C55E]">
+                  +{formatCurrency(totalConfirmedIncome)}
+                </span>
+              </div>
+            ) : totalConfirmedIncome > 0 ? (
+              <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                <span className="text-xs text-muted-foreground">
+                  Confirmado / Esperado total
+                </span>
+                <span className="text-xs font-semibold"
+                      style={{ color: totalConfirmedIncome >= incomeData.expectedIncome
+                        ? '#22C55E' : '#f59e0b' }}>
+                  {formatCurrency(totalConfirmedIncome)} /
+                  {formatCurrency(incomeData.expectedIncome)}
+                </span>
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
 
@@ -253,11 +496,11 @@ export function PlanejamentoClient({ data, totalBills, month, year, incomeData, 
           </span>
         </div>
 
-        {warningOverBudget && totalBills > 0 && (
+        {warningOverBudget && effectiveBudgetIncome > 0 && (
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
-              Total planejado ({formatCurrency(data.total_planned)}) maior que o disponível ({formatCurrency(disponible)})
+              Total planejado ({formatCurrency(data.total_planned)}) maior que a receita ({formatCurrency(effectiveBudgetIncome)})
             </span>
           </div>
         )}
