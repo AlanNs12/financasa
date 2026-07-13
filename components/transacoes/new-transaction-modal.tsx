@@ -39,13 +39,7 @@ interface NewTransactionModalProps {
   onClose: () => void
   categories: Category[]
   creditCards: CreditCard[]
-}
-
-interface NewTransactionModalProps {
-  isOpen: boolean
-  onClose: () => void
-  categories: Category[]
-  creditCards: CreditCard[]
+  defaultDate?: string
   editingTransaction?: {
     id: string
     description: string
@@ -59,7 +53,7 @@ interface NewTransactionModalProps {
   }
 }
 
-export function NewTransactionModal({ isOpen, onClose, categories, creditCards, editingTransaction }: NewTransactionModalProps) {
+export function NewTransactionModal({ isOpen, onClose, categories, creditCards, defaultDate, editingTransaction }: NewTransactionModalProps) {
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
 
@@ -81,7 +75,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     : {
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
-        date: new Date().toISOString().split('T')[0],
+        date: defaultDate ?? new Date().toISOString().split('T')[0],
       }
 
   const {
@@ -119,10 +113,10 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
       reset({
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
-        date: new Date().toISOString().split('T')[0],
+        date: defaultDate ?? new Date().toISOString().split('T')[0],
       } as any)
     }
-  }, [editingTransaction, isOpen, reset])
+  }, [editingTransaction, isOpen, reset, defaultDate])
 
   useEffect(() => {
     if (paymentMethod !== 'CREDIT_CARD') {

@@ -5,6 +5,7 @@ import { TransactionList } from '@/components/transacoes/transaction-list'
 import { NewTransactionModal } from '@/components/transacoes/new-transaction-modal'
 import { TransactionDetailModal } from '@/components/transacoes/transaction-detail-modal'
 import { Fab } from '@/components/transacoes/fab'
+import { getDefaultTransactionDate } from '@/lib/format'
 
 interface Transaction {
   id: string
@@ -66,6 +67,7 @@ export function TransactionsClient({ transactions, categories, creditCards, mont
         onClose={() => { setModalOpen(false); setEditingTransaction(null) }}
         categories={categories}
         creditCards={creditCards}
+        defaultDate={getDefaultTransactionDate(month, year)}
         editingTransaction={editingTransaction ?? undefined}
       />
       <TransactionDetailModal

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { NewTransactionModal } from '@/components/transacoes/new-transaction-modal'
+import { getDefaultTransactionDate } from '@/lib/format'
 
 interface Category {
   id: string
@@ -23,9 +24,11 @@ interface CreditCard {
 interface QuickAddTransactionProps {
   categories: Category[]
   creditCards: CreditCard[]
+  month: number
+  year: number
 }
 
-export function QuickAddTransaction({ categories, creditCards }: QuickAddTransactionProps) {
+export function QuickAddTransaction({ categories, creditCards, month, year }: QuickAddTransactionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
 
@@ -49,6 +52,7 @@ export function QuickAddTransaction({ categories, creditCards }: QuickAddTransac
         onClose={handleClose}
         categories={categories}
         creditCards={creditCards}
+        defaultDate={getDefaultTransactionDate(month, year)}
       />
     </>
   )
