@@ -13,6 +13,8 @@ import { getActiveAlerts } from '@/lib/db/queries/alerts'
 import { getCategories } from '@/lib/db/queries/categories'
 import { getCreditCards } from '@/lib/db/queries/credit-cards'
 import { getExpectedBudget } from '@/lib/db/queries/expected-budget'
+import { getExpensesByCategory } from '@/lib/db/queries/reports'
+import { ExpensePieChart } from '@/components/dashboard/expense-pie-chart'
 
 const now = new Date()
 
@@ -39,7 +41,7 @@ export default async function DashboardPage({
   }
 
   try {
-    const [transactions, bills, budget, alerts, categories, creditCards, expectedBudget] = await Promise.all([
+    const [transactions, bills, budget, alerts, categories, creditCards, expectedBudget, expensesByCategory] = await Promise.all([
       getTransactionsByMonth(current.householdId, currentMonth, currentYear),
       getRecurringBills(current.householdId, currentMonth, currentYear),
       getBudgetWithProgress(current.householdId, currentMonth, currentYear),
@@ -47,6 +49,7 @@ export default async function DashboardPage({
       getCategories(current.householdId),
       getCreditCards(current.householdId, false),
       getExpectedBudget(current.householdId, currentMonth, currentYear),
+      getExpensesByCategory(current.householdId, currentMonth, currentYear),
     ])
 
     const income = transactions
@@ -111,6 +114,8 @@ export default async function DashboardPage({
         />
 
         {alerts.length > 0 && <AlertsPanel alerts={alerts} />}
+
+        <ExpensePieChart data={expensesByCategory} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RecentTransactions transactions={recentTransactions} />
