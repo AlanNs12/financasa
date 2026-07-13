@@ -17,6 +17,7 @@ const NAV_ITEMS = [
 const MORE_ITEMS = [
   { href: '/metas', label: 'Metas', icon: '🎯' },
   { href: '/investimentos', label: 'Investimentos', icon: '📈' },
+  { href: '/faturas', label: 'Faturas', icon: '🧾' },
   { href: '/dividas', label: 'Dívidas', icon: '💳' },
   { href: '/relatorios', label: 'Relatórios', icon: '📊' },
   { href: '/calendario', label: 'Calendário', icon: '📅' },
