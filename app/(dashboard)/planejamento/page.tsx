@@ -58,6 +58,13 @@ export default async function PlanejamentoPage({
     .filter((b) => b.monthlyStatus?.[0]?.status === 'PAID')
     .reduce((s, b) => s + b.amount, 0)
 
+  const totalPendingBills = bills
+    .filter((b) =>
+      !b.monthlyStatus?.[0] ||
+      b.monthlyStatus[0].status !== 'PAID'
+    )
+    .reduce((s, b) => s + b.amount, 0)
+
   const clientTransactions = allTransactions.map((t) => ({
     id: t.id,
     description: t.description,
@@ -87,6 +94,7 @@ export default async function PlanejamentoPage({
       <PlanejamentoClient
         data={data}
         totalPaidBills={totalPaidBills}
+        totalPendingBills={totalPendingBills}
         month={month}
         year={year}
         incomeData={incomeData}

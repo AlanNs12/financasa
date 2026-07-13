@@ -136,7 +136,7 @@ financasa/
 │   │   ├── goals.ts               # createGoalAction, updateGoalAction, addGoalAmountAction, deleteGoalAction
 │   │   ├── household.ts           # clearHouseholdDataAction, deleteAccountAction
 │   │   ├── investments.ts         # createInvestmentAction, updateInvestmentAction, deleteInvestmentAction
-│   │   ├── recurring-incomes.ts   # createRecurringIncomeAction, deleteRecurringIncomeAction
+│   │   ├── recurring-incomes.ts   # createRecurringIncomeAction, updateRecurringIncomeAction, deleteRecurringIncomeAction, confirmRecurringIncomeAction, unconfirmRecurringIncomeAction
 │   │   ├── theme.ts               # setThemeAction (cookie de tema)
 │   │   └── transactions.ts        # createTransactionAction, deleteTransactionAction, updateTransactionAction
 │   ├── globals.css                # Tema Tailwind v4 + variáveis CSS + .dark
@@ -182,7 +182,7 @@ financasa/
 │   │   └── metas-client.tsx       # Lista metas, barras progresso invertidas, modal nova meta
 │   ├── planejamento/
 │   │   ├── category-detail-panel.tsx # Modal com transações do mês por categoria
-│   │   └── planejamento-client.tsx   # Edição inline + botão exportar CSV
+│   │   └── planejamento-client.tsx   # Confirmação de receitas previstas + edição inline + saldo previsto + CSV
 │   ├── relatorios/
 │   │   ├── print-button.tsx       # Botão de impressão/PDF
 │   │   └── relatorios-client.tsx  # 3 abas com gráficos recharts
@@ -226,7 +226,7 @@ financasa/
 │   │       ├── investments.ts     # getInvestments, getInvestmentsSummary, getInvestmentsByGoal, CRUD
 │   │       ├── reports.ts         # getExpensesByCategory, getMonthlyEvolution, getPlannedVsActual
 │   │   ├── transactions.ts    # getTransactionsByMonth, createTransaction, deleteTransaction, updateTransaction
-│   │   ├── recurring-incomes.ts # getRecurringIncomes, createRecurringIncome, deleteRecurringIncome
+│   │   ├── recurring-incomes.ts # getRecurringIncomes, getRecurringIncomesForMonth, getTotalExpectedIncomeForMonth, getRecurringIncomesWithStatus, createRecurringIncome, deleteRecurringIncome
 │   │   └── user.ts            # getCurrentUserHousehold, getCurrentUser, createUserAndHousehold, joinHouseholdByInviteCode, getHouseholdInviteCode, getHouseholdMembers
 │   ├── supabase/
 │   │   ├── client.ts             # createBrowserClient
@@ -348,27 +348,29 @@ model Category {
 enum CategoryType { INCOME; EXPENSE; BOTH }
 
 model Transaction {
-  id                String          @id @default(uuid())
-  household_id      String
-  household         Household       @relation(fields: [household_id], references: [id])
-  user_id           String
-  user              User            @relation(fields: [user_id], references: [id])
-  category_id       String
-  category          Category        @relation(fields: [category_id], references: [id])
-  type              TransactionType
-  amount            Decimal         @db.Decimal(10, 2)
-  description       String
-  date              DateTime        @db.Date
-  payment_method    PaymentMethod   @default(PIX)
-  notes             String?
-  recurring_bill_id String?
-  recurring_bill    RecurringBill?  @relation(fields: [recurring_bill_id], references: [id])
-  credit_card_id    String?
-  credit_card       CreditCard?     @relation(fields: [credit_card_id], references: [id])
-  billing_month     Int?
-  billing_year      Int?
-  created_at        DateTime        @default(now())
-  updated_at        DateTime        @updatedAt
+  id                  String          @id @default(uuid())
+  household_id        String
+  household           Household       @relation(fields: [household_id], references: [id])
+  user_id             String
+  user                User            @relation(fields: [user_id], references: [id])
+  category_id         String
+  category            Category        @relation(fields: [category_id], references: [id])
+  type                TransactionType
+  amount              Decimal         @db.Decimal(10, 2)
+  description         String
+  date                DateTime        @db.Date
+  payment_method      PaymentMethod   @default(PIX)
+  notes               String?
+  recurring_bill_id   String?
+  recurring_bill      RecurringBill?  @relation(fields: [recurring_bill_id], references: [id])
+  credit_card_id      String?
+  credit_card         CreditCard?     @relation(fields: [credit_card_id], references: [id])
+  recurring_income_id String?
+  recurring_income    RecurringIncome? @relation(fields: [recurring_income_id], references: [id])
+  billing_month       Int?
+  billing_year        Int?
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
 }
 
 enum TransactionType { INCOME; EXPENSE }
@@ -415,19 +417,20 @@ model BillMonthlyStatus {
 enum BillStatus { PENDING; PAID; OVERDUE; SKIPPED }
 
 model RecurringIncome {
-  id           String     @id @default(uuid())
-  household_id String
-  user_id      String
-  household    Household  @relation(fields: [household_id], references: [id])
-  user         User       @relation(fields: [user_id], references: [id])
-  name         String
-  amount       Decimal    @db.Decimal(10, 2)
-  recurrence   Recurrence @default(MONTHLY)
-  start_month  Int
-  start_year   Int
-  is_active    Boolean    @default(true)
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
+  id                    String        @id @default(uuid())
+  household_id          String
+  user_id               String
+  household             Household     @relation(fields: [household_id], references: [id])
+  user                  User          @relation(fields: [user_id], references: [id])
+  name                  String
+  amount                Decimal       @db.Decimal(10, 2)
+  recurrence            Recurrence    @default(MONTHLY)
+  start_month           Int
+  start_year            Int
+  is_active             Boolean       @default(true)
+  created_at            DateTime      @default(now())
+  updated_at            DateTime      @updatedAt
+  confirmedTransactions Transaction[]
 }
 
 model Budget {
@@ -617,11 +620,19 @@ Criadas automaticamente ao criar novo household (em `lib/db/queries/categories.t
 
 ### ✅ Planejamento (`/planejamento`) — FUNCIONAL
 - Card receita total do mês (editável inline). `getEffectiveIncome`: se `budget.total_income` = 0, usa renda real das transações como fallback.
+- Breakdown do saldo: (-) Contas fixas, (-) Gastos variáveis, (=) Saldo real, **Saldo previsto** (saldo real + receitas pendentes - contas pendentes).
 - Lista de categorias com gasto vs planejado + barra colorida.
 - Click em categoria → `CategoryDetailPanel`: modal com transações do mês daquela categoria + barra de progresso do orçamento.
 - Edição inline do valor planejado por categoria.
+- **Seção "Receitas previstas este mês"**: lista receitas recorrentes ativas no mês com status de confirmação.
+  - Botão **"Confirmar recebimento"** em receitas pendentes → formulário inline com campo de valor customizável.
+  - Aviso visual quando valor recebido ≠ valor planejado.
+  - Badge **"✓ recebido"** com valor real após confirmação; botão "editar" para reabrir; "✕" para desfazer (com confirmação).
+  - Indicador "Todas as receitas confirmadas" ou "Confirmado / Esperado total".
+  - Query `getRecurringIncomesWithStatus`: cruza `RecurringIncome` com `Transaction` (via `recurring_income_id`) para determinar status por mês.
+  - Server actions `confirmRecurringIncomeAction` (upsert: atualiza se já existe Transaction vinculada) e `unconfirmRecurringIncomeAction`.
 - Botão **Exportar CSV**.
-- Server actions `updateBudgetIncomeAction` e `upsertBudgetItemAction`.
+- Prop `totalPendingBills` calculada na página via `getRecurringBills` (contas não PAID).
 
 ### ✅ Metas (`/metas`) — FUNCIONAL (dados reais)
 - Server Component async, busca metas via `getFinancialGoals`.
@@ -817,7 +828,7 @@ Inspirada em paleta monocromática preto/branco/cinzas. 3 camadas de profundidad
 | 10 | ~~Bottom nav vs Sidebar~~ | **RESOLVIDO**: Bottom nav tem 5 itens + "Mais" (bottom sheet com todas as rotas). |
 | 11 | **`getDashboardSummary` não usado** | `lib/db/queries/dashboard.ts` existe mas o dashboard calcula in-place. Considerar consolidar. |
 | 12 | **Avisos CRLF** | Git avisa LF→CRLF no Windows. Configurar `.gitattributes` se necessário. |
-| 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 133 testes em 12 arquivos cobrindo cálculos, formatação e validações. |
+| 13 | ~~Sem testes~~ | **RESOLVIDO**: Vitest configurado, 142 testes em 13 arquivos cobrindo cálculos, formatação e validações. |
 | 14 | ~~db:push pendente~~ | **RESOLVIDO**: Models Investment, Debt, CreditCard e `category_id` em RecurringBill já estão no banco e em uso. |
 | 15 | **RLS pendente aplicação** | Script SQL pronto mas não aplicado ao banco. Aplicar manualmente no Supabase SQL Editor. |
 | 16 | **Erros lint pré-existentes** | `app/(dashboard)/page.tsx` tem 8 erros (JSX em try/catch — react-hooks/error-boundaries). `components/transacoes/new-transaction-modal.tsx` tem 4 erros (`@typescript-eslint/no-explicit-any`). 8 warnings em bills-history, new-bill-modal, upcoming-bills, metas-client, person-avatar, new-transaction-modal. Total: 20 problemas (12 erros, 8 warnings). Pré-existentes, não corrigir. |
