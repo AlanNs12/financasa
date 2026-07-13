@@ -53,6 +53,9 @@ interface PlanejamentoClientProps {
     recurrence: string
     start_month: number
     start_year: number
+    confirmed: boolean
+    confirmedAmount: number | null
+    confirmedTransactionId: string | null
   }>
 }
 

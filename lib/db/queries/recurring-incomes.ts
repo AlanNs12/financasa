@@ -83,3 +83,47 @@ export async function deleteRecurringIncome(id: string, householdId: string) {
     data: { is_active: false },
   })
 }
+
+export async function getRecurringIncomesWithStatus(
+  householdId: string,
+  month: number,
+  year: number
+) {
+  const incomes = await getRecurringIncomesForMonth(householdId, month, year)
+
+  const confirmedTransactions = await prisma.transaction.findMany({
+    where: {
+      household_id: householdId,
+      type: 'INCOME',
+      recurring_income_id: { in: incomes.map(i => i.id) },
+      OR: [
+        { billing_month: month, billing_year: year },
+        {
+          billing_month: null,
+          date: {
+            gte: new Date(year, month - 1, 1),
+            lt:  new Date(year, month, 1),
+          },
+        },
+      ],
+    },
+    select: {
+      id: true,
+      recurring_income_id: true,
+      amount: true,
+      date: true,
+    },
+  })
+
+  return incomes.map(income => {
+    const confirmed = confirmedTransactions.find(
+      t => t.recurring_income_id === income.id
+    )
+    return {
+      ...income,
+      confirmed: !!confirmed,
+      confirmedAmount: confirmed ? Number(confirmed.amount) : null,
+      confirmedTransactionId: confirmed?.id ?? null,
+    }
+  })
+}

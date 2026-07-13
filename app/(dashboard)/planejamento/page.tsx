@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
 import { getRecurringBills } from '@/lib/db/queries/bills'
-import { getRecurringIncomesForMonth } from '@/lib/db/queries/recurring-incomes'
+import { getRecurringIncomesWithStatus } from '@/lib/db/queries/recurring-incomes'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { prisma } from '@/lib/db/prisma'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
@@ -51,7 +51,7 @@ export default async function PlanejamentoPage({
     getRecurringBills(current.householdId, month, year),
     getEffectiveIncome(current.householdId, month, year),
     getTransactionsByMonth(current.householdId, month, year),
-    getRecurringIncomesForMonth(current.householdId, month, year),
+    getRecurringIncomesWithStatus(current.householdId, month, year),
   ])
 
   const totalPaidBills = bills
@@ -77,6 +77,9 @@ export default async function PlanejamentoPage({
     recurrence: i.recurrence as string,
     start_month: i.start_month,
     start_year: i.start_year,
+    confirmed: i.confirmed,
+    confirmedAmount: i.confirmedAmount,
+    confirmedTransactionId: i.confirmedTransactionId,
   }))
 
   return (
