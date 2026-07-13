@@ -2,6 +2,7 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatCurrency } from '@/lib/format'
+import { useBalanceVisibility } from '@/lib/balance-visibility-context'
 
 interface CategoryExpense {
   categoryId: string
@@ -27,7 +28,15 @@ const FALLBACK_COLORS = [
   '#F97316',
 ]
 
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: CategoryExpense }> }) {
+function CustomTooltip({
+  active,
+  payload,
+  hidden,
+}: {
+  active?: boolean
+  payload?: Array<{ payload: CategoryExpense }>
+  hidden?: boolean
+}) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
@@ -36,8 +45,12 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
         <span>{d.categoryIcon}</span>
         <span className="font-medium text-foreground">{d.categoryName}</span>
       </div>
-      <p className="text-foreground font-bold">{formatCurrency(d.amount)}</p>
-      <p className="text-muted-foreground text-xs">{d.percentage.toFixed(1)}%</p>
+      <p className="text-foreground font-bold">
+        {hidden ? '••••••' : formatCurrency(d.amount)}
+      </p>
+      <p className="text-muted-foreground text-xs">
+        {hidden ? '••••••' : `${d.percentage.toFixed(1)}%`}
+      </p>
     </div>
   )
 }
@@ -54,6 +67,7 @@ export function ExpensePieChart({
   }>
 }) {
   const total = data.reduce((s, d) => s + d.total, 0)
+  const { isHidden, hideValue } = useBalanceVisibility()
 
   const enriched: CategoryExpense[] = data.map((d) => ({
     categoryId: d.categoryId,
@@ -114,7 +128,7 @@ export function ExpensePieChart({
                   />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip hidden={isHidden} />} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -133,11 +147,11 @@ export function ExpensePieChart({
               <span className="text-sm text-foreground flex-1 truncate">
                 {d.categoryIcon} {d.categoryName}
               </span>
-              <span className="text-sm font-semibold text-foreground tabular-nums shrink-0">
-                {formatCurrency(d.amount)}
+              <span className="text-sm font-semibold text-foreground tabular-nums shrink-0 transition-all duration-200">
+                {hideValue(formatCurrency(d.amount))}
               </span>
-              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right shrink-0">
-                {d.percentage.toFixed(0)}%
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right shrink-0 transition-all duration-200">
+                {isHidden ? '••••••' : `${d.percentage.toFixed(0)}%`}
               </span>
             </div>
           ))}
@@ -146,8 +160,8 @@ export function ExpensePieChart({
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Total
             </span>
-            <span className="text-sm font-bold text-foreground tabular-nums">
-              {formatCurrency(total)}
+            <span className="text-sm font-bold text-foreground tabular-nums transition-all duration-200">
+              {hideValue(formatCurrency(total))}
             </span>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { formatCurrency } from '@/lib/format'
 import Link from 'next/link'
+import { useBalanceVisibility } from '@/lib/balance-visibility-context'
 
 interface MonthlyBudgetCardProps {
   month: string
@@ -27,6 +28,7 @@ export function MonthlyBudgetCard({
   expectedBudget,
 }: MonthlyBudgetCardProps) {
   const percent = Math.min(100, percentage)
+  const { hideValue } = useBalanceVisibility()
 
   return (
     <div className="rounded-2xl p-6 text-white shadow-theme-lg relative
@@ -45,8 +47,8 @@ export function MonthlyBudgetCard({
             <p className="text-white/70 text-sm font-medium mb-1">
               Orçamento Mensal
             </p>
-            <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(balance)}
+            <p className="text-3xl font-bold tracking-tight transition-all duration-200">
+              {hideValue(formatCurrency(balance))}
             </p>
             <p className="text-white/60 text-xs mt-1">saldo disponível</p>
           </div>
@@ -65,8 +67,8 @@ export function MonthlyBudgetCard({
         </div>
 
         <div className="flex justify-between text-xs text-white/70">
-          <span>Gasto: {formatCurrency(spent)}</span>
-          <span>Meta: {formatCurrency(totalBudget)}</span>
+          <span>Gasto: {hideValue(formatCurrency(spent))}</span>
+          <span>Meta: {hideValue(formatCurrency(totalBudget))}</span>
         </div>
 
         <Link
@@ -84,20 +86,20 @@ export function MonthlyBudgetCard({
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="text-white/60">Receita prevista</span>
-                <span className="text-white/90 font-medium">
-                  +{formatCurrency(expectedBudget.expectedIncome)}
+                <span className="text-white/90 font-medium transition-all duration-200">
+                  +{hideValue(formatCurrency(expectedBudget.expectedIncome))}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-white/60">(-) Contas fixas</span>
-                <span className="text-white/70">
-                  -{formatCurrency(expectedBudget.totalBills)}
+                <span className="text-white/70 transition-all duration-200">
+                  -{hideValue(formatCurrency(expectedBudget.totalBills))}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-white/60">(-) Gastos comprometidos</span>
-                <span className="text-white/70">
-                  -{formatCurrency(expectedBudget.totalCommitted)}
+                <span className="text-white/70 transition-all duration-200">
+                  -{hideValue(formatCurrency(expectedBudget.totalCommitted))}
                 </span>
               </div>
               <div className="flex justify-between text-xs pt-1.5 border-t border-white/10">
@@ -105,7 +107,7 @@ export function MonthlyBudgetCard({
                   (=) Disponível esperado
                 </span>
                 <span
-                  className="font-bold"
+                  className="font-bold transition-all duration-200"
                   style={{
                     color:
                       expectedBudget.expectedAvailable >= 0
@@ -113,7 +115,7 @@ export function MonthlyBudgetCard({
                         : '#f87171',
                   }}
                 >
-                  {formatCurrency(expectedBudget.expectedAvailable)}
+                  {hideValue(formatCurrency(expectedBudget.expectedAvailable))}
                 </span>
               </div>
             </div>

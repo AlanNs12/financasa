@@ -1,11 +1,13 @@
 'use client'
 
 import { Suspense } from 'react'
-import { Menu, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Menu, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { MonthSelector } from './month-selector'
 import { PersonAvatar } from '@/components/shared/person-avatar'
+import { HeaderThemeToggle } from './header-theme-toggle'
 import { useSidebar } from '@/lib/sidebar-context'
+import { useBalanceVisibility } from '@/lib/balance-visibility-context'
 import { Logo } from '@/components/shared/logo'
 
 function MonthSelectorFallback() {
@@ -34,6 +36,7 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   const { toggleMobile } = useSidebar()
+  const { isHidden, toggle } = useBalanceVisibility()
 
   return (
     <header className="sticky top-0 z-[30] flex h-16 items-center gap-3
@@ -63,6 +66,16 @@ export function Header({ user }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={toggle}
+          aria-label={isHidden ? 'Mostrar saldos' : 'Esconder saldos'}
+          className="w-9 h-9 flex items-center justify-center rounded-lg
+                     text-muted-foreground hover:bg-muted hover:text-foreground
+                     transition-colors"
+        >
+          {isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+        <HeaderThemeToggle />
         <Link
           href="/configuracoes"
           className="flex items-center gap-2.5 rounded-lg px-2 py-1.5

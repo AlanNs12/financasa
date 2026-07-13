@@ -1,6 +1,9 @@
+'use client'
+
 import { formatCurrency } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { TrendingUp, TrendingDown, Wallet, Clock } from 'lucide-react'
+import { useBalanceVisibility } from '@/lib/balance-visibility-context'
 
 interface SummaryCardsProps {
   income: number
@@ -51,10 +54,11 @@ const cards = [
 export function SummaryCards({
   income,
   expenses,
-  balance,
-  pendingBills,
-}: SummaryCardsProps) {
-  const values = { income, expenses, balance, pendingBills }
+      balance,
+      pendingBills,
+    }: SummaryCardsProps) {
+      const { hideValue } = useBalanceVisibility()
+      const values = { income, expenses, balance, pendingBills }
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -87,10 +91,10 @@ export function SummaryCards({
               </div>
             </div>
             <p
-              className="text-2xl font-bold mb-1 tabular-nums"
+              className="text-2xl font-bold mb-1 tabular-nums transition-all duration-200"
               style={{ color: isBalance ? valueColor : undefined }}
             >
-              {formatCurrency(values[card.key])}
+              {hideValue(formatCurrency(values[card.key]))}
             </p>
             <p className="text-sm text-muted-foreground">{card.label}</p>
           </div>
