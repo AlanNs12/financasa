@@ -22,6 +22,8 @@ interface Bill {
   recurrence: string
   installment_total: number | null
   installment_current: number | null
+  start_month: number
+  start_year: number
   created_at: string
   monthlyStatus: { status: string; paid_at: string | null }[]
 }
@@ -106,10 +108,8 @@ function extractName(name: string): string {
 
 function getRecurrenceLabel(bill: Bill, viewMonth: number, viewYear: number): string {
   if (bill.installment_total) {
-    const created = new Date(bill.created_at)
-    const monthsDiff =
-      (viewYear - created.getFullYear()) * 12 + (viewMonth - 1 - created.getMonth())
-    const installmentNumber = Math.max(1, Math.min(1 + monthsDiff, bill.installment_total))
+    const monthDiff = (viewYear - bill.start_year) * 12 + (viewMonth - bill.start_month)
+    const installmentNumber = Math.max(1, Math.min(monthDiff + 1, bill.installment_total))
     return `Parcela ${installmentNumber}/${bill.installment_total}`
   }
   return RECURRENCE_LABELS[bill.recurrence] || bill.recurrence

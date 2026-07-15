@@ -42,6 +42,8 @@ export async function getRecurringBills(householdId: string, month?: number, yea
     is_active: b.is_active,
     installment_total: b.installment_total,
     installment_current: b.installment_current,
+    start_month: b.start_month,
+    start_year: b.start_year,
     created_at: b.created_at.toISOString(),
     user: b.user,
     monthlyStatus: b.monthlyStatus,
