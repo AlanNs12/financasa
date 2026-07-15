@@ -187,6 +187,11 @@ export function FaturasClient({
                           fatura
                         </span>
                       )}
+                      {t.installment_total && t.installment_total > 1 && (
+                        <span className="text-[10px] text-primary font-medium shrink-0">
+                          {t.installment_current}/{t.installment_total}x
+                        </span>
+                      )}
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-[#EF4444] shrink-0 tabular-nums">

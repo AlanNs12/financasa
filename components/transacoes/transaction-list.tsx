@@ -24,6 +24,9 @@ interface TransactionItem {
   credit_card_id?: string | null
   billing_month?: number | null
   billing_year?: number | null
+  installment_group_id?: string | null
+  installment_total?: number | null
+  installment_current?: number | null
   category: { name: string; icon: string; color: string } | null
   user: { name: string; avatar_url: string | null } | null
 }
@@ -193,6 +196,11 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                                          bg-[#fef9c3] dark:bg-[#f59e0b]/10
                                          px-1.5 py-0.5 rounded-full font-medium shrink-0">
                           Fatura {MONTH_ABBR[tx.billing_month - 1]}
+                        </span>
+                      )}
+                      {tx.installment_total && tx.installment_total > 1 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/8 text-primary dark:text-primary shrink-0">
+                          {tx.installment_current}/{tx.installment_total}x
                         </span>
                       )}
                       {tx.user && <PersonAvatar user={tx.user} size="sm" />}

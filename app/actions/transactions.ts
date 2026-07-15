@@ -5,8 +5,9 @@ import { createTransaction, deleteTransaction, updateTransaction } from '@/lib/d
 import { transactionSchema } from '@/lib/validations/transaction'
 import type { TransactionType, PaymentMethod } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
-import { calculateBillingPeriod } from '@/lib/calculations/billing'
+import { calculateBillingPeriod, calculateInstallmentPlan } from '@/lib/calculations/billing'
 import { prisma } from '@/lib/db/prisma'
+import { randomUUID } from 'crypto'
 
 async function computeBilling(
   paymentMethod: string,
@@ -37,6 +38,8 @@ export async function createTransactionAction(data: {
   payment_method: string
   notes?: string
   credit_card_id?: string | null
+  installments?: number
+  total_amount?: number
 }) {
   const current = await getCurrentUserHousehold()
   if (!current) {
@@ -52,12 +55,72 @@ export async function createTransactionAction(data: {
     payment_method: data.payment_method,
     notes: data.notes,
     credit_card_id: data.credit_card_id || undefined,
+    installments: data.installments,
+    total_amount: data.total_amount,
   }
 
   const parsed = transactionSchema.safeParse(rawData)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const installments = parsed.data.installments ?? 1
+  const isInstallment =
+    installments > 1 &&
+    parsed.data.payment_method === 'CREDIT_CARD' &&
+    !!parsed.data.credit_card_id
+
+  if (isInstallment) {
+    const card = await prisma.creditCard.findFirst({
+      where: { id: parsed.data.credit_card_id!, household_id: current.householdId },
+      select: { closing_day: true },
+    })
+
+    const purchaseDate = new Date(parsed.data.date + 'T12:00:00')
+    const totalAmount = parsed.data.total_amount ?? parsed.data.amount
+    const groupId = randomUUID()
+
+    const plan = calculateInstallmentPlan(
+      purchaseDate,
+      card?.closing_day ?? null,
+      totalAmount,
+      installments
+    )
+
+    await prisma.transaction.createMany({
+      data: plan.map((p) => ({
+        household_id: current.householdId,
+        user_id: current.userId,
+        category_id: parsed.data.category_id,
+        type: 'EXPENSE' as const,
+        amount: p.amount,
+        description: `${parsed.data.description} (${p.installmentNumber}/${installments}x)`,
+        date: purchaseDate,
+        payment_method: 'CREDIT_CARD' as const,
+        notes: parsed.data.notes,
+        credit_card_id: parsed.data.credit_card_id,
+        billing_month: p.billingMonth,
+        billing_year: p.billingYear,
+        installment_group_id: groupId,
+        installment_total: installments,
+        installment_current: p.installmentNumber,
+      })),
+    })
+
+    revalidatePath('/transacoes')
+    revalidatePath('/')
+    revalidatePath('/faturas')
+
+    return {
+      success: true,
+      installments,
+      billingStart: { month: plan[0].billingMonth, year: plan[0].billingYear },
+      billingEnd: {
+        month: plan[installments - 1].billingMonth,
+        year: plan[installments - 1].billingYear,
+      },
+    }
   }
 
   const { billingMonth, billingYear } = await computeBilling(

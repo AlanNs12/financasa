@@ -11,11 +11,20 @@ interface MonthlyBudgetCardProps {
   totalBudget: number
   percentage: number
   expectedBudget?: {
-    expectedIncome: number
-    totalBills: number
-    totalCommitted: number
-    expectedAvailable: number
     hasExpectedData: boolean
+    expectedIncome: number
+    actualIncome: number
+    confirmedIncome: number
+    pendingIncome: number
+    incomeProgress: number
+    totalBills: number
+    paidBills: number
+    pendingBills: number
+    billsProgress: number
+    totalExpenses: number
+    variableExpenses: number
+    saldoReal: number
+    saldoPrevisto: number
   }
 }
 
@@ -79,45 +88,126 @@ export function MonthlyBudgetCard({
         </Link>
 
         {expectedBudget?.hasExpectedData && (
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <p className="text-white/50 text-xs font-medium uppercase tracking-wide mb-3">
+          <div className="mt-5 pt-5 border-t border-white/10 space-y-4">
+            <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">
               Orçamento esperado
             </p>
-            <div className="space-y-1.5">
+
+            {expectedBudget.expectedIncome > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-xs text-white/70 font-medium">Receitas</span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold text-white">
+                      {hideValue(formatCurrency(expectedBudget.actualIncome))}
+                    </span>
+                    <span className="text-[11px] text-white/40">/</span>
+                    <span className="text-[11px] text-white/60">
+                      {hideValue(formatCurrency(expectedBudget.expectedIncome))}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${expectedBudget.incomeProgress}%`,
+                      backgroundColor:
+                        expectedBudget.incomeProgress >= 100
+                          ? '#4ade80'
+                          : expectedBudget.incomeProgress >= 50
+                            ? '#fbbf24'
+                            : '#f87171',
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-white/50">
+                    {expectedBudget.confirmedIncome > 0
+                      ? `${hideValue(formatCurrency(expectedBudget.confirmedIncome))} confirmado`
+                      : 'Nenhuma receita confirmada'}
+                  </span>
+                  {expectedBudget.pendingIncome > 0 && (
+                    <span className="text-[#fbbf24]">
+                      +{hideValue(formatCurrency(expectedBudget.pendingIncome))} a receber
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {expectedBudget.totalBills > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-xs text-white/70 font-medium">Contas fixas</span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold text-white">
+                      {hideValue(formatCurrency(expectedBudget.paidBills))}
+                    </span>
+                    <span className="text-[11px] text-white/40">/</span>
+                    <span className="text-[11px] text-white/60">
+                      {hideValue(formatCurrency(expectedBudget.totalBills))}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${expectedBudget.billsProgress}%`,
+                      backgroundColor:
+                        expectedBudget.billsProgress >= 100 ? '#4ade80' : '#fbbf24',
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-white/50">
+                    {hideValue(formatCurrency(expectedBudget.paidBills))} pago
+                  </span>
+                  {expectedBudget.pendingBills > 0 && (
+                    <span className="text-[#fbbf24]">
+                      {hideValue(formatCurrency(expectedBudget.pendingBills))} pendente
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {expectedBudget.variableExpenses > 0 && (
               <div className="flex justify-between text-xs">
-                <span className="text-white/60">Receita prevista</span>
-                <span className="text-white/90 font-medium transition-all duration-200">
-                  +{hideValue(formatCurrency(expectedBudget.expectedIncome))}
+                <span className="text-white/70">Gastos variáveis</span>
+                <span className="font-semibold text-[#f87171]">
+                  -{hideValue(formatCurrency(expectedBudget.variableExpenses))}
                 </span>
               </div>
+            )}
+
+            <div className="pt-3 border-t border-white/10 space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-white/60">(-) Contas fixas</span>
-                <span className="text-white/70 transition-all duration-200">
-                  -{hideValue(formatCurrency(expectedBudget.totalBills))}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-white/60">(-) Gastos comprometidos</span>
-                <span className="text-white/70 transition-all duration-200">
-                  -{hideValue(formatCurrency(expectedBudget.totalCommitted))}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs pt-1.5 border-t border-white/10">
-                <span className="text-white/80 font-medium">
-                  (=) Disponível esperado
-                </span>
+                <span className="text-white/60">Saldo real agora</span>
                 <span
-                  className="font-bold transition-all duration-200"
-                  style={{
-                    color:
-                      expectedBudget.expectedAvailable >= 0
-                        ? '#4ade80'
-                        : '#f87171',
-                  }}
+                  className="font-bold text-sm"
+                  style={{ color: expectedBudget.saldoReal >= 0 ? '#4ade80' : '#f87171' }}
                 >
-                  {hideValue(formatCurrency(expectedBudget.expectedAvailable))}
+                  {expectedBudget.saldoReal < 0 ? '-' : ''}
+                  {hideValue(formatCurrency(Math.abs(expectedBudget.saldoReal)))}
                 </span>
               </div>
+
+              {(expectedBudget.pendingIncome > 0 || expectedBudget.pendingBills > 0) && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/60">Saldo previsto (fim do mês)</span>
+                  <span
+                    className="font-bold text-sm"
+                    style={{
+                      color: expectedBudget.saldoPrevisto >= 0 ? '#4ade80' : '#f87171',
+                    }}
+                  >
+                    {expectedBudget.saldoPrevisto < 0 ? '-' : ''}
+                    {hideValue(formatCurrency(Math.abs(expectedBudget.saldoPrevisto)))}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

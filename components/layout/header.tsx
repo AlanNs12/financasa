@@ -19,7 +19,7 @@ function MonthSelectorFallback() {
       <div className="w-7 h-7 flex items-center justify-center rounded-lg">
         <ChevronLeft size={16} className="text-muted-foreground" />
       </div>
-      <span className="min-w-[120px] text-center text-sm font-semibold
+      <span suppressHydrationWarning className="min-w-[120px] text-center text-sm font-semibold
                        text-foreground uppercase tracking-wide px-2">
         {label} {now.getFullYear()}
       </span>

@@ -42,6 +42,8 @@ export default async function ContasPage({
     recurrence: b.recurrence,
     installment_total: b.installment_total,
     installment_current: b.installment_current,
+    start_month: b.start_month,
+    start_year: b.start_year,
     created_at: b.created_at,
     monthlyStatus: b.monthlyStatus.map((ms) => ({
       status: ms.status,
