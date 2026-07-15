@@ -55,6 +55,9 @@ export interface Transaction {
   notes?: string | null
   recurring_bill_id?: string | null
   credit_card_id?: string | null
+  installment_group_id?: string | null
+  installment_total?: number | null
+  installment_current?: number | null
   created_at: string
   updated_at: string
   category?: Category

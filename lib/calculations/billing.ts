@@ -3,6 +3,13 @@ export interface BillingPeriod {
   billingYear: number
 }
 
+export interface InstallmentBillingPlan {
+  installmentNumber: number
+  billingMonth: number
+  billingYear: number
+  amount: number
+}
+
 export function calculateBillingPeriod(
   purchaseDate: Date,
   closingDay: number | null | undefined
@@ -38,4 +45,36 @@ export function previewBillingPeriod(
   const date = new Date(dateString + 'T12:00:00')
   if (isNaN(date.getTime())) return null
   return calculateBillingPeriod(date, closingDay)
+}
+
+export function calculateInstallmentPlan(
+  purchaseDate: Date,
+  closingDay: number | null | undefined,
+  totalAmount: number,
+  installments: number
+): InstallmentBillingPlan[] {
+  const perInstallment = Math.round((totalAmount / installments) * 100) / 100
+  const firstBilling = calculateBillingPeriod(purchaseDate, closingDay)
+
+  return Array.from({ length: installments }, (_, i) => {
+    let m = firstBilling.billingMonth + i
+    let y = firstBilling.billingYear
+
+    while (m > 12) {
+      m -= 12
+      y += 1
+    }
+
+    const isLast = i === installments - 1
+    const amount = isLast
+      ? Math.round((totalAmount - perInstallment * (installments - 1)) * 100) / 100
+      : perInstallment
+
+    return {
+      installmentNumber: i + 1,
+      billingMonth: m,
+      billingYear: y,
+      amount,
+    }
+  })
 }

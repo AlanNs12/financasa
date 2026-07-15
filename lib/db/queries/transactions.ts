@@ -41,7 +41,7 @@ export async function getTransactionsByMonth(
     orderBy: { date: 'desc' },
   })
 
-  return transactions.map((t: { amount: { toString: () => string }; created_at: Date; updated_at: Date; date: Date; billing_month: number | null; billing_year: number | null }) => ({
+  return transactions.map((t: { amount: { toString: () => string }; created_at: Date; updated_at: Date; date: Date; billing_month: number | null; billing_year: number | null; installment_group_id: string | null; installment_total: number | null; installment_current: number | null }) => ({
     ...t,
     amount: Number(t.amount),
     created_at: t.created_at.toISOString(),
@@ -49,6 +49,9 @@ export async function getTransactionsByMonth(
     date: t.date.toISOString(),
     billing_month: t.billing_month,
     billing_year: t.billing_year,
+    installment_group_id: t.installment_group_id,
+    installment_total: t.installment_total,
+    installment_current: t.installment_current,
   })) as unknown as Transaction[]
 }
 

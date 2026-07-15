@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { transactionSchema, type TransactionOutput } from '@/lib/validations/transaction'
 import { createTransactionAction, updateTransactionAction } from '@/app/actions/transactions'
 import { previewBillingPeriod, getBillingLabel } from '@/lib/calculations/billing'
+import { formatCurrency } from '@/lib/format'
 import { toast } from 'sonner'
 
 interface Category {
@@ -56,6 +57,7 @@ interface NewTransactionModalProps {
 export function NewTransactionModal({ isOpen, onClose, categories, creditCards, defaultDate, editingTransaction }: NewTransactionModalProps) {
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
+  const [installments, setInstallments] = useState(1)
 
   const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === 'BOTH'
@@ -99,6 +101,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
   useEffect(() => {
     if (editingTransaction) {
       setType(editingTransaction.type)
+      setInstallments(1)
       reset({
         amount: editingTransaction.amount,
         description: editingTransaction.description,
@@ -110,6 +113,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
       } as any)
     } else if (isOpen) {
       setType('EXPENSE')
+      setInstallments(1)
       reset({
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
@@ -169,6 +173,8 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
           payment_method: values.payment_method,
           notes: values.notes || undefined,
           credit_card_id: values.credit_card_id || undefined,
+          installments: installments > 1 ? installments : 1,
+          total_amount: installments > 1 ? Number(values.amount) : undefined,
         })
 
         if (result?.error) {
@@ -176,7 +182,12 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
           return
         }
 
-        if (result?.billingMoved && result.billingMonth && result.billingYear) {
+        if (result?.installments && result.installments > 1) {
+          const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+          toast.success(
+            `Compra parcelada em ${result.installments}x criada! ${MONTHS[result.billingStart.month - 1]}/${result.billingStart.year} → ${MONTHS[result.billingEnd.month - 1]}/${result.billingEnd.year}`
+          )
+        } else if (result?.billingMoved && result.billingMonth && result.billingYear) {
           toast.success(
             `Transação criada! Lançada na fatura de ${getBillingLabel({
               billingMonth: result.billingMonth,
@@ -188,6 +199,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
         }
       }
 
+      setInstallments(1)
       reset()
       onClose()
     })
@@ -352,6 +364,99 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
                     </option>
                   ))}
                 </select>
+              )}
+            </div>
+          )}
+
+          {paymentMethod === 'CREDIT_CARD' && creditCardId && !editingTransaction && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInstallments(1)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    installments === 1
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  À vista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { if (installments <= 1) setInstallments(2) }}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    installments > 1
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  Parcelado
+                </button>
+              </div>
+
+              {installments > 1 && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Número de parcelas
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="2"
+                      max="24"
+                      value={installments}
+                      onChange={(e) => setInstallments(Number(e.target.value))}
+                      className="flex-1 accent-primary"
+                    />
+                    <span className="text-sm font-bold text-foreground min-w-[32px] text-center">
+                      {installments}x
+                    </span>
+                  </div>
+
+                  {watch('amount') && Number(watch('amount')) > 0 && (
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Valor total</span>
+                        <span className="font-semibold text-foreground">
+                          {formatCurrency(Number(watch('amount')))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Cada parcela</span>
+                        <span className="font-semibold text-foreground">
+                          {formatCurrency(
+                            Math.round((Number(watch('amount')) / installments) * 100) / 100
+                          )}
+                        </span>
+                      </div>
+                      {(() => {
+                        const card = creditCards.find((c) => c.id === creditCardId)
+                        const dateVal = watch('date')
+                        if (!card?.closing_day || !dateVal) return null
+                        const firstBilling = previewBillingPeriod(dateVal, card.closing_day)
+                        if (!firstBilling) return null
+                        let endM = firstBilling.billingMonth + installments - 1
+                        let endY = firstBilling.billingYear
+                        while (endM > 12) {
+                          endM -= 12
+                          endY++
+                        }
+                        const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+                        return (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Período</span>
+                            <span className="font-medium text-foreground">
+                              {MONTHS[firstBilling.billingMonth - 1]}/{firstBilling.billingYear}
+                              {' → '}
+                              {MONTHS[endM - 1]}/{endY}
+                            </span>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -74,6 +74,9 @@ model Transaction {
   recurring_income_id String?
   billing_month      Int?
   billing_year      Int?
+  installment_group_id String?
+  installment_total    Int?
+  installment_current  Int?
   category          Category        @relation(fields: [category_id], references: [id])
   credit_card        CreditCard?       @relation(fields: [credit_card_id], references: [id])
   recurring_income   RecurringIncome?  @relation(fields: [recurring_income_id], references: [id])

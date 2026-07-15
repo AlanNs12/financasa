@@ -10,6 +10,8 @@ export interface FaturaTransaction {
   categoryColor: string
   billingMoved: boolean
   purchaseDate: string
+  installment_total: number | null
+  installment_current: number | null
 }
 
 export interface FaturaCard {
@@ -90,6 +92,8 @@ export async function getFaturaData(
       categoryColor: t.category.color,
       billingMoved,
       purchaseDate: dateStr,
+      installment_total: t.installment_total,
+      installment_current: t.installment_current,
     }
 
     if (!t.credit_card) {
