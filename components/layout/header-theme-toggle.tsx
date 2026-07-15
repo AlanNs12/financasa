@@ -1,22 +1,30 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useSyncExternalStore, useTransition } from 'react'
 import { Sun, Moon } from 'lucide-react'
 import { setThemeAction } from '@/app/actions/theme'
 
+function subscribe(callback: () => void) {
+  window.addEventListener('themechange', callback)
+  return () => window.removeEventListener('themechange', callback)
+}
+
+function getSnapshot() {
+  return document.documentElement.classList.contains('dark')
+}
+
+function getServerSnapshot() {
+  return false
+}
+
 export function HeaderThemeToggle() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document !== 'undefined') {
-      return document.documentElement.classList.contains('dark')
-    }
-    return false
-  })
+  const isDark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const [, startTransition] = useTransition()
 
   function toggle() {
     const next = !isDark
-    setIsDark(next)
     document.documentElement.classList.toggle('dark', next)
+    window.dispatchEvent(new Event('themechange'))
     startTransition(() => setThemeAction(next ? 'dark' : 'light'))
   }
 

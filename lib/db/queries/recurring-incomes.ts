@@ -91,6 +91,10 @@ export async function getRecurringIncomesWithStatus(
 ) {
   const incomes = await getRecurringIncomesForMonth(householdId, month, year)
 
+  if (incomes.length === 0) {
+    return []
+  }
+
   const confirmedTransactions = await prisma.transaction.findMany({
     where: {
       household_id: householdId,

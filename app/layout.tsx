@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Outfit } from "next/font/google"
 import { Toaster } from "sonner"
-import { cookies } from "next/headers"   // ← adicionar
+import { cookies } from "next/headers"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -36,26 +36,28 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({   // ← adicionar async
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const cookieStore = await cookies()         // ← adicionar
-  const theme = cookieStore.get("theme")?.value ?? "light"  // ← adicionar
+  const cookieStore = await cookies()
+  const theme = cookieStore.get("theme")?.value ?? "light"
 
   return (
     <html
       lang="pt-BR"
-      className={`${outfit.variable} h-full antialiased ${theme === "dark" ? "dark" : ""}`}  // ← adicionar dark
+      className={`${outfit.variable} h-full antialiased ${theme === "dark" ? "dark" : ""}`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)theme=([^;]+)/);var t=m?decodeURIComponent(m[1]):'light';if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`
           }}
         />
+      </head>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <Toaster
           position="bottom-center"
