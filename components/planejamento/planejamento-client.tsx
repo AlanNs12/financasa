@@ -9,7 +9,8 @@ import { confirmRecurringIncomeAction, unconfirmRecurringIncomeAction } from '@/
 import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 import { CategoryDetailPanel } from '@/components/planejamento/category-detail-panel'
-import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp } from 'lucide-react'
+import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp, Repeat } from 'lucide-react'
+import type { BillsBreakdown } from '@/lib/db/queries/bills'
 
 interface PlanejamentoItem {
   id: string
@@ -20,6 +21,7 @@ interface PlanejamentoItem {
   planned: number
   spent: number
   percentage: number
+  hasRecurringPlan: boolean
 }
 
 interface PlanejamentoData {
@@ -33,8 +35,7 @@ interface PlanejamentoData {
 
 interface PlanejamentoClientProps {
   data: PlanejamentoData
-  totalPaidBills: number
-  totalPendingBills: number
+  billsBreakdown: BillsBreakdown
   month: number
   year: number
   incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number; expectedIncome: number }
@@ -62,7 +63,7 @@ interface PlanejamentoClientProps {
   }>
 }
 
-export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
   const router = useRouter()
   const { effectiveIncome: effectiveBudgetIncome, actualIncome, expectedIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
@@ -70,6 +71,7 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
   const [incomeValue, setIncomeValue] = useState(String(effectiveBudgetIncome))
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [itemValue, setItemValue] = useState('')
+  const [repeatMonthly, setRepeatMonthly] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [confirmingIncomeId, setConfirmingIncomeId] = useState<string | null>(null)
   const [confirmAmount, setConfirmAmount] = useState('')
@@ -83,9 +85,9 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
   } | null>(null)
 
   const monthName = getMonthName(month)
-  const baseIncome = actualIncome > 0 ? actualIncome : expectedIncome
-  const saldoReal = baseIncome - data.total_spent
-  const totalVariableExpenses = data.total_spent - totalPaidBills
+  const receitaEfetiva = actualIncome > 0 ? actualIncome : expectedIncome
+  const gastosVariaveis = Math.max(0, data.total_spent - billsBreakdown.paid)
+  const saldoReal = receitaEfetiva - billsBreakdown.total - gastosVariaveis
   const naoAlocado = effectiveBudgetIncome - data.total_planned
   const warningOverBudget = data.total_planned > effectiveBudgetIncome
 
@@ -93,14 +95,11 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
     .filter(i => i.confirmed)
     .reduce((s, i) => s + (i.confirmedAmount ?? 0), 0)
 
-  const totalPendingExpectedIncome = monthIncomes
+  const pendingIncome = monthIncomes
     .filter(i => !i.confirmed)
     .reduce((s, i) => s + i.amount, 0)
 
-  const saldoPrevisto =
-    saldoReal +
-    totalPendingExpectedIncome -
-    totalPendingBills
+  const saldoPrevisto = saldoReal + pendingIncome
 
   function saveIncome() {
     const val = Number(incomeValue)
@@ -119,16 +118,21 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
   function startEditItem(item: PlanejamentoItem) {
     setEditingItem(item.id)
     setItemValue(String(item.planned))
+    setRepeatMonthly(item.hasRecurringPlan ?? false)
   }
 
   function saveItem() {
     const val = Number(itemValue)
     if (val < 0 || !editingItem) return
     startTransition(async () => {
-      const result = await upsertBudgetItemAction(month, year, editingItem, val)
+      const result = await upsertBudgetItemAction(month, year, editingItem, val, repeatMonthly)
       if (result?.success) {
-        toast.success('Planejamento salvo!')
+        toast.success(repeatMonthly
+          ? 'Planejamento salvo e repetirá todo mês'
+          : 'Planejamento salvo para este mês')
         setEditingItem(null)
+        setRepeatMonthly(false)
+        router.refresh()
       } else {
         toast.error('Erro ao salvar.')
       }
@@ -245,52 +249,56 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
               ) : null}
             </div>
 
-            {(totalPaidBills > 0 || data.total_spent > 0) && (
+            {(billsBreakdown.total > 0 || gastosVariaveis > 0) && (
               <>
-                {totalPaidBills > 0 && (
-                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                {billsBreakdown.total > 0 && (
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatCurrency(totalPaidBills)}
+                      {formatCurrency(billsBreakdown.total)}
+                      {billsBreakdown.pending > 0 && (
+                        <span className="text-[11px] text-[#f59e0b] ml-1">
+                          ({formatCurrency(billsBreakdown.pending)} pendente)
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
 
-                {totalVariableExpenses > 0 && (
-                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                {gastosVariaveis > 0 && (
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">(-) Gastos variáveis</span>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatCurrency(totalVariableExpenses)}
+                      {formatCurrency(gastosVariaveis)}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
                   <span className="text-sm font-semibold text-foreground">(=) Saldo real</span>
                   <span
                     className="text-xl font-bold"
                     style={{ color: saldoReal >= 0 ? '#22C55E' : '#EF4444' }}
                   >
-                    {formatCurrency(saldoReal)}
+                    {saldoReal < 0 ? '-' : ''}{formatCurrency(Math.abs(saldoReal))}
                   </span>
                   {saldoReal < 0 && (
                     <AlertTriangle className="w-4 h-4" style={{ color: '#EF4444' }} />
                   )}
                 </div>
 
-                {(totalPendingExpectedIncome > 0 || totalPendingBills > 0) && (
+                {pendingIncome > 0 && (
                   <div className="flex items-center gap-2 mt-1 pl-1">
                     <div className="w-0.5 h-4 bg-border self-stretch mr-1" />
-                    <span className="text-xs text-muted-foreground">Saldo previsto</span>
+                    <span className="text-xs text-muted-foreground">
+                      Saldo previsto (com receitas a confirmar)
+                    </span>
                     <span
                       className="text-sm font-semibold tabular-nums"
                       style={{ color: saldoPrevisto >= 0 ? '#22C55E' : '#EF4444' }}
                     >
                       {saldoPrevisto < 0 ? '-' : ''}
                       {formatCurrency(Math.abs(saldoPrevisto))}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      (se tudo planejado ocorrer)
                     </span>
                   </div>
                 )}
@@ -462,7 +470,7 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
               </div>
             ))}
 
-            {totalPendingExpectedIncome === 0 && totalConfirmedIncome > 0 ? (
+            {pendingIncome === 0 && totalConfirmedIncome > 0 ? (
               <div className="flex items-center justify-between pt-2 border-t border-border/60">
                 <span className="text-xs text-[#15803d] dark:text-[#4ade80] font-medium">
                   ✓ Todas as receitas confirmadas
@@ -511,93 +519,139 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
           return (
             <div
               key={item.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSelectedCategory({
-                id: item.id,
-                name: item.name,
-                icon: item.icon,
-                color: item.color,
-                planned: item.planned,
-              })}
-              onKeyDown={e => { if (e.key === 'Enter') setSelectedCategory({ id: item.id, name: item.name, icon: item.icon, color: item.color, planned: item.planned }) }}
-              className="bg-card rounded-2xl border border-border p-4 cursor-pointer hover:bg-muted/40 transition-colors group"
-              aria-label={`Ver detalhes da categoria ${item.name}`}
+              className="rounded-2xl border border-border bg-card overflow-hidden"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xl">{item.icon}</span>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{item.name}</p>
-                  {isEditing ? (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs text-muted-foreground">Planejado: R$</span>
-                      <input
-                        type="number"
-                        value={itemValue}
-                        onChange={(e) => setItemValue(e.target.value)}
-                        className="min-w-0 w-[120px] max-w-full px-3 py-1.5 rounded-lg border border-border bg-background text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveItem()
-                          if (e.key === 'Escape') cancelEdit()
-                        }}
-                      />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); saveItem() }}
-                        disabled={isPending}
-                        aria-label="Confirmar valor"
-                        className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 transition-colors"
-                      >
-                        {isPending ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <Check size={18} />}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); cancelEdit() }}
-                        aria-label="Cancelar edição"
-                        className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 transition-colors"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-xs">
-                      {item.planned > 0 ? (
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="text-muted-foreground">Gasto:</span>
-                          <span className={item.spent > item.planned ? 'text-expense font-medium' : 'text-foreground font-medium'}>
-                            {formatCurrency(item.spent)}
-                          </span>
-                          <span className="text-muted-foreground">de</span>
-                          <span className="text-foreground font-medium">{formatCurrency(item.planned)}</span>
-                          <span style={{ color: item.planned - item.spent >= 0 ? 'var(--income)' : 'var(--expense)' }} className="font-medium">
-                            ({item.planned - item.spent >= 0 ? '+' : '-'}{formatCurrency(Math.abs(item.planned - item.spent)).replace('R$', '').trim()})
-                          </span>
-                        </div>
-                      ) : item.spent > 0 ? (
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="text-muted-foreground">Gasto:</span>
-                          <span className="text-expense font-medium">{formatCurrency(item.spent)}</span>
-                          <span className="text-muted-foreground">· sem planejamento</span>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">Nenhum gasto · sem planejamento</p>
-                      )}
-                    </div>
-                  )}
+              <div
+                onClick={() => {
+                  if (isEditing) return
+                  setSelectedCategory({
+                    id: item.id,
+                    name: item.name,
+                    icon: item.icon,
+                    color: item.color,
+                    planned: item.planned,
+                  })
+                }}
+                className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/40 transition-colors"
+                aria-label={isEditing ? undefined : `Ver detalhes da categoria ${item.name}`}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                  style={{ backgroundColor: `${item.color}20` }}
+                >
+                  {item.icon}
                 </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {item.name}
+                    </p>
+                    {item.hasRecurringPlan && (
+                      <Repeat size={11} className="text-muted-foreground shrink-0" aria-label="Planejamento recorrente" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Gasto: <span style={{
+                      color: item.spent > item.planned ? '#EF4444' : 'inherit'
+                    }}>
+                      {formatCurrency(item.spent)}
+                    </span>
+                    {item.planned === 0
+                      ? ' · sem planejamento'
+                      : ` de ${formatCurrency(item.planned)}`}
+                  </p>
+                </div>
+
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={item.percentage > 90 ? 'text-xs font-medium text-expense' : item.percentage >= 70 ? 'text-xs font-medium text-yellow-500' : 'text-xs font-medium text-muted-foreground'}>
-                    {Math.round(item.percentage)}%
-                  </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); startEditItem(item) }}
-                    aria-label="Editar planejamento"
-                    className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent dark:hover:bg-gray-800 transition-colors"
+                  <span
+                    className="text-sm font-bold"
+                    style={{
+                      color: item.planned === 0 ? 'var(--muted-foreground)' :
+                        (item.spent / item.planned) >= 1 ? '#EF4444' :
+                        (item.spent / item.planned) >= 0.7 ? '#f59e0b' : '#22C55E'
+                    }}
                   >
-                    <Pencil size={18} className="text-muted-foreground" />
+                    {item.planned > 0
+                      ? `${Math.min(100, Math.round((item.spent / item.planned) * 100))}%`
+                      : '—'}
+                  </span>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      startEditItem(item)
+                    }}
+                    aria-label={`Editar planejamento de ${item.name}`}
+                    disabled={isEditing}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 disabled:opacity-30"
+                  >
+                    <Pencil size={15} />
                   </button>
                 </div>
               </div>
-              <ProgressBar value={item.spent} max={item.planned || item.spent || 1} size="sm" />
+
+              <div className="px-4 pb-3">
+                <ProgressBar value={item.spent} max={item.planned || item.spent || 1} size="sm" />
+              </div>
+
+              {isEditing && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 px-4 pb-4 pt-1 border-t border-border bg-muted/20"
+                >
+                  <div className="flex-1">
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide block mb-1">
+                      Valor planejado
+                    </label>
+                    <input
+                      type="number"
+                      value={itemValue}
+                      onChange={(e) => setItemValue(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      min="0"
+                      step="0.01"
+                      autoFocus
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-base font-medium focus:outline-none focus:border-ring transition-colors"
+                    />
+                  </div>
+
+                  <label
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer shrink-0 self-end sm:self-auto pb-0.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={repeatMonthly}
+                      onChange={(e) => setRepeatMonthly(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-primary"
+                    />
+                    Repetir
+                  </label>
+
+                  <div className="flex gap-1.5 shrink-0 self-end sm:self-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        saveItem()
+                      }}
+                      disabled={isPending}
+                      className="h-10 px-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] disabled:opacity-50 transition-colors"
+                    >
+                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        cancelEdit()
+                      }}
+                      className="h-10 px-3 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}

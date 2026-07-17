@@ -12,6 +12,7 @@ import {
 } from '@/app/actions/recurring-incomes'
 
 const RECURRENCE_LABELS: Record<string, string> = {
+  ONCE: 'Único (uma vez)',
   MONTHLY: 'Mensal',
   BIMONTHLY: 'Bimestral',
   QUARTERLY: 'Trimestral',
@@ -174,6 +175,11 @@ export function RecurringIncomeSection({
                       este mês
                     </span>
                   )}
+                  {income.recurrence === 'ONCE' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground shrink-0">
+                      única
+                    </span>
+                  )}
                   <button
                     onClick={() => openModal(income)}
                     aria-label="Editar receita"
@@ -261,14 +267,29 @@ export function RecurringIncomeSection({
 
               {!editingIncome && (
                 <div className="p-3 rounded-xl bg-muted/40 text-xs text-muted-foreground">
-                  Esta receita começará a aparecer a partir de{' '}
-                  <strong className="text-foreground">
-                    {new Date(currentYear, currentMonth - 1).toLocaleString('pt-BR', {
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </strong>
-                  .
+                  {recurrence === 'ONCE' ? (
+                    <>
+                      Esta receita aparecerá apenas em{' '}
+                      <strong className="text-foreground">
+                        {new Date(currentYear, currentMonth - 1).toLocaleString('pt-BR', {
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </strong>{' '}
+                      e não se repetirá nos meses seguintes.
+                    </>
+                  ) : (
+                    <>
+                      Esta receita começará a aparecer a partir de{' '}
+                      <strong className="text-foreground">
+                        {new Date(currentYear, currentMonth - 1).toLocaleString('pt-BR', {
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </strong>
+                      .
+                    </>
+                  )}
                 </div>
               )}
 

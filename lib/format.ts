@@ -5,11 +5,17 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
+function toLocalDateOnly(date: string | Date): Date {
+  if (date instanceof Date) return date
+  const [y, m, d] = date.split('T')[0].split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('pt-BR', {
     day: 'numeric',
     month: 'long',
-  }).format(new Date(date))
+  }).format(toLocalDateOnly(date))
 }
 
 export function formatDateFull(date: string | Date): string {
@@ -17,7 +23,7 @@ export function formatDateFull(date: string | Date): string {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(new Date(date))
+  }).format(toLocalDateOnly(date))
 }
 
 export function formatPercentage(value: number): string {
@@ -49,7 +55,7 @@ export function getDefaultTransactionDate(
   const currentYear = now.getFullYear()
 
   if (selectedYear === currentYear && selectedMonth === currentMonth) {
-    return now.toISOString().split('T')[0]
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   }
 
   if (

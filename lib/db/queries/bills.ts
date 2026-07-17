@@ -1,6 +1,35 @@
 import { prisma } from '@/lib/db/prisma'
 import type { BillStatus, Recurrence } from '@prisma/client'
 
+export type ComputedBillStatus = 'PAID' | 'PENDING' | 'OVERDUE'
+
+export function computeBillStatus(
+  dueDay: number,
+  month: number,
+  year: number,
+  savedStatus?: string | null
+): ComputedBillStatus {
+  if (savedStatus === 'PAID') return 'PAID'
+  if (savedStatus === 'SKIPPED') return 'PENDING'
+
+  const now = new Date()
+  const currentDay = now.getDate()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  if (year < currentYear) return 'OVERDUE'
+  if (year === currentYear && month < currentMonth) return 'OVERDUE'
+
+  const dim = new Date(year, month, 0).getDate()
+  const effectiveDueDay = dueDay > dim ? dim : dueDay
+
+  if (year === currentYear && month === currentMonth && effectiveDueDay < currentDay) {
+    return 'OVERDUE'
+  }
+
+  return 'PENDING'
+}
+
 export async function getRecurringBills(householdId: string, month?: number, year?: number) {
   const targetMonth = month ?? new Date().getMonth() + 1
   const targetYear = year ?? new Date().getFullYear()
@@ -319,5 +348,63 @@ export async function updateRecurringBill(
   return prisma.recurringBill.findFirst({
     where: { id, household_id: householdId },
   })
+}
+
+export interface BillsBreakdown {
+  total: number
+  paid: number
+  pending: number
+}
+
+function billAppliesInMonth(
+  startMonth: number,
+  startYear: number,
+  recurrence: string,
+  month: number,
+  year: number
+): boolean {
+  const monthDiff = (year - startYear) * 12 + (month - startMonth)
+  if (monthDiff < 0) return false
+
+  switch (recurrence) {
+    case 'MONTHLY': return true
+    case 'BIMONTHLY': return monthDiff % 2 === 0
+    case 'QUARTERLY': return monthDiff % 3 === 0
+    case 'SEMIANNUAL': return monthDiff % 6 === 0
+    case 'ANNUAL': return monthDiff % 12 === 0
+    default: return true
+  }
+}
+
+export async function getBillsBreakdownForMonth(
+  householdId: string,
+  month: number,
+  year: number
+): Promise<BillsBreakdown> {
+  const bills = await prisma.recurringBill.findMany({
+    where: {
+      household_id: householdId,
+      is_active: true,
+      OR: [
+        { start_year: { lt: year } },
+        { start_year: year, start_month: { lte: month } },
+      ],
+    },
+    include: {
+      monthlyStatus: { where: { month, year }, take: 1 },
+    },
+  })
+
+  let total = 0
+  let paid = 0
+
+  for (const b of bills) {
+    if (!billAppliesInMonth(b.start_month, b.start_year, b.recurrence, month, year)) continue
+    const amount = Number(b.amount)
+    total += amount
+    if (b.monthlyStatus?.[0]?.status === 'PAID') paid += amount
+  }
+
+  return { total, paid, pending: total - paid }
 }
 

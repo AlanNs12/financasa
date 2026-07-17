@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useState, useTransition, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { X, ArrowUpCircle, ArrowDownCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useForm } from 'react-hook-form'
@@ -55,6 +56,7 @@ interface NewTransactionModalProps {
 }
 
 export function NewTransactionModal({ isOpen, onClose, categories, creditCards, defaultDate, editingTransaction }: NewTransactionModalProps) {
+  const router = useRouter()
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
   const [installments, setInstallments] = useState(1)
@@ -77,7 +79,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     : {
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
-        date: defaultDate ?? new Date().toISOString().split('T')[0],
+        date: defaultDate ?? (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}` })(),
       }
 
   const {
@@ -86,7 +88,6 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     setValue,
     watch,
     reset,
-    getValues,
     formState: { errors },
   } = useForm<TransactionOutput>({
     resolver: zodResolver(transactionSchema) as any,
@@ -103,6 +104,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
       setType(editingTransaction.type)
       setInstallments(1)
       reset({
+        type: editingTransaction.type,
         amount: editingTransaction.amount,
         description: editingTransaction.description,
         date: editingTransaction.date.split('T')[0],
@@ -117,7 +119,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
       reset({
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
-        date: defaultDate ?? new Date().toISOString().split('T')[0],
+        date: defaultDate ?? (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}` })(),
       } as any)
     }
   }, [editingTransaction, isOpen, reset, defaultDate])
@@ -142,12 +144,11 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     ? billingPreview.billingMonth !== purchaseMonth
     : false
 
-  function handleFormSubmit() {
-    const values = getValues()
+  function handleFormSubmit(values: TransactionOutput) {
     startTransition(async () => {
-      if (editingTransaction) {
-        const result = await updateTransactionAction(editingTransaction.id, {
-          type,
+      try {
+        const payload = {
+          type: values.type,
           description: values.description,
           amount: Number(values.amount) || 0,
           date: values.date,
@@ -155,53 +156,54 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
           payment_method: values.payment_method,
           notes: values.notes || undefined,
           credit_card_id: values.credit_card_id || undefined,
-        })
-
-        if (result?.error) {
-          toast.error('Erro ao salvar. Verifique os campos.')
-          return
         }
 
-        toast.success('Transação atualizada!')
-      } else {
-        const result = await createTransactionAction({
-          type,
-          description: values.description,
-          amount: Number(values.amount) || 0,
-          date: values.date,
-          category_id: values.category_id,
-          payment_method: values.payment_method,
-          notes: values.notes || undefined,
-          credit_card_id: values.credit_card_id || undefined,
-          installments: installments > 1 ? installments : 1,
-          total_amount: installments > 1 ? Number(values.amount) : undefined,
-        })
+        if (editingTransaction) {
+          const result = await updateTransactionAction(editingTransaction.id, payload)
 
-        if (result?.error) {
-          toast.error('Erro ao salvar. Verifique os campos.')
-          return
-        }
+          if (result?.error) {
+            toast.error('Erro ao salvar. Verifique os campos.')
+            return
+          }
 
-        if (result?.installments && result.installments > 1) {
-          const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-          toast.success(
-            `Compra parcelada em ${result.installments}x criada! ${MONTHS[result.billingStart.month - 1]}/${result.billingStart.year} → ${MONTHS[result.billingEnd.month - 1]}/${result.billingEnd.year}`
-          )
-        } else if (result?.billingMoved && result.billingMonth && result.billingYear) {
-          toast.success(
-            `Transação criada! Lançada na fatura de ${getBillingLabel({
-              billingMonth: result.billingMonth,
-              billingYear: result.billingYear,
-            })}`
-          )
+          toast.success('Transação atualizada!')
         } else {
-          toast.success('Transação criada!')
-        }
-      }
+          const result = await createTransactionAction({
+            ...payload,
+            installments: installments > 1 ? installments : 1,
+            total_amount: installments > 1 ? Number(values.amount) : undefined,
+          })
 
-      setInstallments(1)
-      reset()
-      onClose()
+          if (result?.error) {
+            toast.error('Erro ao salvar. Verifique os campos.')
+            return
+          }
+
+          if (result?.installments && result.installments > 1) {
+            const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+            toast.success(
+              `Compra parcelada em ${result.installments}x criada! ${MONTHS[result.billingStart.month - 1]}/${result.billingStart.year} → ${MONTHS[result.billingEnd.month - 1]}/${result.billingEnd.year}`
+            )
+          } else if (result?.billingMoved && result.billingMonth && result.billingYear) {
+            toast.success(
+              `Transação criada! Lançada na fatura de ${getBillingLabel({
+                billingMonth: result.billingMonth,
+                billingYear: result.billingYear,
+              })}`
+            )
+          } else {
+            toast.success('Transação criada!')
+          }
+        }
+
+        setInstallments(1)
+        reset()
+        onClose()
+        router.refresh()
+      } catch (e) {
+        console.error(e)
+        toast.error('Erro ao salvar. Tente novamente.')
+      }
     })
   }
 
@@ -225,7 +227,9 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit(handleFormSubmit, () => {
+          toast.error('Verifique os campos obrigatórios.')
+        })} className="p-5 space-y-5">
           <div className="flex bg-muted rounded-xl p-1">
             {(['EXPENSE', 'INCOME'] as const).map((t) => (
               <button

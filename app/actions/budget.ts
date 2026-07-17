@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db/prisma'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
+import { upsertCategoryBudgetPlan, deactivateCategoryBudgetPlan } from '@/lib/db/queries/budget'
 
 export async function updateBudgetIncomeAction(month: number, year: number, totalIncome: number) {
   const current = await getCurrentUserHousehold()
@@ -30,10 +31,17 @@ export async function upsertBudgetItemAction(
   month: number,
   year: number,
   categoryId: string,
-  planned: number
+  planned: number,
+  repeatMonthly: boolean = false
 ) {
   const current = await getCurrentUserHousehold()
   if (!current) return { success: false, error: 'Usuário não autenticado.' }
+
+  if (repeatMonthly) {
+    await upsertCategoryBudgetPlan(current.householdId, categoryId, planned, month, year)
+  } else {
+    await deactivateCategoryBudgetPlan(current.householdId, categoryId)
+  }
 
   const budget = await prisma.budget.upsert({
     where: {

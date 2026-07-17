@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
-import { getRecurringBills } from '@/lib/db/queries/bills'
+import { getRecurringBills, computeBillStatus } from '@/lib/db/queries/bills'
 import { getExpensesByCategory } from '@/lib/db/queries/reports'
 import { formatCurrency, getMonthName } from '@/lib/format'
 import { PrintButton } from '@/components/relatorios/print-button'
@@ -160,10 +160,11 @@ export default async function ImprimirRelatorioPage({
               </thead>
               <tbody>
                 {bills.map((bill) => {
-                  const status = bill.monthlyStatus?.[0]
-                  const statusLabel = status?.status === 'PAID'
+                  const saved = bill.monthlyStatus?.[0]?.status
+                  const computed = computeBillStatus(bill.due_day, month, year, saved)
+                  const statusLabel = computed === 'PAID'
                     ? 'Paga'
-                    : status?.status === 'OVERDUE'
+                    : computed === 'OVERDUE'
                       ? 'Atrasada'
                       : 'Pendente'
                   return (

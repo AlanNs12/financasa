@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/prisma'
 import { getCreditCardsWithSpending } from '@/lib/db/queries/credit-cards'
+import { computeBillStatus } from '@/lib/db/queries/bills'
 import { formatCurrency } from '@/lib/format'
 
 export type AlertSeverity = 'danger' | 'warning'
@@ -15,10 +16,6 @@ export interface ActiveAlert {
   href: string
 }
 
-function daysInMonth(month: number, year: number): number {
-  return new Date(year, month, 0).getDate()
-}
-
 export async function getActiveAlerts(
   householdId: string,
   month: number,
@@ -26,17 +23,16 @@ export async function getActiveAlerts(
 ): Promise<ActiveAlert[]> {
   const alerts: ActiveAlert[] = []
 
-  const today = new Date()
-  const currentDay = today.getDate()
-  const currentMonth = today.getMonth() + 1
-  const currentYear = today.getFullYear()
-
-  const isCurrentMonth = month === currentMonth && year === currentYear
-
   const bills = await prisma.recurringBill.findMany({
     where: {
       household_id: householdId,
       is_active: true,
+      AND: {
+        OR: [
+          { start_year: { lt: year } },
+          { start_year: year, start_month: { lte: month } },
+        ],
+      },
     },
     include: {
       monthlyStatus: {
@@ -45,34 +41,31 @@ export async function getActiveAlerts(
     },
   })
 
-  const dim = daysInMonth(month, year)
-
   for (const bill of bills) {
-    const status = bill.monthlyStatus[0]
-    if (status?.status === 'PAID' || status?.status === 'SKIPPED') continue
+    const saved = bill.monthlyStatus[0]?.status
+    const billStatus = computeBillStatus(bill.due_day, month, year, saved)
 
-    let effectiveDueDay = bill.due_day
-    if (effectiveDueDay > dim) effectiveDueDay = dim
+    if (billStatus === 'PAID') continue
 
-    let daysUntilDue: number
-    if (isCurrentMonth) {
-      daysUntilDue = effectiveDueDay - currentDay
-    } else {
-      const dueDate = new Date(year, month - 1, effectiveDueDay)
-      daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    }
-
-    if (daysUntilDue > 5) continue
-
-    const severity: AlertSeverity = daysUntilDue <= 0 ? 'danger' : 'warning'
+    const severity: AlertSeverity = billStatus === 'OVERDUE' ? 'danger' : 'warning'
 
     let title: string
-    if (daysUntilDue < 0) {
+    if (billStatus === 'OVERDUE') {
       title = `${bill.name} vencida`
-    } else if (daysUntilDue === 0) {
-      title = `${bill.name} vence hoje`
     } else {
-      title = `${bill.name} vence em ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'}`
+      const dim = new Date(year, month, 0).getDate()
+      const effectiveDueDay = bill.due_day > dim ? dim : bill.due_day
+      const today = new Date()
+      const dueDate = new Date(year, month - 1, effectiveDueDay)
+      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (daysUntilDue > 5) continue
+
+      if (daysUntilDue === 0) {
+        title = `${bill.name} vence hoje`
+      } else {
+        title = `${bill.name} vence em ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'}`
+      }
     }
 
     alerts.push({
@@ -81,7 +74,7 @@ export async function getActiveAlerts(
       severity,
       title,
       description: `${formatCurrency(Number(bill.amount))} · venc. dia ${bill.due_day}`,
-      href: '/contas',
+      href: `/contas?month=${month}&year=${year}`,
     })
   }
 

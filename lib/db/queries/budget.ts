@@ -9,7 +9,7 @@ export async function getPlanejamentoData(
   const monthStart = new Date(year, month - 1, 1)
   const monthEnd = new Date(year, month, 1)
 
-  const [transactions, categories, budget] = await Promise.all([
+  const [transactions, categories, budget, budgetPlans] = await Promise.all([
     prisma.transaction.findMany({
       where: {
         household_id: householdId,
@@ -32,6 +32,7 @@ export async function getPlanejamentoData(
       },
       include: { items: true },
     }),
+    getActiveBudgetPlans(householdId, month, year),
   ])
 
   const actualIncome = transactions
@@ -44,7 +45,12 @@ export async function getPlanejamentoData(
       .reduce((sum, t) => sum + Number(t.amount), 0)
 
     const budgetItem = budget?.items.find((i) => i.category_id === cat.id)
-    const planned = budgetItem ? Number(budgetItem.planned) : 0
+    const templatePlanned = budgetPlans.get(cat.id)
+    const hasRecurringPlan = templatePlanned != null
+
+    const planned = budgetItem != null
+      ? Number(budgetItem.planned)
+      : (templatePlanned ?? 0)
 
     return {
       id: cat.id,
@@ -55,6 +61,7 @@ export async function getPlanejamentoData(
       planned,
       spent,
       percentage: planned > 0 ? Math.round((spent / planned) * 100) : (spent > 0 ? 100 : 0),
+      hasRecurringPlan,
     }
   })
 
@@ -169,4 +176,62 @@ export async function getBudgetWithProgress(
     items,
     created_at: budget.created_at.toISOString(),
   }
+}
+
+export async function upsertCategoryBudgetPlan(
+  householdId: string,
+  categoryId: string,
+  plannedAmount: number,
+  startMonth: number,
+  startYear: number
+) {
+  return prisma.categoryBudgetPlan.upsert({
+    where: {
+      household_id_category_id: {
+        household_id: householdId,
+        category_id: categoryId,
+      },
+    },
+    create: {
+      household_id: householdId,
+      category_id: categoryId,
+      planned_amount: plannedAmount,
+      start_month: startMonth,
+      start_year: startYear,
+    },
+    update: {
+      planned_amount: plannedAmount,
+      start_month: startMonth,
+      start_year: startYear,
+      is_active: true,
+    },
+  })
+}
+
+export async function deactivateCategoryBudgetPlan(
+  householdId: string,
+  categoryId: string
+) {
+  return prisma.categoryBudgetPlan.updateMany({
+    where: { household_id: householdId, category_id: categoryId },
+    data: { is_active: false },
+  })
+}
+
+export async function getActiveBudgetPlans(
+  householdId: string,
+  month: number,
+  year: number
+): Promise<Map<string, number>> {
+  const plans = await prisma.categoryBudgetPlan.findMany({
+    where: {
+      household_id: householdId,
+      is_active: true,
+      OR: [
+        { start_year: { lt: year } },
+        { start_year: year, start_month: { lte: month } },
+      ],
+    },
+  })
+  return new Map(plans.map(p => [p.category_id, Number(p.planned_amount)]))
 }

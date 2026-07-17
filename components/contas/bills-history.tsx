@@ -6,6 +6,7 @@ import { ProgressBar } from '@/components/shared/progress-bar'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { computeBillStatus } from '@/lib/db/queries/bills'
 
 interface HistoryBill {
   id: string
@@ -33,9 +34,10 @@ interface BillsHistoryProps {
   currentYear: number
 }
 
-function getBillStatus(status: string): 'paid' | 'pending' | 'overdue' {
-  if (status === 'PAID') return 'paid'
-  if (status === 'OVERDUE') return 'overdue'
+function getBillStatus(dueDay: number, month: number, year: number, savedStatus: string): 'paid' | 'pending' | 'overdue' {
+  const computed = computeBillStatus(dueDay, month, year, savedStatus)
+  if (computed === 'PAID') return 'paid'
+  if (computed === 'OVERDUE') return 'overdue'
   return 'pending'
 }
 
@@ -114,7 +116,7 @@ export function BillsHistory({ history, currentMonth, currentYear }: BillsHistor
             {isExpanded && (
               <div className="border-t border-border divide-y divide-border">
                 {h.bills.map((bill) => {
-                  const status = getBillStatus(bill.status)
+                  const status = getBillStatus(bill.due_day, h.month, h.year, bill.status)
                   const icon = extractIcon(bill.name)
                   const name = extractName(bill.name)
 

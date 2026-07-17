@@ -15,15 +15,16 @@ interface UpcomingBill {
 interface UpcomingBillsProps {
   bills: UpcomingBill[]
   month: number
+  year: number
 }
 
-export function UpcomingBills({ bills, month }: UpcomingBillsProps) {
+export function UpcomingBills({ bills, month, year }: UpcomingBillsProps) {
   return (
     <PageCard
       title="Próximas contas"
       action={
         <Link
-          href="/contas"
+          href={`/contas?month=${month}&year=${year}`}
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           Ver todas

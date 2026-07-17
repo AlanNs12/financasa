@@ -10,6 +10,7 @@ import { BillsHistory } from '@/components/contas/bills-history'
 import { RecurringIncomeSection } from '@/components/contas/recurring-income-section'
 import { Fab } from '@/components/transacoes/fab'
 import { markBillAsPaidAction, deleteRecurringBillAction } from '@/app/actions/bills'
+import { computeBillStatus } from '@/lib/db/queries/bills'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
@@ -88,11 +89,11 @@ const RECURRENCE_LABELS: Record<string, string> = {
   ANNUAL: 'Anual',
 }
 
-function getBillStatus(bill: Bill): 'paid' | 'pending' | 'overdue' {
-  const status = bill.monthlyStatus?.[0]?.status
-  if (status === 'PAID') return 'paid'
-  if (status === 'OVERDUE') return 'overdue'
-  if (status === 'SKIPPED') return 'pending'
+function getBillStatus(bill: Bill, viewMonth: number, viewYear: number): 'paid' | 'pending' | 'overdue' {
+  const saved = bill.monthlyStatus?.[0]?.status
+  const computed = computeBillStatus(bill.due_day, viewMonth, viewYear, saved)
+  if (computed === 'PAID') return 'paid'
+  if (computed === 'OVERDUE') return 'overdue'
   return 'pending'
 }
 
@@ -142,7 +143,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
 
   const totalAmount = bills.reduce((sum, b) => sum + b.amount, 0)
   const paidAmount = bills
-    .filter((b) => getBillStatus(b) === 'paid')
+    .filter((b) => getBillStatus(b, month, year) === 'paid')
     .reduce((sum, b) => sum + b.amount, 0)
   const remaining = totalAmount - paidAmount
   const paidPercentage = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0
@@ -264,7 +265,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
             ) : (
               bills.map((bill) => {
                 const isExpanded = expandedBill === bill.id
-                const status = getBillStatus(bill)
+                const status = getBillStatus(bill, month, year)
                 const icon = extractIcon(bill.name)
                 const name = extractName(bill.name)
                 const isPaying = payingBill === bill.id
