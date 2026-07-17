@@ -511,93 +511,121 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
           return (
             <div
               key={item.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSelectedCategory({
-                id: item.id,
-                name: item.name,
-                icon: item.icon,
-                color: item.color,
-                planned: item.planned,
-              })}
-              onKeyDown={e => { if (e.key === 'Enter') setSelectedCategory({ id: item.id, name: item.name, icon: item.icon, color: item.color, planned: item.planned }) }}
-              className="bg-card rounded-2xl border border-border p-4 cursor-pointer hover:bg-muted/40 transition-colors group"
-              aria-label={`Ver detalhes da categoria ${item.name}`}
+              className="rounded-2xl border border-border bg-card overflow-hidden"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xl">{item.icon}</span>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{item.name}</p>
-                  {isEditing ? (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-xs text-muted-foreground">Planejado: R$</span>
-                      <input
-                        type="number"
-                        value={itemValue}
-                        onChange={(e) => setItemValue(e.target.value)}
-                        className="min-w-0 w-[120px] max-w-full px-3 py-1.5 rounded-lg border border-border bg-background text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveItem()
-                          if (e.key === 'Escape') cancelEdit()
-                        }}
-                      />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); saveItem() }}
-                        disabled={isPending}
-                        aria-label="Confirmar valor"
-                        className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 transition-colors"
-                      >
-                        {isPending ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <Check size={18} />}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); cancelEdit() }}
-                        aria-label="Cancelar edição"
-                        className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 transition-colors"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-xs">
-                      {item.planned > 0 ? (
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="text-muted-foreground">Gasto:</span>
-                          <span className={item.spent > item.planned ? 'text-expense font-medium' : 'text-foreground font-medium'}>
-                            {formatCurrency(item.spent)}
-                          </span>
-                          <span className="text-muted-foreground">de</span>
-                          <span className="text-foreground font-medium">{formatCurrency(item.planned)}</span>
-                          <span style={{ color: item.planned - item.spent >= 0 ? 'var(--income)' : 'var(--expense)' }} className="font-medium">
-                            ({item.planned - item.spent >= 0 ? '+' : '-'}{formatCurrency(Math.abs(item.planned - item.spent)).replace('R$', '').trim()})
-                          </span>
-                        </div>
-                      ) : item.spent > 0 ? (
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="text-muted-foreground">Gasto:</span>
-                          <span className="text-expense font-medium">{formatCurrency(item.spent)}</span>
-                          <span className="text-muted-foreground">· sem planejamento</span>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">Nenhum gasto · sem planejamento</p>
-                      )}
-                    </div>
-                  )}
+              <div
+                onClick={() => {
+                  if (isEditing) return
+                  setSelectedCategory({
+                    id: item.id,
+                    name: item.name,
+                    icon: item.icon,
+                    color: item.color,
+                    planned: item.planned,
+                  })
+                }}
+                className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/40 transition-colors"
+                aria-label={isEditing ? undefined : `Ver detalhes da categoria ${item.name}`}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                  style={{ backgroundColor: `${item.color}20` }}
+                >
+                  {item.icon}
                 </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Gasto: <span style={{
+                      color: item.spent > item.planned ? '#EF4444' : 'inherit'
+                    }}>
+                      {formatCurrency(item.spent)}
+                    </span>
+                    {item.planned === 0
+                      ? ' · sem planejamento'
+                      : ` de ${formatCurrency(item.planned)}`}
+                  </p>
+                </div>
+
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={item.percentage > 90 ? 'text-xs font-medium text-expense' : item.percentage >= 70 ? 'text-xs font-medium text-yellow-500' : 'text-xs font-medium text-muted-foreground'}>
-                    {Math.round(item.percentage)}%
-                  </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); startEditItem(item) }}
-                    aria-label="Editar planejamento"
-                    className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent dark:hover:bg-gray-800 transition-colors"
+                  <span
+                    className="text-sm font-bold"
+                    style={{
+                      color: item.planned === 0 ? 'var(--muted-foreground)' :
+                        (item.spent / item.planned) >= 1 ? '#EF4444' :
+                        (item.spent / item.planned) >= 0.7 ? '#f59e0b' : '#22C55E'
+                    }}
                   >
-                    <Pencil size={18} className="text-muted-foreground" />
+                    {item.planned > 0
+                      ? `${Math.min(100, Math.round((item.spent / item.planned) * 100))}%`
+                      : '—'}
+                  </span>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      startEditItem(item)
+                    }}
+                    aria-label={`Editar planejamento de ${item.name}`}
+                    disabled={isEditing}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 disabled:opacity-30"
+                  >
+                    <Pencil size={15} />
                   </button>
                 </div>
               </div>
-              <ProgressBar value={item.spent} max={item.planned || item.spent || 1} size="sm" />
+
+              <div className="px-4 pb-3">
+                <ProgressBar value={item.spent} max={item.planned || item.spent || 1} size="sm" />
+              </div>
+
+              {isEditing && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 px-4 pb-4 pt-1 border-t border-border bg-muted/20"
+                >
+                  <div className="flex-1">
+                    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide block mb-1">
+                      Valor planejado
+                    </label>
+                    <input
+                      type="number"
+                      value={itemValue}
+                      onChange={(e) => setItemValue(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      min="0"
+                      step="0.01"
+                      autoFocus
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-base font-medium focus:outline-none focus:border-ring transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex gap-1.5 shrink-0 self-end sm:self-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        saveItem()
+                      }}
+                      disabled={isPending}
+                      className="h-10 px-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] disabled:opacity-50 transition-colors"
+                    >
+                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        cancelEdit()
+                      }}
+                      className="h-10 px-3 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}
