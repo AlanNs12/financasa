@@ -19,6 +19,7 @@ const MORE_ITEMS = [
   { href: '/investimentos', label: 'Investimentos', icon: '📈' },
   { href: '/faturas', label: 'Faturas', icon: '🧾' },
   { href: '/dividas', label: 'Dívidas', icon: '💳' },
+  { href: '/valor-real', label: 'Valor Real', icon: '⏱️' },
   { href: '/relatorios', label: 'Relatórios', icon: '📊' },
   { href: '/calendario', label: 'Calendário', icon: '📅' },
   { href: '/configuracoes', label: 'Config.', icon: '⚙️' },

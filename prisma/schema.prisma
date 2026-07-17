@@ -29,6 +29,7 @@ model Household {
   id             String          @id @default(uuid())
   name           String          @default("Nossa Casa")
   invite_code    String          @unique
+  work_hours_per_day Int         @default(12)
   created_at     DateTime        @default(now())
   budgets        Budget[]
   categories     Category[]
