@@ -25,6 +25,10 @@ export async function getRecurringIncomesForMonth(
     if (income.start_year > year) return false
     if (income.start_year === year && income.start_month > month) return false
 
+    if (income.recurrence === 'ONCE') {
+      return income.start_year === year && income.start_month === month
+    }
+
     const monthDiff =
       (year - income.start_year) * 12 + (month - income.start_month)
 
