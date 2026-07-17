@@ -189,9 +189,9 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                         type={tx.type === 'INCOME' ? 'income' : 'expense'}
                         size="sm"
                       />
-                      {tx.payment_method === 'CREDIT_CARD' &&
-                       tx.billing_month != null &&
-                       tx.billing_month !== new Date(tx.date).getMonth() + 1 && (
+                       {tx.payment_method === 'CREDIT_CARD' &&
+                        tx.billing_month != null &&
+                        tx.billing_month !== new Date(tx.date.includes('T') ? tx.date.split('T')[0] + 'T12:00:00' : tx.date).getMonth() + 1 && (
                         <span className="text-[10px] text-[#d97706] dark:text-[#fbbf24]
                                          bg-[#fef9c3] dark:bg-[#f59e0b]/10
                                          px-1.5 py-0.5 rounded-full font-medium shrink-0">

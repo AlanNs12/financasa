@@ -79,7 +79,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     : {
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
-        date: defaultDate ?? new Date().toISOString().split('T')[0],
+        date: defaultDate ?? (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}` })(),
       }
 
   const {
@@ -119,7 +119,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
       reset({
         type: 'EXPENSE' as const,
         payment_method: 'PIX' as const,
-        date: defaultDate ?? new Date().toISOString().split('T')[0],
+        date: defaultDate ?? (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}` })(),
       } as any)
     }
   }, [editingTransaction, isOpen, reset, defaultDate])

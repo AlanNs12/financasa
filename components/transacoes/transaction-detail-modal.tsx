@@ -49,8 +49,8 @@ export function TransactionDetailModal({
   if (!transaction) return null
 
   const isIncome = transaction.type === 'INCOME'
-  const date = new Date(transaction.date)
-  const createdAt = new Date(transaction.created_at)
+  const date = new Date(transaction.date.includes('T') ? transaction.date.split('T')[0] + 'T12:00:00' : transaction.date)
+  const createdAt = new Date(transaction.created_at.includes('T') ? transaction.created_at.split('T')[0] + 'T12:00:00' : transaction.created_at)
 
   const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
   const formattedTime = format(createdAt, "HH:mm")

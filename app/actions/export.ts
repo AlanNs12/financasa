@@ -41,7 +41,7 @@ export async function exportTransactionsCsvAction(month: number, year: number) {
 
   const header = ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Pagamento', 'Usuário']
   const rows = transactions.map((t) => {
-    const date = new Date(t.date).toLocaleDateString('pt-BR')
+    const date = new Date(t.date.includes('T') ? t.date.split('T')[0] + 'T12:00:00' : t.date).toLocaleDateString('pt-BR')
     const category = t.category?.name ?? ''
     const type = t.type === 'INCOME' ? 'Receita' : 'Despesa'
     const payment = PAYMENT_METHOD_LABELS[t.payment_method] ?? t.payment_method
