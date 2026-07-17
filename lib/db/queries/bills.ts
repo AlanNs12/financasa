@@ -1,6 +1,35 @@
 import { prisma } from '@/lib/db/prisma'
 import type { BillStatus, Recurrence } from '@prisma/client'
 
+export type ComputedBillStatus = 'PAID' | 'PENDING' | 'OVERDUE'
+
+export function computeBillStatus(
+  dueDay: number,
+  month: number,
+  year: number,
+  savedStatus?: string | null
+): ComputedBillStatus {
+  if (savedStatus === 'PAID') return 'PAID'
+  if (savedStatus === 'SKIPPED') return 'PENDING'
+
+  const now = new Date()
+  const currentDay = now.getDate()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  if (year < currentYear) return 'OVERDUE'
+  if (year === currentYear && month < currentMonth) return 'OVERDUE'
+
+  const dim = new Date(year, month, 0).getDate()
+  const effectiveDueDay = dueDay > dim ? dim : dueDay
+
+  if (year === currentYear && month === currentMonth && effectiveDueDay < currentDay) {
+    return 'OVERDUE'
+  }
+
+  return 'PENDING'
+}
+
 export async function getRecurringBills(householdId: string, month?: number, year?: number) {
   const targetMonth = month ?? new Date().getMonth() + 1
   const targetYear = year ?? new Date().getFullYear()

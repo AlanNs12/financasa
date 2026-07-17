@@ -7,7 +7,7 @@ import { QuickAddTransaction } from '@/components/dashboard/quick-add-transactio
 import { getMonthAbbr } from '@/lib/format'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
-import { getRecurringBills } from '@/lib/db/queries/bills'
+import { getRecurringBills, computeBillStatus } from '@/lib/db/queries/bills'
 import { getBudgetWithProgress } from '@/lib/db/queries/budget'
 import { getActiveAlerts } from '@/lib/db/queries/alerts'
 import { getCategories } from '@/lib/db/queries/categories'
@@ -81,17 +81,14 @@ export default async function DashboardPage({
     }))
 
     const upcomingBills = bills.slice(0, 3).map((b) => {
-      const status = b.monthlyStatus?.[0]
-      let billStatus: 'paid' | 'pending' | 'overdue' = 'pending'
-      if (status?.status === 'PAID') billStatus = 'paid'
-      else if (status?.status === 'OVERDUE') billStatus = 'overdue'
-
+      const saved = b.monthlyStatus?.[0]?.status
+      const computed = computeBillStatus(b.due_day, currentMonth, currentYear, saved)
       return {
         id: b.id,
         name: b.name,
         amount: b.amount,
         due_day: b.due_day,
-        status: billStatus,
+        status: computed === 'PAID' ? 'paid' as const : computed === 'OVERDUE' ? 'overdue' as const : 'pending' as const,
       }
     })
 
@@ -119,7 +116,7 @@ export default async function DashboardPage({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RecentTransactions transactions={recentTransactions} />
-          <UpcomingBills bills={upcomingBills} month={currentMonth} />
+          <UpcomingBills bills={upcomingBills} month={currentMonth} year={currentYear} />
         </div>
 
         <QuickAddTransaction

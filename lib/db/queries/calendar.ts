@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma'
+import { computeBillStatus } from '@/lib/db/queries/bills'
 
 export type CalendarEventType =
   | 'income'
@@ -91,10 +92,11 @@ export async function getCalendarData(
   })
 
   for (const bill of bills) {
-    const status = bill.monthlyStatus[0]?.status ?? 'PENDING'
+    const saved = bill.monthlyStatus[0]?.status
+    const computed = computeBillStatus(bill.due_day, month, year, saved)
     const eventType: CalendarEventType =
-      status === 'PAID'    ? 'bill_paid'    :
-      status === 'OVERDUE' ? 'bill_overdue' :
+      computed === 'PAID'    ? 'bill_paid'    :
+      computed === 'OVERDUE' ? 'bill_overdue' :
       'bill_pending'
 
     const createdMonth = new Date(bill.created_at).getMonth() + 1
