@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget'
-import { getRecurringBills } from '@/lib/db/queries/bills'
+import { getBillsBreakdownForMonth } from '@/lib/db/queries/bills'
 import { getRecurringIncomesWithStatus } from '@/lib/db/queries/recurring-incomes'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { prisma } from '@/lib/db/prisma'
@@ -46,24 +46,13 @@ export default async function PlanejamentoPage({
     })
   }
 
-  const [data, bills, incomeData, allTransactions, monthIncomes] = await Promise.all([
+  const [data, billsBreakdown, incomeData, allTransactions, monthIncomes] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
-    getRecurringBills(current.householdId, month, year),
+    getBillsBreakdownForMonth(current.householdId, month, year),
     getEffectiveIncome(current.householdId, month, year),
     getTransactionsByMonth(current.householdId, month, year),
     getRecurringIncomesWithStatus(current.householdId, month, year),
   ])
-
-  const totalPaidBills = bills
-    .filter((b) => b.monthlyStatus?.[0]?.status === 'PAID')
-    .reduce((s, b) => s + b.amount, 0)
-
-  const totalPendingBills = bills
-    .filter((b) =>
-      !b.monthlyStatus?.[0] ||
-      b.monthlyStatus[0].status !== 'PAID'
-    )
-    .reduce((s, b) => s + b.amount, 0)
 
   const clientTransactions = allTransactions.map((t) => ({
     id: t.id,
@@ -93,8 +82,7 @@ export default async function PlanejamentoPage({
     <Suspense fallback={<div className="space-y-6"><div className="h-20" /></div>}>
       <PlanejamentoClient
         data={data}
-        totalPaidBills={totalPaidBills}
-        totalPendingBills={totalPendingBills}
+        billsBreakdown={billsBreakdown}
         month={month}
         year={year}
         incomeData={incomeData}

@@ -10,6 +10,7 @@ import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 import { CategoryDetailPanel } from '@/components/planejamento/category-detail-panel'
 import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp } from 'lucide-react'
+import type { BillsBreakdown } from '@/lib/db/queries/bills'
 
 interface PlanejamentoItem {
   id: string
@@ -33,8 +34,7 @@ interface PlanejamentoData {
 
 interface PlanejamentoClientProps {
   data: PlanejamentoData
-  totalPaidBills: number
-  totalPendingBills: number
+  billsBreakdown: BillsBreakdown
   month: number
   year: number
   incomeData: { effectiveIncome: number; actualIncome: number; budgetIncome: number; expectedIncome: number }
@@ -62,7 +62,7 @@ interface PlanejamentoClientProps {
   }>
 }
 
-export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
   const router = useRouter()
   const { effectiveIncome: effectiveBudgetIncome, actualIncome, expectedIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
@@ -83,9 +83,9 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
   } | null>(null)
 
   const monthName = getMonthName(month)
-  const baseIncome = actualIncome > 0 ? actualIncome : expectedIncome
-  const saldoReal = baseIncome - data.total_spent
-  const totalVariableExpenses = data.total_spent - totalPaidBills
+  const receitaEfetiva = actualIncome > 0 ? actualIncome : expectedIncome
+  const gastosVariaveis = Math.max(0, data.total_spent - billsBreakdown.paid)
+  const saldoReal = receitaEfetiva - billsBreakdown.total - gastosVariaveis
   const naoAlocado = effectiveBudgetIncome - data.total_planned
   const warningOverBudget = data.total_planned > effectiveBudgetIncome
 
@@ -93,14 +93,11 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
     .filter(i => i.confirmed)
     .reduce((s, i) => s + (i.confirmedAmount ?? 0), 0)
 
-  const totalPendingExpectedIncome = monthIncomes
+  const pendingIncome = monthIncomes
     .filter(i => !i.confirmed)
     .reduce((s, i) => s + i.amount, 0)
 
-  const saldoPrevisto =
-    saldoReal +
-    totalPendingExpectedIncome -
-    totalPendingBills
+  const saldoPrevisto = saldoReal + pendingIncome
 
   function saveIncome() {
     const val = Number(incomeValue)
@@ -245,52 +242,56 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
               ) : null}
             </div>
 
-            {(totalPaidBills > 0 || data.total_spent > 0) && (
+            {(billsBreakdown.total > 0 || gastosVariaveis > 0) && (
               <>
-                {totalPaidBills > 0 && (
-                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                {billsBreakdown.total > 0 && (
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">(-) Contas fixas</span>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatCurrency(totalPaidBills)}
+                      {formatCurrency(billsBreakdown.total)}
+                      {billsBreakdown.pending > 0 && (
+                        <span className="text-[11px] text-[#f59e0b] ml-1">
+                          ({formatCurrency(billsBreakdown.pending)} pendente)
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
 
-                {totalVariableExpenses > 0 && (
-                  <div className="flex items-center gap-2 pl-1 border-l-2 border-muted-foreground/30">
+                {gastosVariaveis > 0 && (
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">(-) Gastos variáveis</span>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatCurrency(totalVariableExpenses)}
+                      {formatCurrency(gastosVariaveis)}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
                   <span className="text-sm font-semibold text-foreground">(=) Saldo real</span>
                   <span
                     className="text-xl font-bold"
                     style={{ color: saldoReal >= 0 ? '#22C55E' : '#EF4444' }}
                   >
-                    {formatCurrency(saldoReal)}
+                    {saldoReal < 0 ? '-' : ''}{formatCurrency(Math.abs(saldoReal))}
                   </span>
                   {saldoReal < 0 && (
                     <AlertTriangle className="w-4 h-4" style={{ color: '#EF4444' }} />
                   )}
                 </div>
 
-                {(totalPendingExpectedIncome > 0 || totalPendingBills > 0) && (
+                {pendingIncome > 0 && (
                   <div className="flex items-center gap-2 mt-1 pl-1">
                     <div className="w-0.5 h-4 bg-border self-stretch mr-1" />
-                    <span className="text-xs text-muted-foreground">Saldo previsto</span>
+                    <span className="text-xs text-muted-foreground">
+                      Saldo previsto (com receitas a confirmar)
+                    </span>
                     <span
                       className="text-sm font-semibold tabular-nums"
                       style={{ color: saldoPrevisto >= 0 ? '#22C55E' : '#EF4444' }}
                     >
                       {saldoPrevisto < 0 ? '-' : ''}
                       {formatCurrency(Math.abs(saldoPrevisto))}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      (se tudo planejado ocorrer)
                     </span>
                   </div>
                 )}
@@ -462,7 +463,7 @@ export function PlanejamentoClient({ data, totalPaidBills, totalPendingBills, mo
               </div>
             ))}
 
-            {totalPendingExpectedIncome === 0 && totalConfirmedIncome > 0 ? (
+            {pendingIncome === 0 && totalConfirmedIncome > 0 ? (
               <div className="flex items-center justify-between pt-2 border-t border-border/60">
                 <span className="text-xs text-[#15803d] dark:text-[#4ade80] font-medium">
                   ✓ Todas as receitas confirmadas
