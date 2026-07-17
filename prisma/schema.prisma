@@ -32,6 +32,7 @@ model Household {
   created_at     DateTime        @default(now())
   budgets        Budget[]
   categories     Category[]
+  categoryBudgetPlans CategoryBudgetPlan[]
   creditCards      CreditCard[]
   debts            Debt[]
   financialGoals   FinancialGoal[]
@@ -51,6 +52,7 @@ model Category {
   type           CategoryType    @default(EXPENSE)
   is_default     Boolean         @default(false)
   budgetItems    BudgetItem[]
+  budgetPlans    CategoryBudgetPlan[]
   household      Household?      @relation(fields: [household_id], references: [id])
   recurringBills RecurringBill[]
   transactions   Transaction[]
@@ -159,6 +161,22 @@ model BudgetItem {
   category    Category @relation(fields: [category_id], references: [id])
 
   @@unique([budget_id, category_id])
+}
+
+model CategoryBudgetPlan {
+  id             String    @id @default(uuid())
+  household_id   String
+  household      Household @relation(fields: [household_id], references: [id])
+  category_id    String
+  category       Category  @relation(fields: [category_id], references: [id])
+  planned_amount Decimal   @db.Decimal(10, 2)
+  start_month    Int
+  start_year     Int
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@unique([household_id, category_id])
 }
 
 model FinancialGoal {

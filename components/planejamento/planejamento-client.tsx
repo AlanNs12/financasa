@@ -9,7 +9,7 @@ import { confirmRecurringIncomeAction, unconfirmRecurringIncomeAction } from '@/
 import { exportPlanningCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 import { CategoryDetailPanel } from '@/components/planejamento/category-detail-panel'
-import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp } from 'lucide-react'
+import { Pencil, Check, X, Loader2, Download, AlertTriangle, TrendingUp, Repeat } from 'lucide-react'
 import type { BillsBreakdown } from '@/lib/db/queries/bills'
 
 interface PlanejamentoItem {
@@ -21,6 +21,7 @@ interface PlanejamentoItem {
   planned: number
   spent: number
   percentage: number
+  hasRecurringPlan: boolean
 }
 
 interface PlanejamentoData {
@@ -70,6 +71,7 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
   const [incomeValue, setIncomeValue] = useState(String(effectiveBudgetIncome))
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [itemValue, setItemValue] = useState('')
+  const [repeatMonthly, setRepeatMonthly] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [confirmingIncomeId, setConfirmingIncomeId] = useState<string | null>(null)
   const [confirmAmount, setConfirmAmount] = useState('')
@@ -116,16 +118,21 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
   function startEditItem(item: PlanejamentoItem) {
     setEditingItem(item.id)
     setItemValue(String(item.planned))
+    setRepeatMonthly(item.hasRecurringPlan ?? false)
   }
 
   function saveItem() {
     const val = Number(itemValue)
     if (val < 0 || !editingItem) return
     startTransition(async () => {
-      const result = await upsertBudgetItemAction(month, year, editingItem, val)
+      const result = await upsertBudgetItemAction(month, year, editingItem, val, repeatMonthly)
       if (result?.success) {
-        toast.success('Planejamento salvo!')
+        toast.success(repeatMonthly
+          ? 'Planejamento salvo e repetirá todo mês'
+          : 'Planejamento salvo para este mês')
         setEditingItem(null)
+        setRepeatMonthly(false)
+        router.refresh()
       } else {
         toast.error('Erro ao salvar.')
       }
@@ -536,9 +543,14 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {item.name}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {item.name}
+                    </p>
+                    {item.hasRecurringPlan && (
+                      <Repeat size={11} className="text-muted-foreground shrink-0" aria-label="Planejamento recorrente" />
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Gasto: <span style={{
                       color: item.spent > item.planned ? '#EF4444' : 'inherit'
@@ -603,6 +615,19 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                       className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-base font-medium focus:outline-none focus:border-ring transition-colors"
                     />
                   </div>
+
+                  <label
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer shrink-0 self-end sm:self-auto pb-0.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={repeatMonthly}
+                      onChange={(e) => setRepeatMonthly(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-primary"
+                    />
+                    Repetir
+                  </label>
 
                   <div className="flex gap-1.5 shrink-0 self-end sm:self-auto">
                     <button
