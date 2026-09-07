@@ -12,7 +12,7 @@ export function MonthSelector() {
   const pathname = usePathname()
   const { month, year, setMonth } = useMonth()
 
-  const date = new Date(year - 1, month, 1)
+  const date = new Date(year, month - 1, 1)
   const monthLabel = format(date, 'MMMM', { locale: ptBR }).toUpperCase()
 
   function navigate(newMonth: number, newYear: number) {
