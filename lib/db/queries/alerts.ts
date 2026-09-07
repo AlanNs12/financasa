@@ -133,7 +133,7 @@ export async function getActiveAlerts(
           severity,
           title: `${catIcon} ${catName}: ${Math.round(percentage)}% do orçamento`,
           description: `${formatCurrency(spent)} de ${formatCurrency(planned)}`,
-          href: '/planejamento',
+          href: `/planejamento?month=${month}&year=${year}`,
         })
       }
     }
@@ -153,7 +153,7 @@ export async function getActiveAlerts(
       severity,
       title: `Cartão ${card.name}: ${Math.round(card.capPercentage)}% do teto`,
       description: `${formatCurrency(card.spending)} de ${formatCurrency(card.spending_cap as number)}`,
-      href: '/transacoes',
+      href: `/transacoes?month=${month}&year=${year}`,
     })
   }
 

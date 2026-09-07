@@ -145,7 +145,7 @@ export function NewBillModal({ isOpen, onClose, categories, editingBill, current
     <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-theme-lg border border-border max-h-[90dvh] overflow-y-auto">
+      <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-theme-lg border border-border max-h-[90dvh] overflow-y-auto safe-area-bottom">
         <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
           <h2 className="text-base font-semibold text-foreground">
             {isEditing ? 'Editar conta' : 'Nova conta'}

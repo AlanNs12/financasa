@@ -125,6 +125,7 @@ model RecurringIncome {
   household             Household       @relation(fields: [household_id], references: [id])
   user                  User            @relation(fields: [user_id], references: [id])
   confirmedTransactions Transaction[]
+  monthlyOverrides      IncomeMonthlyOverride[]
 }
 
 model BillMonthlyStatus {
@@ -138,6 +139,18 @@ model BillMonthlyStatus {
   recurring_bill    RecurringBill @relation(fields: [recurring_bill_id], references: [id])
 
   @@unique([recurring_bill_id, month, year])
+}
+
+model IncomeMonthlyOverride {
+  id                  String          @id @default(uuid())
+  recurring_income_id String
+  month               Int
+  year                Int
+  amount              Decimal         @db.Decimal(10, 2)
+  created_at          DateTime        @default(now())
+  recurring_income    RecurringIncome @relation(fields: [recurring_income_id], references: [id])
+
+  @@unique([recurring_income_id, month, year])
 }
 
 model Budget {

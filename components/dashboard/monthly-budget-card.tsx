@@ -3,6 +3,7 @@
 import { formatCurrency } from '@/lib/format'
 import Link from 'next/link'
 import { useBalanceVisibility } from '@/lib/balance-visibility-context'
+import { useMonth } from '@/lib/month-context'
 
 interface MonthlyBudgetCardProps {
   month: string
@@ -38,6 +39,7 @@ export function MonthlyBudgetCard({
 }: MonthlyBudgetCardProps) {
   const percent = Math.min(100, percentage)
   const { hideValue } = useBalanceVisibility()
+  const { getHref } = useMonth()
 
   return (
     <div className="rounded-2xl p-6 text-white shadow-theme-lg relative
@@ -81,7 +83,7 @@ export function MonthlyBudgetCard({
         </div>
 
         <Link
-          href="/planejamento"
+          href={getHref('/planejamento')}
           className="inline-flex items-center gap-1.5 mt-4 text-xs text-white/60 hover:text-white transition-colors font-medium"
         >
           Ver detalhes &rarr;

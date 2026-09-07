@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/lib/sidebar-context'
+import { useMonth } from '@/lib/month-context'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/actions/auth'
 import { Logo } from '@/components/shared/logo'
@@ -104,6 +105,8 @@ function SidebarInner({
   isExpanded: boolean
   toggleExpanded: () => void
 }) {
+  const { getHref } = useMonth()
+
   return (
     <div className="flex flex-col h-full">
       <div
@@ -112,7 +115,7 @@ function SidebarInner({
           showLabels ? 'justify-between' : 'justify-between'
         )}
       >
-        <Link href="/" className={cn('flex items-center', showLabels ? 'gap-3' : '')}
+        <Link href={getHref('/')} className={cn('flex items-center', showLabels ? 'gap-3' : '')}
               aria-label="Ir para o início">
           <Logo size={showLabels ? 28 : 24} variant="auto"
                 className="text-foreground shrink-0" />
@@ -137,12 +140,12 @@ function SidebarInner({
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === '/'
-              ? pathname === '/'
+              ? pathname === '/' || pathname.startsWith('/?')
               : pathname.startsWith(href)
           return (
             <Link
               key={href}
-              href={href}
+              href={getHref(href)}
               prefetch={true}
               className={cn(
                 'menu-item',
@@ -168,7 +171,7 @@ function SidebarInner({
 
       <div className="px-3 py-4 border-t border-border space-y-0.5">
         <Link
-          href="/configuracoes"
+          href={getHref('/configuracoes')}
           prefetch={true}
           className={cn(
             'menu-item',
