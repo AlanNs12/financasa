@@ -34,19 +34,19 @@ export function MonthSelector() {
   }
 
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-border
-                    bg-background px-1 py-1 shadow-theme-xs">
+    <div className="flex items-center gap-0.5 sm:gap-1 rounded-xl border border-border
+                    bg-background px-0.5 sm:px-1 py-1 shadow-theme-xs">
       <button
         onClick={prevMonth}
         aria-label="Mês anterior"
         className="w-7 h-7 flex items-center justify-center rounded-lg
                    text-muted-foreground hover:bg-muted hover:text-foreground
-                   transition-colors"
+                   transition-colors shrink-0"
       >
         <ChevronLeft size={16} />
       </button>
-      <span className="min-w-[120px] text-center text-sm font-semibold
-                       text-foreground uppercase tracking-wide px-2">
+      <span className="text-center text-xs sm:text-sm font-semibold
+                       text-foreground uppercase tracking-wide px-1 sm:px-2 whitespace-nowrap">
         {monthLabel} {year}
       </span>
       <button
@@ -54,7 +54,7 @@ export function MonthSelector() {
         aria-label="Próximo mês"
         className="w-7 h-7 flex items-center justify-center rounded-lg
                    text-muted-foreground hover:bg-muted hover:text-foreground
-                   transition-colors"
+                   transition-colors shrink-0"
       >
         <ChevronRight size={16} />
       </button>

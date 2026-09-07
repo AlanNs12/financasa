@@ -15,13 +15,13 @@ function MonthSelectorFallback() {
   const now = new Date()
   const label = now.toLocaleDateString('pt-BR', { month: 'long' }).toUpperCase()
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-border
-                    bg-background px-1 py-1 shadow-theme-xs">
+    <div className="flex items-center gap-0.5 sm:gap-1 rounded-xl border border-border
+                    bg-background px-0.5 sm:px-1 py-1 shadow-theme-xs">
       <div className="w-7 h-7 flex items-center justify-center rounded-lg">
         <ChevronLeft size={16} className="text-muted-foreground" />
       </div>
-      <span suppressHydrationWarning className="min-w-[120px] text-center text-sm font-semibold
-                       text-foreground uppercase tracking-wide px-2">
+      <span suppressHydrationWarning className="text-center text-xs sm:text-sm font-semibold
+                       text-foreground uppercase tracking-wide px-1 sm:px-2 whitespace-nowrap">
         {label} {now.getFullYear()}
       </span>
       <div className="w-7 h-7 flex items-center justify-center rounded-lg">
@@ -41,14 +41,14 @@ export function Header({ user }: HeaderProps) {
   const { getHref } = useMonth()
 
   return (
-    <header className="sticky top-0 z-[30] flex h-16 items-center gap-3
+    <header className="sticky top-0 z-[30] flex h-14 sm:h-16 items-center gap-2 sm:gap-3
                        border-b border-border bg-card/80 backdrop-blur-sm
-                       px-4 lg:px-6">
+                       px-3 sm:px-4 lg:px-6">
 
       <button
         onClick={toggleMobile}
         aria-label="Abrir menu"
-        className="lg:hidden w-9 h-9 flex items-center justify-center
+        className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center
                    rounded-lg text-muted-foreground hover:bg-muted
                    transition-colors shrink-0"
       >
@@ -56,22 +56,22 @@ export function Header({ user }: HeaderProps) {
       </button>
 
       <Link href={getHref('/')}
-            className="lg:hidden flex items-center gap-2 shrink-0">
-        <Logo size={24} variant="auto"
+            className="lg:hidden flex items-center shrink-0">
+        <Logo size={22} variant="auto"
               className="text-primary" />
       </Link>
 
-      <div className="flex-1 flex items-center justify-center lg:justify-start">
+      <div className="flex-1 flex items-center justify-center lg:justify-start min-w-0 overflow-hidden">
         <Suspense fallback={<MonthSelectorFallback />}>
           <MonthSelector />
         </Suspense>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
         <button
           onClick={toggle}
           aria-label={isHidden ? 'Mostrar saldos' : 'Esconder saldos'}
-          className="w-9 h-9 flex items-center justify-center rounded-lg
+          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg
                      text-muted-foreground hover:bg-muted hover:text-foreground
                      transition-colors"
         >
@@ -80,7 +80,7 @@ export function Header({ user }: HeaderProps) {
         <HeaderThemeToggle />
         <Link
           href={getHref('/configuracoes')}
-          className="flex items-center gap-2.5 rounded-lg px-2 py-1.5
+          className="flex items-center rounded-lg p-1.5
                      hover:bg-muted transition-colors group"
         >
           <PersonAvatar
@@ -89,7 +89,7 @@ export function Header({ user }: HeaderProps) {
           />
           <span className="hidden md:block text-sm font-medium text-foreground
                            max-w-[160px] truncate group-hover:text-primary
-                           transition-colors">
+                           transition-colors ml-2">
             {user?.name || 'Usuário'}
           </span>
         </Link>

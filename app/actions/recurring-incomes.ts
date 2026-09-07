@@ -6,6 +6,8 @@ import {
   createRecurringIncome,
   updateRecurringIncome,
   deleteRecurringIncome,
+  upsertIncomeMonthlyOverride,
+  deleteIncomeMonthlyOverride,
 } from '@/lib/db/queries/recurring-incomes'
 import { recurringIncomeSchema } from '@/lib/validations/recurring-income'
 import type { Recurrence } from '@prisma/client'
@@ -47,6 +49,52 @@ export async function updateRecurringIncomeAction(id: string, data: unknown) {
     amount: parsed.data.amount ?? 0,
     recurrence: (parsed.data.recurrence ?? 'MONTHLY') as Recurrence,
   })
+
+  revalidatePath('/planejamento')
+  revalidatePath('/contas')
+  return { success: true }
+}
+
+export async function updateRecurringIncomeForMonthAction(
+  id: string,
+  month: number,
+  year: number,
+  data: { name?: string; amount?: number }
+) {
+  const user = await getCurrentUserHousehold()
+  if (!user) return { error: 'Não autorizado' }
+
+  const income = await prisma.recurringIncome.findFirst({
+    where: { id, household_id: user.householdId },
+  })
+  if (!income) return { error: 'Receita não encontrada' }
+
+  if (data.name !== undefined && data.name !== income.name) {
+    await updateRecurringIncome(id, user.householdId, {
+      name: data.name,
+      amount: Number(income.amount),
+      recurrence: income.recurrence,
+    })
+  }
+
+  if (data.amount !== undefined && data.amount !== Number(income.amount)) {
+    await upsertIncomeMonthlyOverride(id, month, year, data.amount)
+  }
+
+  revalidatePath('/planejamento')
+  revalidatePath('/contas')
+  return { success: true }
+}
+
+export async function resetRecurringIncomeForMonthAction(
+  id: string,
+  month: number,
+  year: number
+) {
+  const user = await getCurrentUserHousehold()
+  if (!user) return { error: 'Não autorizado' }
+
+  await deleteIncomeMonthlyOverride(id, month, year)
 
   revalidatePath('/planejamento')
   revalidatePath('/contas')

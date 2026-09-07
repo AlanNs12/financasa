@@ -397,9 +397,9 @@ export function InvestimentosClient({
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl safe-area-bottom">
             <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
               <h2 className="text-lg font-bold text-foreground">Novo investimento</h2>
               <button
@@ -570,12 +570,12 @@ export function InvestimentosClient({
       )}
 
       {pendingDelete && (
-        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => !isPending && setPendingDelete(null)}
           />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
             <div className="flex flex-col items-center text-center mb-5">
               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
                 <AlertTriangle className="w-6 h-6 text-red-500" />
