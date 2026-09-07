@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useMonth } from '@/lib/month-context'
 import { Home, ArrowLeftRight, Receipt, Banknote, Grid3x3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/app/actions/auth'
@@ -28,6 +29,7 @@ const MORE_ITEMS = [
 export function BottomNav() {
   const pathname = usePathname()
   const [showMore, setShowMore] = useState(false)
+  const { getHref } = useMonth()
 
   return (
     <>
@@ -35,11 +37,13 @@ export function BottomNav() {
         <div className="flex items-center h-16">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isActive =
-              href === '/' ? pathname === '/' : pathname.startsWith(href)
+              href === '/'
+                ? pathname === '/' || pathname.startsWith('/?')
+                : pathname.startsWith(href)
             return (
               <Link
                 key={href}
-                href={href}
+                href={getHref(href)}
                 prefetch={true}
                 className="flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors"
               >
@@ -97,7 +101,7 @@ export function BottomNav() {
               {MORE_ITEMS.map(({ href, label, icon }) => (
                 <Link
                   key={href}
-                  href={href}
+                  href={getHref(href)}
                   onClick={() => setShowMore(false)}
                   className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted/60 hover:bg-muted transition-colors"
                 >

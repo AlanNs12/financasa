@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Pencil, Trash2, TrendingUp, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, TrendingUp, X, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import {
   createRecurringIncomeAction,
   updateRecurringIncomeAction,
+  updateRecurringIncomeForMonthAction,
+  resetRecurringIncomeForMonthAction,
   deleteRecurringIncomeAction,
 } from '@/app/actions/recurring-incomes'
 
@@ -27,6 +29,7 @@ interface RecurringIncomeItem {
   recurrence: string
   start_month: number
   start_year: number
+  hasOverride?: boolean
 }
 
 interface RecurringIncomeSectionProps {
@@ -44,6 +47,7 @@ export function RecurringIncomeSection({
 }: RecurringIncomeSectionProps) {
   const [showModal, setShowModal] = useState(false)
   const [editingIncome, setEditingIncome] = useState<RecurringIncomeItem | null>(null)
+  const [editMode, setEditMode] = useState<'global' | 'month'>('global')
   const [isPending, startTransition] = useTransition()
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
@@ -51,17 +55,19 @@ export function RecurringIncomeSection({
 
   const totalExpected = monthIncomes.reduce((s, i) => s + i.amount, 0)
 
-  function openModal(income?: RecurringIncomeItem) {
+  function openModal(income?: RecurringIncomeItem, mode: 'global' | 'month' = 'global') {
     if (income) {
       setEditingIncome(income)
       setName(income.name)
       setAmount(String(income.amount))
       setRecurrence(income.recurrence)
+      setEditMode(mode)
     } else {
       setEditingIncome(null)
       setName('')
       setAmount('')
       setRecurrence('MONTHLY')
+      setEditMode('global')
     }
     setShowModal(true)
   }
@@ -78,12 +84,26 @@ export function RecurringIncomeSection({
 
     startTransition(async () => {
       if (editingIncome) {
-        const result = await updateRecurringIncomeAction(editingIncome.id, data)
-        if (result?.error) {
-          toast.error(result.error)
-          return
+        if (editMode === 'month') {
+          const result = await updateRecurringIncomeForMonthAction(
+            editingIncome.id,
+            currentMonth,
+            currentYear,
+            { name, amount: Number(amount) }
+          )
+          if (result?.error) {
+            toast.error(result.error)
+            return
+          }
+          toast.success('Valor atualizado apenas para este mês!')
+        } else {
+          const result = await updateRecurringIncomeAction(editingIncome.id, data)
+          if (result?.error) {
+            toast.error(result.error)
+            return
+          }
+          toast.success('Receita atualizada para todos os meses!')
         }
-        toast.success('Receita atualizada!')
       } else {
         const result = await createRecurringIncomeAction(data)
         if (result?.error) {
@@ -93,6 +113,22 @@ export function RecurringIncomeSection({
         toast.success('Receita cadastrada!')
       }
       setShowModal(false)
+    })
+  }
+
+  function handleResetMonth(income: RecurringIncomeItem) {
+    if (!confirm(`Restaurar valor original de "${income.name}" para este mês?`)) return
+    startTransition(async () => {
+      const result = await resetRecurringIncomeForMonthAction(
+        income.id,
+        currentMonth,
+        currentYear
+      )
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Valor restaurado para o original')
     })
   }
 
@@ -148,6 +184,8 @@ export function RecurringIncomeSection({
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           {recurringIncomes.map((income, idx) => {
             const isThisMonth = monthIncomes.some((m) => m.id === income.id)
+            const monthIncome = monthIncomes.find((m) => m.id === income.id)
+            const hasOverride = monthIncome?.hasOverride ?? false
             return (
               <div
                 key={income.id}
@@ -164,11 +202,17 @@ export function RecurringIncomeSection({
                   <p className="text-xs text-muted-foreground">
                     {RECURRENCE_LABELS[income.recurrence] ?? income.recurrence}
                     {!isThisMonth && ' · não previsto este mês'}
+                    {hasOverride && ' · valor alterado este mês'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-[#16a34a] dark:text-[#4ade80]">
-                    +{formatCurrency(income.amount)}
+                  <p className={cn(
+                    'text-sm font-semibold',
+                    hasOverride
+                      ? 'text-[#f59e0b] dark:text-[#fbbf24]'
+                      : 'text-[#16a34a] dark:text-[#4ade80]'
+                  )}>
+                    +{formatCurrency(isThisMonth ? monthIncome?.amount ?? income.amount : income.amount)}
                   </p>
                   {isThisMonth && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-[#dcfce7] dark:bg-[#22c55e]/15 text-[#15803d] dark:text-[#4ade80]">
@@ -180,9 +224,20 @@ export function RecurringIncomeSection({
                       única
                     </span>
                   )}
+                  {hasOverride && (
+                    <button
+                      onClick={() => handleResetMonth(income)}
+                      aria-label="Restaurar valor original"
+                      title="Restaurar valor original deste mês"
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-[#f59e0b] hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                  )}
                   <button
-                    onClick={() => openModal(income)}
-                    aria-label="Editar receita"
+                    onClick={() => openModal(income, 'month')}
+                    aria-label="Editar valor deste mês"
+                    title="Editar apenas este mês"
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 sm:opacity-100"
                   >
                     <Pencil size={14} />
@@ -206,7 +261,11 @@ export function RecurringIncomeSection({
           <div className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-3xl border border-border shadow-theme-lg">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">
-                {editingIncome ? 'Editar receita' : 'Nova receita fixa'}
+                {editingIncome
+                  ? editMode === 'month'
+                    ? 'Editar valor deste mês'
+                    : 'Editar receita'
+                  : 'Nova receita fixa'}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -218,6 +277,21 @@ export function RecurringIncomeSection({
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              {editMode === 'month' && editingIncome && (
+                <div className="p-3 rounded-xl bg-[#fef9c3] dark:bg-[#f59e0b]/10 border border-[#fde68a] dark:border-[#f59e0b]/25">
+                  <p className="text-xs text-[#92400e] dark:text-[#fcd34d]">
+                    Editando o valor apenas para{' '}
+                    <strong>
+                      {new Date(currentYear, currentMonth - 1).toLocaleString('pt-BR', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </strong>
+                    . O valor original não será afetado.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
                   Nome
@@ -228,7 +302,8 @@ export function RecurringIncomeSection({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Salário, Freelance mensal, Aluguel recebido"
                   required
-                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-ring transition-colors"
+                  disabled={editMode === 'month'}
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -248,22 +323,24 @@ export function RecurringIncomeSection({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Recorrência
-                </label>
-                <select
-                  value={recurrence}
-                  onChange={(e) => setRecurrence(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
-                >
-                  {Object.entries(RECURRENCE_LABELS).map(([val, label]) => (
-                    <option key={val} value={val}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {editMode === 'global' && (
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                    Recorrência
+                  </label>
+                  <select
+                    value={recurrence}
+                    onChange={(e) => setRecurrence(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
+                  >
+                    {Object.entries(RECURRENCE_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {!editingIncome && (
                 <div className="p-3 rounded-xl bg-muted/40 text-xs text-muted-foreground">
@@ -306,7 +383,7 @@ export function RecurringIncomeSection({
                   disabled={isPending}
                   className="flex-1 h-11 rounded-lg bg-[#22C55E] text-white text-sm font-semibold hover:bg-[#16a34a] disabled:opacity-50 transition-colors"
                 >
-                  {isPending ? 'Salvando...' : editingIncome ? 'Salvar' : 'Cadastrar'}
+                  {isPending ? 'Salvando...' : editMode === 'month' ? 'Salvar para este mês' : editingIncome ? 'Salvar' : 'Cadastrar'}
                 </button>
               </div>
             </form>

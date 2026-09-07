@@ -4,20 +4,19 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useMonth } from '@/lib/month-context'
 
 export function MonthSelector() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+  const { month, year, setMonth } = useMonth()
 
-  const now = new Date()
-  const month = Number(searchParams.get('month')) || now.getMonth() + 1
-  const year = Number(searchParams.get('year')) || now.getFullYear()
-
-  const date = new Date(year, month - 1, 1)
+  const date = new Date(year - 1, month, 1)
   const monthLabel = format(date, 'MMMM', { locale: ptBR }).toUpperCase()
 
   function navigate(newMonth: number, newYear: number) {
+    setMonth(newMonth, newYear)
     const params = new URLSearchParams(searchParams.toString())
     params.set('month', String(newMonth))
     params.set('year', String(newYear))
@@ -35,19 +34,19 @@ export function MonthSelector() {
   }
 
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-border
-                    bg-background px-1 py-1 shadow-theme-xs">
+    <div className="flex items-center gap-0.5 sm:gap-1 rounded-xl border border-border
+                    bg-background px-0.5 sm:px-1 py-1 shadow-theme-xs">
       <button
         onClick={prevMonth}
         aria-label="Mês anterior"
         className="w-7 h-7 flex items-center justify-center rounded-lg
                    text-muted-foreground hover:bg-muted hover:text-foreground
-                   transition-colors"
+                   transition-colors shrink-0"
       >
         <ChevronLeft size={16} />
       </button>
-      <span className="min-w-[120px] text-center text-sm font-semibold
-                       text-foreground uppercase tracking-wide px-2">
+      <span className="text-center text-xs sm:text-sm font-semibold
+                       text-foreground uppercase tracking-wide px-1 sm:px-2 whitespace-nowrap">
         {monthLabel} {year}
       </span>
       <button
@@ -55,7 +54,7 @@ export function MonthSelector() {
         aria-label="Próximo mês"
         className="w-7 h-7 flex items-center justify-center rounded-lg
                    text-muted-foreground hover:bg-muted hover:text-foreground
-                   transition-colors"
+                   transition-colors shrink-0"
       >
         <ChevronRight size={16} />
       </button>

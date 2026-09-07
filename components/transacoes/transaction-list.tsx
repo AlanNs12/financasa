@@ -107,7 +107,7 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           onClick={() => setShowFilters(!showFilters)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-accent transition-colors"
@@ -131,7 +131,7 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                'px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                'px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
                 filter === f
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -163,61 +163,126 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                     onClick={() => onSelectTransaction(tx)}
                     onKeyDown={e => e.key === 'Enter' && onSelectTransaction(tx)}
                     className={cn(
-                      'flex items-center gap-3 p-3 transition-colors cursor-pointer hover:bg-muted/50 group',
+                      'p-3 transition-colors cursor-pointer hover:bg-muted/50 group',
                       idx < txs.length - 1 && 'border-b border-border'
                     )}
                     aria-label={`Ver detalhes: ${tx.description}`}
                   >
-                    <CategoryIcon category={tx.category} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {tx.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-muted-foreground">
-                          {tx.category?.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">
-                          {PAYMENT_METHOD_LABELS[tx.payment_method] || tx.payment_method}
-                        </span>
+                    {/* Desktop layout */}
+                    <div className="hidden sm:flex items-center gap-3">
+                      <CategoryIcon category={tx.category} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {tx.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-muted-foreground">
+                            {tx.category?.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">·</span>
+                          <span className="text-xs text-muted-foreground">
+                            {PAYMENT_METHOD_LABELS[tx.payment_method] || tx.payment_method}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <MoneyDisplay
+                          amount={tx.amount}
+                          type={tx.type === 'INCOME' ? 'income' : 'expense'}
+                          size="sm"
+                        />
+                        {tx.payment_method === 'CREDIT_CARD' &&
+                          tx.billing_month != null &&
+                          tx.billing_month !== new Date(tx.date.includes('T') ? tx.date.split('T')[0] + 'T12:00:00' : tx.date).getMonth() + 1 && (
+                          <span className="text-[10px] text-[#d97706] dark:text-[#fbbf24]
+                                           bg-[#fef9c3] dark:bg-[#f59e0b]/10
+                                           px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                            Fatura {MONTH_ABBR[tx.billing_month - 1]}
+                          </span>
+                        )}
+                        {tx.installment_total && tx.installment_total > 1 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/8 text-primary dark:text-primary shrink-0">
+                            {tx.installment_current}/{tx.installment_total}x
+                          </span>
+                        )}
+                        {tx.user && <PersonAvatar user={tx.user} size="sm" />}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onEdit(tx) }}
+                          aria-label="Editar transação"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                          aria-label="Excluir transação"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MoneyDisplay
-                        amount={tx.amount}
-                        type={tx.type === 'INCOME' ? 'income' : 'expense'}
-                        size="sm"
-                      />
-                       {tx.payment_method === 'CREDIT_CARD' &&
-                        tx.billing_month != null &&
-                        tx.billing_month !== new Date(tx.date.includes('T') ? tx.date.split('T')[0] + 'T12:00:00' : tx.date).getMonth() + 1 && (
-                        <span className="text-[10px] text-[#d97706] dark:text-[#fbbf24]
-                                         bg-[#fef9c3] dark:bg-[#f59e0b]/10
-                                         px-1.5 py-0.5 rounded-full font-medium shrink-0">
-                          Fatura {MONTH_ABBR[tx.billing_month - 1]}
-                        </span>
-                      )}
-                      {tx.installment_total && tx.installment_total > 1 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/8 text-primary dark:text-primary shrink-0">
-                          {tx.installment_current}/{tx.installment_total}x
-                        </span>
-                      )}
-                      {tx.user && <PersonAvatar user={tx.user} size="sm" />}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onEdit(tx) }}
-                        aria-label="Editar transação"
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                        aria-label="Excluir transação"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+
+                    {/* Mobile layout */}
+                    <div className="flex sm:hidden gap-3">
+                      <CategoryIcon category={tx.category} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium text-foreground truncate min-w-0">
+                            {tx.description}
+                          </p>
+                          <MoneyDisplay
+                            amount={tx.amount}
+                            type={tx.type === 'INCOME' ? 'income' : 'expense'}
+                            size="sm"
+                            className="shrink-0"
+                          />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {tx.category?.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">·</span>
+                          <span className="text-xs text-muted-foreground">
+                            {PAYMENT_METHOD_LABELS[tx.payment_method] || tx.payment_method}
+                          </span>
+                          {tx.payment_method === 'CREDIT_CARD' &&
+                            tx.billing_month != null &&
+                            tx.billing_month !== new Date(tx.date.includes('T') ? tx.date.split('T')[0] + 'T12:00:00' : tx.date).getMonth() + 1 && (
+                            <span className="text-[10px] text-[#d97706] dark:text-[#fbbf24]
+                                             bg-[#fef9c3] dark:bg-[#f59e0b]/10
+                                             px-1.5 py-0.5 rounded-full font-medium">
+                              Fatura {MONTH_ABBR[tx.billing_month - 1]}
+                            </span>
+                          )}
+                          {tx.installment_total && tx.installment_total > 1 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/8 text-primary dark:text-primary">
+                              {tx.installment_current}/{tx.installment_total}x
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {tx.user && <PersonAvatar user={tx.user} size="xs" />}
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onEdit(tx) }}
+                              aria-label="Editar transação"
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                              aria-label="Excluir transação"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -228,12 +293,12 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
       )}
 
       {pendingDelete && (
-        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => !isPending && setPendingDelete(null)}
           />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl">
+          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
             <div className="flex flex-col items-center text-center mb-5">
               <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
                 <AlertTriangle className="w-6 h-6 text-red-500" />

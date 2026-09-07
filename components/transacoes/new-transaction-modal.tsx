@@ -10,6 +10,7 @@ import { transactionSchema, type TransactionOutput } from '@/lib/validations/tra
 import { createTransactionAction, updateTransactionAction } from '@/app/actions/transactions'
 import { previewBillingPeriod, getBillingLabel } from '@/lib/calculations/billing'
 import { formatCurrency } from '@/lib/format'
+import { useMonth } from '@/lib/month-context'
 import { toast } from 'sonner'
 
 interface Category {
@@ -60,6 +61,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
   const [installments, setInstallments] = useState(1)
+  const { getHref } = useMonth()
 
   const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === 'BOTH'
@@ -213,7 +215,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-theme-lg border border-border max-h-[90dvh] overflow-y-auto">
+      <div className="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-theme-lg border border-border max-h-[90dvh] overflow-y-auto safe-area-bottom">
         <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
           <h2 className="text-base font-semibold text-foreground">
             {editingTransaction ? 'Editar transação' : 'Nova transação'}
@@ -349,7 +351,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
                 <div className="p-3 rounded-lg bg-muted/50 border border-border">
                   <p className="text-xs text-muted-foreground text-center">
                     Nenhum cartão cadastrado.{' '}
-                    <a href="/configuracoes" className="text-primary underline">
+                    <a href={getHref('/configuracoes')} className="text-primary underline">
                       Cadastrar cartão
                     </a>
                   </p>

@@ -4,6 +4,8 @@ import type { ActiveAlert, AlertType } from '@/lib/db/queries/alerts'
 
 interface AlertsPanelProps {
   alerts: ActiveAlert[]
+  month: number
+  year: number
 }
 
 const TYPE_ICONS: Record<AlertType, typeof Receipt> = {
@@ -12,7 +14,7 @@ const TYPE_ICONS: Record<AlertType, typeof Receipt> = {
   credit_card: CreditCard,
 }
 
-export function AlertsPanel({ alerts }: AlertsPanelProps) {
+export function AlertsPanel({ alerts, month, year }: AlertsPanelProps) {
   if (alerts.length === 0) return null
 
   const visible = alerts.slice(0, 3)
@@ -68,7 +70,7 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
 
       {remaining > 0 && (
         <Link
-          href="/contas"
+          href={`/contas?month=${month}&year=${year}`}
           className="block text-center text-xs text-muted-foreground hover:text-foreground py-1.5 transition-colors"
         >
           Ver mais {remaining} {remaining === 1 ? 'alerta' : 'alertas'}

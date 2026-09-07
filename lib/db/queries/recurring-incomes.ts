@@ -21,7 +21,7 @@ export async function getRecurringIncomesForMonth(
 ) {
   const all = await getRecurringIncomes(householdId)
 
-  return all.filter((income) => {
+  const matching = all.filter((income) => {
     if (income.start_year > year) return false
     if (income.start_year === year && income.start_month > month) return false
 
@@ -45,6 +45,27 @@ export async function getRecurringIncomesForMonth(
         return monthDiff % 12 === 0
       default:
         return false
+    }
+  })
+
+  if (matching.length === 0) return []
+
+  const overrides = await prisma.incomeMonthlyOverride.findMany({
+    where: {
+      recurring_income_id: { in: matching.map((i) => i.id) },
+      month,
+      year,
+    },
+  })
+
+  return matching.map((income) => {
+    const override = overrides.find(
+      (o) => o.recurring_income_id === income.id
+    )
+    return {
+      ...income,
+      amount: override ? Number(override.amount) : income.amount,
+      hasOverride: !!override,
     }
   })
 }
@@ -78,6 +99,44 @@ export async function updateRecurringIncome(
   return prisma.recurringIncome.updateMany({
     where: { id, household_id: householdId },
     data,
+  })
+}
+
+export async function upsertIncomeMonthlyOverride(
+  recurringIncomeId: string,
+  month: number,
+  year: number,
+  amount: number
+) {
+  return prisma.incomeMonthlyOverride.upsert({
+    where: {
+      recurring_income_id_month_year: {
+        recurring_income_id: recurringIncomeId,
+        month,
+        year,
+      },
+    },
+    update: { amount },
+    create: {
+      recurring_income_id: recurringIncomeId,
+      month,
+      year,
+      amount,
+    },
+  })
+}
+
+export async function deleteIncomeMonthlyOverride(
+  recurringIncomeId: string,
+  month: number,
+  year: number
+) {
+  return prisma.incomeMonthlyOverride.deleteMany({
+    where: {
+      recurring_income_id: recurringIncomeId,
+      month,
+      year,
+    },
   })
 }
 
