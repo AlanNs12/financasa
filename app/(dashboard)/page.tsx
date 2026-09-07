@@ -110,7 +110,7 @@ export default async function DashboardPage({
           pendingBills={pendingBillsAmount}
         />
 
-        {alerts.length > 0 && <AlertsPanel alerts={alerts} />}
+        {alerts.length > 0 && <AlertsPanel alerts={alerts} month={currentMonth} year={currentYear} />}
 
         <ExpensePieChart data={expensesByCategory} />
 

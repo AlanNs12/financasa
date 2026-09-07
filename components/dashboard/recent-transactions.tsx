@@ -7,6 +7,7 @@ import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
 import { PageCard } from '@/components/shared/page-card'
 import { useBalanceVisibility } from '@/lib/balance-visibility-context'
+import { useMonth } from '@/lib/month-context'
 
 interface RecentTransaction {
   id: string
@@ -29,13 +30,14 @@ export function RecentTransactions({
   transactions,
 }: RecentTransactionsProps) {
   const { isHidden } = useBalanceVisibility()
+  const { getHref } = useMonth()
 
   return (
     <PageCard
       title="Últimas transações"
       action={
         <Link
-          href="/transacoes"
+          href={getHref('/transacoes')}
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           Ver todas

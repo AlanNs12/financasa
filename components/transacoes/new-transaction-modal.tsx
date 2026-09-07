@@ -10,6 +10,7 @@ import { transactionSchema, type TransactionOutput } from '@/lib/validations/tra
 import { createTransactionAction, updateTransactionAction } from '@/app/actions/transactions'
 import { previewBillingPeriod, getBillingLabel } from '@/lib/calculations/billing'
 import { formatCurrency } from '@/lib/format'
+import { useMonth } from '@/lib/month-context'
 import { toast } from 'sonner'
 
 interface Category {
@@ -60,6 +61,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
   const [installments, setInstallments] = useState(1)
+  const { getHref } = useMonth()
 
   const filteredCategories = categories.filter(
     (c) => c.type === type || c.type === 'BOTH'
@@ -349,7 +351,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
                 <div className="p-3 rounded-lg bg-muted/50 border border-border">
                   <p className="text-xs text-muted-foreground text-center">
                     Nenhum cartão cadastrado.{' '}
-                    <a href="/configuracoes" className="text-primary underline">
+                    <a href={getHref('/configuracoes')} className="text-primary underline">
                       Cadastrar cartão
                     </a>
                   </p>

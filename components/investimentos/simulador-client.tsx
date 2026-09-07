@@ -16,6 +16,7 @@ import { formatCurrency } from '@/lib/format'
 import { runSimulation } from '@/lib/calculations/retirement'
 import type { ProductType } from '@/lib/calculations/retirement'
 import { createGoalAction } from '@/app/actions/goals'
+import { useMonth } from '@/lib/month-context'
 import { toast } from 'sonner'
 
 const PRODUCT_LABELS: Record<ProductType, string> = {
@@ -36,6 +37,7 @@ export function SimuladorClient() {
   const [years, setYears] = useState(35)
   const [annualRate, setAnnualRate] = useState(9.5)
   const [isPending, startTransition] = useTransition()
+  const { getHref } = useMonth()
 
   const months = years * 12
 
@@ -86,7 +88,7 @@ export function SimuladorClient() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link
-          href="/investimentos"
+          href={getHref('/investimentos')}
           className="p-1.5 rounded-lg hover:bg-accent transition-colors"
           aria-label="Voltar para investimentos"
         >

@@ -8,6 +8,7 @@ import { PersonAvatar } from '@/components/shared/person-avatar'
 import { HeaderThemeToggle } from './header-theme-toggle'
 import { useSidebar } from '@/lib/sidebar-context'
 import { useBalanceVisibility } from '@/lib/balance-visibility-context'
+import { useMonth } from '@/lib/month-context'
 import { Logo } from '@/components/shared/logo'
 
 function MonthSelectorFallback() {
@@ -37,6 +38,7 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   const { toggleMobile } = useSidebar()
   const { isHidden, toggle } = useBalanceVisibility()
+  const { getHref } = useMonth()
 
   return (
     <header className="sticky top-0 z-[30] flex h-16 items-center gap-3
@@ -53,7 +55,7 @@ export function Header({ user }: HeaderProps) {
         <Menu size={20} />
       </button>
 
-      <Link href="/"
+      <Link href={getHref('/')}
             className="lg:hidden flex items-center gap-2 shrink-0">
         <Logo size={24} variant="auto"
               className="text-primary" />
@@ -77,7 +79,7 @@ export function Header({ user }: HeaderProps) {
         </button>
         <HeaderThemeToggle />
         <Link
-          href="/configuracoes"
+          href={getHref('/configuracoes')}
           className="flex items-center gap-2.5 rounded-lg px-2 py-1.5
                      hover:bg-muted transition-colors group"
         >

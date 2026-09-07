@@ -26,6 +26,7 @@ import { formatCurrency, formatDate, formatPercentage } from '@/lib/format'
 import { EmptyState } from '@/components/shared/empty-state'
 import { createInvestmentAction, deleteInvestmentAction } from '@/app/actions/investments'
 import { investmentSchema, type InvestmentInput } from '@/lib/validations/investment'
+import { useMonth } from '@/lib/month-context'
 import type { Investment, InvestmentType, FinancialGoal } from '@/types'
 import type { InvestmentSummary, InvestmentByGoal } from '@/lib/db/queries/investments'
 import { toast } from 'sonner'
@@ -70,6 +71,7 @@ export function InvestimentosClient({
   const [showModal, setShowModal] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Investment | null>(null)
   const [isPending, startTransition] = useTransition()
+  const { getHref } = useMonth()
 
   const {
     register,
@@ -145,7 +147,7 @@ export function InvestimentosClient({
           <p className="text-sm text-muted-foreground">Sua carteira de investimentos</p>
         </div>
         <Link
-          href="/investimentos/simulador"
+          href={getHref('/investimentos/simulador')}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-accent transition-colors shrink-0"
         >
           <Calculator className="w-3.5 h-3.5" />
