@@ -5,17 +5,29 @@ import { updateBillStatus, createRecurringBill, createTransactionFromBill, delet
 import { updateRecurringBillSchema } from '@/lib/validations/bill'
 import { BillStatus, Recurrence } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
+import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
 
 export async function markBillAsPaidAction(
   billId: string,
   month: number,
   year: number,
-  paidAmount?: number
+  paidAmount?: number,
+  accountId?: string
 ) {
   const current = await getCurrentUserHousehold()
   if (!current) {
     return { success: false, error: 'Usuário não autenticado.' }
+  }
+
+  if (accountId) {
+    const account = await prisma.account.findFirst({
+      where: { id: accountId, household_id: current.householdId },
+      select: { id: true },
+    })
+    if (!account) {
+      return { success: false, error: 'Conta inválida.' }
+    }
   }
 
   await updateBillStatus(billId, month, year, BillStatus.PAID, paidAmount)
@@ -24,12 +36,14 @@ export async function markBillAsPaidAction(
     billId,
     current.userId,
     month,
-    year
+    year,
+    accountId
   )
 
   revalidatePath('/contas')
   revalidatePath('/transacoes')
   revalidatePath('/relatorios')
+  revalidatePath('/contas-bancarias')
   revalidatePath('/')
   return { success: true, transactionCreated }
 }

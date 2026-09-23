@@ -5,7 +5,6 @@ import { formatCurrency, getMonthName } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { computeBillStatus } from '@/lib/db/queries/bills'
 
 interface HistoryBill {
@@ -30,8 +29,6 @@ interface MonthHistory {
 
 interface BillsHistoryProps {
   history: MonthHistory[]
-  currentMonth: number
-  currentYear: number
 }
 
 function getBillStatus(dueDay: number, month: number, year: number, savedStatus: string): 'paid' | 'pending' | 'overdue' {
@@ -51,7 +48,7 @@ function extractName(name: string): string {
   return name.replace(/^\S+\s+/, '')
 }
 
-export function BillsHistory({ history, currentMonth, currentYear }: BillsHistoryProps) {
+export function BillsHistory({ history }: BillsHistoryProps) {
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
 
   function toggleMonth(key: string) {

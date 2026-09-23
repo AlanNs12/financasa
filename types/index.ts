@@ -1,5 +1,6 @@
 export type TransactionType = 'INCOME' | 'EXPENSE'
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH' | 'BANK_TRANSFER' | 'BOLETO'
+export type AccountType = 'CHECKING' | 'SAVINGS' | 'CASH' | 'WALLET' | 'INVESTMENT' | 'OTHER'
 export type CategoryType = 'INCOME' | 'EXPENSE' | 'BOTH'
 export type Recurrence = 'MONTHLY' | 'BIMONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL'
 export type BillStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'SKIPPED'
@@ -55,12 +56,14 @@ export interface Transaction {
   notes?: string | null
   recurring_bill_id?: string | null
   credit_card_id?: string | null
+  account_id?: string | null
   installment_group_id?: string | null
   installment_total?: number | null
   installment_current?: number | null
   created_at: string
   updated_at: string
   category?: Category
+  account?: AccountRef
   user?: User
 }
 
@@ -199,4 +202,48 @@ export interface CreditCard {
   due_day?: number | null
   is_active: boolean
   created_at: string
+}
+
+export interface Account {
+  id: string
+  household_id: string
+  name: string
+  type: AccountType
+  institution?: string | null
+  initial_balance: number
+  color?: string | null
+  icon?: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface AccountWithBalance extends Account {
+  balance: number
+  income: number
+  expenses: number
+  transfersIn: number
+  transfersOut: number
+}
+
+export interface AccountRef {
+  id: string
+  name: string
+  color?: string | null
+  icon?: string | null
+}
+
+export interface Transfer {
+  id: string
+  household_id: string
+  user_id: string
+  from_account_id: string
+  to_account_id: string
+  amount: number
+  date: string
+  description?: string | null
+  notes?: string | null
+  created_at: string
+  from_account?: AccountRef
+  to_account?: AccountRef
 }

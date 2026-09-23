@@ -20,6 +20,7 @@ import {
   CalendarDays,
   Clock,
   Settings,
+  Wallet,
   LogOut,
   Menu,
   ChevronLeft,
@@ -28,7 +29,8 @@ import {
 const NAV_ITEMS = [
   { href: '/', icon: LayoutDashboard, label: 'Home' },
   { href: '/transacoes', icon: ArrowLeftRight, label: 'Transações' },
-  { href: '/contas', icon: Receipt, label: 'Contas' },
+  { href: '/contas', icon: Receipt, label: 'Contas a pagar' },
+  { href: '/contas-bancarias', icon: Wallet, label: 'Contas bancárias' },
   { href: '/faturas', icon: FileText, label: 'Faturas' },
   { href: '/planejamento', icon: Target, label: 'Planejamento' },
   { href: '/valor-real', icon: Clock, label: 'Valor Real' },

@@ -57,6 +57,7 @@ interface ContasClientProps {
   categories: { id: string; name: string; icon: string }[]
   recurringIncomes: RecurringIncomeItem[]
   monthIncomes: RecurringIncomeItem[]
+  accounts: { id: string; name: string; icon: string | null; color: string | null }[]
 }
 
 interface EditingBill {
@@ -129,11 +130,12 @@ function mapBillToEditing(bill: Bill): EditingBill {
   }
 }
 
-export function ContasClient({ bills, history, month, year, categories, recurringIncomes, monthIncomes }: ContasClientProps) {
+export function ContasClient({ bills, history, month, year, categories, recurringIncomes, monthIncomes, accounts }: ContasClientProps) {
   const router = useRouter()
   const [expandedBill, setExpandedBill] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [payingBill, setPayingBill] = useState<string | null>(null)
+  const [payAccountId, setPayAccountId] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('current')
   const [editingBill, setEditingBill] = useState<EditingBill | null>(null)
   const [deletingBill, setDeletingBill] = useState<Bill | null>(null)
@@ -149,10 +151,20 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
   const paidPercentage = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0
 
   function handleMarkAsPaid(billId: string) {
+    if (accounts.length > 0 && !payAccountId) {
+      toast.error('Selecione a conta de onde o valor vai sair.')
+      return
+    }
     setPayingBill(billId)
     startTransition(async () => {
       const bill = bills.find((b) => b.id === billId)
-      const result = await markBillAsPaidAction(billId, month, year, bill?.amount)
+      const result = await markBillAsPaidAction(
+        billId,
+        month,
+        year,
+        bill?.amount,
+        payAccountId || undefined
+      )
       if (!result?.success) {
         toast.error('Erro ao marcar conta.')
       } else {
@@ -280,7 +292,10 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
                     )}
                   >
                     <button
-                      onClick={() => setExpandedBill(isExpanded ? null : bill.id)}
+                      onClick={() => {
+                        setExpandedBill(isExpanded ? null : bill.id)
+                        if (!isExpanded) setPayAccountId(accounts[0]?.id ?? '')
+                      }}
                       className="w-full flex items-center gap-3 p-4 text-left"
                     >
                       <span className="text-xl">{icon}</span>
@@ -319,7 +334,30 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
                     </button>
 
                     {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-border pt-3">
+                      <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+                        {status !== 'paid' &&
+                          (accounts.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center">
+                              Nenhuma conta cadastrada.{' '}
+                              <a href="/contas-bancarias" className="text-primary underline">
+                                Cadastrar conta
+                              </a>
+                            </p>
+                          ) : (
+                            <select
+                              value={payAccountId}
+                              onChange={(e) => setPayAccountId(e.target.value)}
+                              className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
+                            >
+                              <option value="">De qual conta?</option>
+                              {accounts.map((account) => (
+                                <option key={account.id} value={account.id}>
+                                  {account.icon ? `${account.icon} ` : ''}
+                                  {account.name}
+                                </option>
+                              ))}
+                            </select>
+                          ))}
                         {status !== 'paid' ? (
                           <button
                             onClick={() => handleMarkAsPaid(bill.id)}
@@ -354,6 +392,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
 
           <Fab onClick={() => setModalOpen(true)} />
           <NewBillModal
+            key={editingBill?.id ?? (modalOpen ? 'new' : 'idle')}
             isOpen={modalOpen || !!editingBill}
             onClose={handleModalClose}
             categories={categories}
@@ -393,11 +432,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
           )}
         </>
       ) : activeTab === 'history' ? (
-        <BillsHistory
-          history={history}
-          currentMonth={month}
-          currentYear={year}
-        />
+        <BillsHistory history={history} />
       ) : (
         <RecurringIncomeSection
           recurringIncomes={recurringIncomes}

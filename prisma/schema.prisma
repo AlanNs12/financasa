@@ -22,6 +22,7 @@ model User {
   recurringBills   RecurringBill[]
   recurringIncomes RecurringIncome[]
   transactions     Transaction[]
+  transfers        Transfer[]
   household        Household       @relation(fields: [household_id], references: [id])
 }
 
@@ -42,6 +43,8 @@ model Household {
   recurringIncomes RecurringIncome[]
   transactions     Transaction[]
   users          User[]
+  accounts       Account[]
+  transfers      Transfer[]
 }
 
 model Category {
@@ -75,12 +78,14 @@ model Transaction {
   updated_at        DateTime        @updatedAt
   credit_card_id     String?
   recurring_income_id String?
+  account_id         String?
   billing_month      Int?
-  billing_year      Int?
+  billing_year       Int?
   installment_group_id String?
   installment_total    Int?
   installment_current  Int?
   category          Category        @relation(fields: [category_id], references: [id])
+  account           Account?          @relation(fields: [account_id], references: [id])
   credit_card        CreditCard?       @relation(fields: [credit_card_id], references: [id])
   recurring_income   RecurringIncome?  @relation(fields: [recurring_income_id], references: [id])
   household          Household         @relation(fields: [household_id], references: [id])
@@ -274,6 +279,41 @@ model CreditCard {
   transactions Transaction[]
 }
 
+model Account {
+  id              String        @id @default(uuid())
+  household_id    String
+  name            String
+  type            AccountType   @default(CHECKING)
+  institution     String?
+  initial_balance Decimal       @default(0) @db.Decimal(10, 2)
+  color           String?
+  icon            String?
+  is_active       Boolean       @default(true)
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  household       Household     @relation(fields: [household_id], references: [id])
+  transactions    Transaction[]
+  transfers_out   Transfer[]    @relation("TransferFromAccount")
+  transfers_in    Transfer[]    @relation("TransferToAccount")
+}
+
+model Transfer {
+  id              String   @id @default(uuid())
+  household_id    String
+  user_id         String
+  from_account_id String
+  to_account_id   String
+  amount          Decimal  @db.Decimal(10, 2)
+  date            DateTime @db.Date
+  description     String?
+  notes           String?
+  created_at      DateTime @default(now())
+  from_account    Account  @relation("TransferFromAccount", fields: [from_account_id], references: [id])
+  to_account      Account  @relation("TransferToAccount", fields: [to_account_id], references: [id])
+  household       Household @relation(fields: [household_id], references: [id])
+  user            User      @relation(fields: [user_id], references: [id])
+}
+
 enum CategoryType {
   INCOME
   EXPENSE
@@ -292,6 +332,15 @@ enum PaymentMethod {
   CASH
   BANK_TRANSFER
   BOLETO
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  WALLET
+  INVESTMENT
+  OTHER
 }
 
 enum Recurrence {

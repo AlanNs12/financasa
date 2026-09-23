@@ -21,14 +21,22 @@ interface CreditCard {
   closing_day: number | null
 }
 
+interface AccountOption {
+  id: string
+  name: string
+  icon: string | null
+  color: string | null
+}
+
 interface QuickAddTransactionProps {
   categories: Category[]
   creditCards: CreditCard[]
+  accounts: AccountOption[]
   month: number
   year: number
 }
 
-export function QuickAddTransaction({ categories, creditCards, month, year }: QuickAddTransactionProps) {
+export function QuickAddTransaction({ categories, creditCards, accounts, month, year }: QuickAddTransactionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
 
@@ -48,10 +56,12 @@ export function QuickAddTransaction({ categories, creditCards, month, year }: Qu
       </button>
 
       <NewTransactionModal
+        key={isOpen ? 'new' : 'idle'}
         isOpen={isOpen}
         onClose={handleClose}
         categories={categories}
         creditCards={creditCards}
+        accounts={accounts}
         defaultDate={getDefaultTransactionDate(month, year)}
       />
     </>

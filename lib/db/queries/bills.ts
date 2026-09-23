@@ -242,7 +242,8 @@ export async function createTransactionFromBill(
   billId: string,
   userId: string,
   month: number,
-  year: number
+  year: number,
+  accountId?: string | null
 ): Promise<boolean> {
   const existing = await prisma.transaction.findFirst({
     where: {
@@ -287,6 +288,7 @@ export async function createTransactionFromBill(
       date: new Date(year, month - 1, day),
       payment_method: 'PIX',
       recurring_bill_id: bill.id,
+      account_id: accountId ?? null,
     },
   })
 

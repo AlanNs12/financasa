@@ -29,6 +29,29 @@ async function computeBilling(
   return { billingMonth: period.billingMonth, billingYear: period.billingYear }
 }
 
+async function validateAccount(
+  paymentMethod: string,
+  accountId: string | null | undefined,
+  householdId: string
+): Promise<{ account_id: string[] } | null> {
+  if (paymentMethod === 'CREDIT_CARD') return null
+
+  if (!accountId) {
+    return { account_id: ['Selecione a conta de origem/destino.'] }
+  }
+
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, household_id: householdId },
+    select: { id: true },
+  })
+
+  if (!account) {
+    return { account_id: ['Conta inválida.'] }
+  }
+
+  return null
+}
+
 export async function createTransactionAction(data: {
   type: 'INCOME' | 'EXPENSE'
   description: string
@@ -38,6 +61,7 @@ export async function createTransactionAction(data: {
   payment_method: string
   notes?: string
   credit_card_id?: string | null
+  account_id?: string | null
   installments?: number
   total_amount?: number
 }) {
@@ -55,6 +79,7 @@ export async function createTransactionAction(data: {
     payment_method: data.payment_method,
     notes: data.notes,
     credit_card_id: data.credit_card_id || undefined,
+    account_id: data.account_id || undefined,
     installments: data.installments,
     total_amount: data.total_amount,
   }
@@ -63,6 +88,15 @@ export async function createTransactionAction(data: {
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const accountError = await validateAccount(
+    parsed.data.payment_method,
+    parsed.data.account_id,
+    current.householdId
+  )
+  if (accountError) {
+    return { error: accountError }
   }
 
   const installments = parsed.data.installments ?? 1
@@ -111,6 +145,7 @@ export async function createTransactionAction(data: {
     revalidatePath('/transacoes')
     revalidatePath('/')
     revalidatePath('/faturas')
+    revalidatePath('/contas-bancarias')
 
     return {
       success: true,
@@ -144,12 +179,14 @@ export async function createTransactionAction(data: {
     payment_method: parsed.data.payment_method as PaymentMethod,
     notes: parsed.data.notes,
     credit_card_id: parsed.data.credit_card_id || undefined,
+    account_id: parsed.data.account_id || undefined,
     billing_month: billingMonth,
     billing_year: billingYear,
   })
 
   revalidatePath('/transacoes')
   revalidatePath('/')
+  revalidatePath('/contas-bancarias')
   return {
     success: true,
     billingMoved: billingMonth !== null && billingMonth !== purchaseMonth,
@@ -172,6 +209,7 @@ export async function deleteTransactionAction(id: string) {
 
   revalidatePath('/transacoes')
   revalidatePath('/')
+  revalidatePath('/contas-bancarias')
   return { success: true }
 }
 
@@ -186,6 +224,7 @@ export async function updateTransactionAction(
     payment_method: string
     notes?: string
     credit_card_id?: string | null
+    account_id?: string | null
   }
 ) {
   const current = await getCurrentUserHousehold()
@@ -202,12 +241,22 @@ export async function updateTransactionAction(
     payment_method: data.payment_method,
     notes: data.notes,
     credit_card_id: data.credit_card_id || undefined,
+    account_id: data.account_id || undefined,
   }
 
   const parsed = transactionSchema.safeParse(rawData)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const accountError = await validateAccount(
+    parsed.data.payment_method,
+    parsed.data.account_id,
+    current.householdId
+  )
+  if (accountError) {
+    return { error: accountError }
   }
 
   let billingMonth: number | null = null
@@ -240,11 +289,13 @@ export async function updateTransactionAction(
     payment_method: parsed.data.payment_method,
     notes: parsed.data.notes,
     credit_card_id: parsed.data.credit_card_id || undefined,
+    account_id: parsed.data.account_id || undefined,
     billing_month: billingMonth,
     billing_year: billingYear,
   })
 
   revalidatePath('/transacoes')
   revalidatePath('/')
+  revalidatePath('/contas-bancarias')
   return { success: true }
 }

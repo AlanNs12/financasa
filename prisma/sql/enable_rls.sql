@@ -70,6 +70,8 @@ ALTER TABLE "BudgetGoal"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Investment"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Debt"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "CreditCard"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Account"          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Transfer"         ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- 2. Policies — Household
@@ -257,6 +259,24 @@ CREATE POLICY "debt_isolation"
 
 CREATE POLICY "credit_card_isolation"
   ON "CreditCard" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 15. Policies — Account
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "account_isolation"
+  ON "Account" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 16. Policies — Transfer
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "transfer_isolation"
+  ON "Transfer" FOR ALL TO authenticated
   USING (household_id = auth.current_household_id())
   WITH CHECK (household_id = auth.current_household_id());
 

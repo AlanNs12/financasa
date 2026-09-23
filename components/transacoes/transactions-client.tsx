@@ -18,9 +18,11 @@ interface Transaction {
   category_id: string
   payment_method: string
   credit_card_id?: string | null
+  account_id?: string | null
   billing_month?: number | null
   billing_year?: number | null
   category: { name: string; icon: string; color: string } | null
+  account?: { name: string; icon: string | null; color: string | null } | null
   user: { name: string; avatar_url: string | null } | null
 }
 
@@ -39,15 +41,23 @@ interface CreditCard {
   closing_day: number | null
 }
 
+interface AccountOption {
+  id: string
+  name: string
+  icon: string | null
+  color: string | null
+}
+
 interface TransactionsClientProps {
   transactions: Transaction[]
   categories: Category[]
   creditCards: CreditCard[]
+  accounts: AccountOption[]
   month: number
   year: number
 }
 
-export function TransactionsClient({ transactions, categories, creditCards, month, year }: TransactionsClientProps) {
+export function TransactionsClient({ transactions, categories, creditCards, accounts, month, year }: TransactionsClientProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
@@ -63,10 +73,12 @@ export function TransactionsClient({ transactions, categories, creditCards, mont
       />
       <Fab onClick={() => setModalOpen(true)} />
       <NewTransactionModal
+        key={editingTransaction?.id ?? (modalOpen ? 'new' : 'idle')}
         isOpen={modalOpen || !!editingTransaction}
         onClose={() => { setModalOpen(false); setEditingTransaction(null) }}
         categories={categories}
         creditCards={creditCards}
+        accounts={accounts}
         defaultDate={getDefaultTransactionDate(month, year)}
         editingTransaction={editingTransaction ?? undefined}
       />

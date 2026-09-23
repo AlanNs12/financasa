@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, PlusCircle, Pencil, Trash2, X, Target, Loader2 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
@@ -56,6 +56,9 @@ export function MetasClient({ goals }: MetasClientProps) {
   const editForm = useForm<UpdateGoalInput>({
     resolver: zodResolver(updateGoalSchema) as never,
   })
+
+  const editIcon = useWatch({ control: editForm.control, name: 'icon' })
+  const editColor = useWatch({ control: editForm.control, name: 'color' })
 
   function openEdit(goal: FinancialGoal) {
     setEditingGoal(goal)
@@ -366,7 +369,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                       type="button"
                       onClick={() => editForm.setValue('icon', ic)}
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${
-                        editForm.watch('icon') === ic
+                        editIcon === ic
                           ? 'border-foreground bg-muted'
                           : 'border-border hover:border-border'
                       }`}
@@ -432,7 +435,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                       type="button"
                       onClick={() => editForm.setValue('color', c)}
                       className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        editForm.watch('color') === c ? 'border-foreground scale-110' : 'border-transparent'
+                        editColor === c ? 'border-foreground scale-110' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
                       aria-label={`Cor ${c}`}
