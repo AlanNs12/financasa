@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2, X, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
-import { createCategoryAction, deleteCategoryAction } from '@/app/actions/categories'
+import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from '@/app/actions/categories'
 
 const PRESET_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#22c55e',
@@ -30,6 +30,7 @@ interface CategoryManagerProps {
 
 export function CategoryManager({ categories }: CategoryManagerProps) {
   const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('💰')
@@ -39,6 +40,31 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
 
   const customCategories = categories.filter((c) => !c.is_default)
 
+  function openCreate() {
+    setEditingId(null)
+    setName('')
+    setIcon('💰')
+    setColor('#22c55e')
+    setCustomEmoji('')
+    setType('EXPENSE')
+    setShowModal(true)
+  }
+
+  function openEdit(cat: CategoryManagerProps['categories'][number]) {
+    setEditingId(cat.id)
+    setName(cat.name)
+    setIcon(cat.icon)
+    setColor(cat.color)
+    setCustomEmoji('')
+    setType(cat.type === 'INCOME' ? 'INCOME' : 'EXPENSE')
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditingId(null)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const finalIcon = customEmoji.trim() || icon
@@ -47,17 +73,21 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
       return
     }
     startTransition(async () => {
-      const result = await createCategoryAction({ name: name.trim(), icon: finalIcon, color, type })
+      const payload = { name: name.trim(), icon: finalIcon, color, type }
+      const result = editingId
+        ? await updateCategoryAction(editingId, payload)
+        : await createCategoryAction(payload)
       if (result?.error) {
         toast.error(result.error)
         return
       }
-      toast.success('Categoria criada!')
-      setShowModal(false)
+      toast.success(editingId ? 'Categoria atualizada!' : 'Categoria criada!')
+      closeModal()
       setName('')
       setIcon('💰')
       setColor('#22c55e')
       setCustomEmoji('')
+      setType('EXPENSE')
     })
   }
 
@@ -83,7 +113,7 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreate}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
                      bg-primary text-primary-foreground text-xs font-medium
                      hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors"
@@ -123,6 +153,14 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
                 {cat.type === 'INCOME' ? 'Entrada' : 'Saída'}
               </span>
               <button
+                onClick={() => openEdit(cat)}
+                aria-label={`Editar categoria ${cat.name}`}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground
+                           hover:text-foreground transition-all"
+              >
+                <Pencil size={13} />
+              </button>
+              <button
                 onClick={() => handleDelete(cat.id, cat.name)}
                 aria-label={`Apagar categoria ${cat.name}`}
                 className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground
@@ -145,9 +183,11 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
                         border border-border shadow-theme-lg max-h-[90dvh] overflow-y-auto"
           >
             <div className="flex items-center justify-between p-5 border-b border-border">
-              <h2 className="text-base font-semibold text-foreground">Nova categoria</h2>
+              <h2 className="text-base font-semibold text-foreground">
+                {editingId ? 'Editar categoria' : 'Nova categoria'}
+              </h2>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 aria-label="Fechar"
                 className="w-8 h-8 flex items-center justify-center rounded-lg
                            text-muted-foreground hover:bg-muted transition-colors"
@@ -263,7 +303,7 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeModal}
                   className="flex-1 h-11 rounded-lg border border-border text-sm
                              text-muted-foreground hover:bg-muted transition-colors"
                 >
@@ -276,7 +316,7 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
                              text-sm font-semibold hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47]
                              disabled:opacity-50 transition-colors"
                 >
-                  {isPending ? 'Criando...' : 'Criar categoria'}
+                  {isPending ? 'Salvando...' : editingId ? 'Salvar' : 'Criar categoria'}
                 </button>
               </div>
             </form>

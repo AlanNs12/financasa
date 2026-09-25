@@ -1,7 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createTransaction, deleteTransaction, updateTransaction } from '@/lib/db/queries/transactions'
+import {
+  createTransaction,
+  deleteTransaction,
+  deleteInstallmentGroup,
+  updateTransaction,
+} from '@/lib/db/queries/transactions'
 import { transactionSchema } from '@/lib/validations/transaction'
 import type { TransactionType, PaymentMethod } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
@@ -235,6 +240,25 @@ export async function deleteTransactionAction(id: string) {
   revalidatePath('/')
   revalidatePath('/contas-bancarias')
   return { success: true }
+}
+
+export async function deleteInstallmentGroupAction(groupId: string) {
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { error: 'Usuário não autenticado.' }
+  }
+
+  const count = await deleteInstallmentGroup(groupId, current.householdId)
+
+  if (count === 0) {
+    return { error: 'Parcelas não encontradas.' }
+  }
+
+  revalidatePath('/transacoes')
+  revalidatePath('/')
+  revalidatePath('/contas-bancarias')
+  revalidatePath('/faturas')
+  return { success: true, count }
 }
 
 export async function updateTransactionAction(

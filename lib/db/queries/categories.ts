@@ -46,7 +46,7 @@ export async function createCategory(data: {
 export async function updateCategory(
   id: string,
   householdId: string,
-  data: { name: string; icon: string; color: string }
+  data: { name: string; icon: string; color: string; type?: 'INCOME' | 'EXPENSE' | 'BOTH' }
 ) {
   return prisma.category.updateMany({
     where: { id, household_id: householdId },

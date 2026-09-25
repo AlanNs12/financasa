@@ -88,6 +88,16 @@ export async function deleteTransaction(
   return result.count
 }
 
+export async function deleteInstallmentGroup(
+  groupId: string,
+  householdId: string
+): Promise<number> {
+  const result = await prisma.transaction.deleteMany({
+    where: { installment_group_id: groupId, household_id: householdId },
+  })
+  return result.count
+}
+
 export async function updateTransaction(
   id: string,
   householdId: string,

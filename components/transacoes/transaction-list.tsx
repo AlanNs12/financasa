@@ -8,7 +8,7 @@ import { PersonAvatar } from '@/components/shared/person-avatar'
 import { Filter, Trash2, Pencil, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { deleteTransactionAction } from '@/app/actions/transactions'
+import { deleteTransactionAction, deleteInstallmentGroupAction } from '@/app/actions/transactions'
 import { exportTransactionsCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 
@@ -59,7 +59,13 @@ export function TransactionList({ transactions, categories, month, year, onSelec
   const [filterCategory, setFilterCategory] = useState('ALL')
   const [filterUser, setFilterUser] = useState('ALL')
   const [pendingDelete, setPendingDelete] = useState<TransactionItem | null>(null)
+  const [deleteAllInstallments, setDeleteAllInstallments] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  function requestDelete(tx: TransactionItem) {
+    setDeleteAllInstallments(false)
+    setPendingDelete(tx)
+  }
 
   const users = Array.from(
     new Set(transactions.map((t) => t.user?.name).filter((n): n is string => !!n))
@@ -81,13 +87,17 @@ export function TransactionList({ transactions, categories, month, year, onSelec
   function confirmDelete() {
     if (!pendingDelete) return
     const tx = pendingDelete
+    const groupId = tx.installment_group_id
+    const deleteGroup = deleteAllInstallments && !!groupId
     startTransition(async () => {
-      const result = await deleteTransactionAction(tx.id)
+      const result = deleteGroup
+        ? await deleteInstallmentGroupAction(groupId!)
+        : await deleteTransactionAction(tx.id)
       if (result?.error) {
         toast.error('Erro ao excluir transação.')
         return
       }
-      toast.success('Transação excluída')
+      toast.success(deleteGroup ? 'Parcelas excluídas' : 'Transação excluída')
       setPendingDelete(null)
     })
   }
@@ -314,7 +324,7 @@ export function TransactionList({ transactions, categories, month, year, onSelec
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
+                          onClick={(e) => { e.stopPropagation(); requestDelete(tx) }}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                           aria-label="Excluir transação"
                         >
@@ -374,7 +384,7 @@ export function TransactionList({ transactions, categories, month, year, onSelec
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
+                              onClick={(e) => { e.stopPropagation(); requestDelete(tx) }}
                               className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
                               aria-label="Excluir transação"
                             >
@@ -401,7 +411,21 @@ export function TransactionList({ transactions, categories, month, year, onSelec
           <>
             <span className="text-foreground font-medium">{pendingDelete?.description}</span>
             {pendingDelete ? ` · ${formatCurrency(pendingDelete.amount)}` : ''}
-            <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+            {pendingDelete?.installment_group_id &&
+            pendingDelete.installment_total &&
+            pendingDelete.installment_total > 1 ? (
+              <label className="flex items-center gap-2 mt-3 text-xs text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteAllInstallments}
+                  onChange={(e) => setDeleteAllInstallments(e.target.checked)}
+                  className="accent-primary"
+                />
+                Excluir todas as {pendingDelete.installment_total} parcelas
+              </label>
+            ) : (
+              <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+            )}
           </>
         }
         confirmLabel="Excluir"

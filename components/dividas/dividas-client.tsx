@@ -10,6 +10,7 @@ import {
   Check,
   Trash2,
   TrendingDown,
+  Pencil,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
@@ -18,6 +19,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   createDebtAction,
+  updateDebtAction,
   payInstallmentAction,
   deleteDebtAction,
 } from '@/app/actions/debts'
@@ -46,6 +48,7 @@ interface DividasClientProps {
 
 export function DividasClient({ debts, summary }: DividasClientProps) {
   const [showModal, setShowModal] = useState(false)
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Debt | null>(null)
   const [payingId, setPayingId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -66,9 +69,48 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
     },
   })
 
+  function openCreate() {
+    setEditingDebt(null)
+    reset({
+      institution: '',
+      product: '',
+      classification: 'EMPRESTIMO_PESSOAL',
+      down_payment: undefined,
+      principal_amount: undefined as never,
+      started_at: new Date().toISOString().split('T')[0],
+      interest_rate: undefined as never,
+      cet_rate: undefined,
+      installment_amount: undefined as never,
+      installment_total: 1,
+    })
+    setShowModal(true)
+  }
+
+  function openEdit(debt: Debt) {
+    setEditingDebt(debt)
+    reset({
+      institution: debt.institution,
+      product: debt.product,
+      classification: debt.classification,
+      down_payment: debt.down_payment ?? undefined,
+      principal_amount: debt.principal_amount,
+      started_at: debt.started_at.split('T')[0],
+      interest_rate: debt.interest_rate,
+      cet_rate: debt.cet_rate ?? undefined,
+      installment_amount: debt.installment_amount,
+      installment_total: debt.installment_total,
+    })
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditingDebt(null)
+  }
+
   function handleFormSubmit(data: DebtInput) {
     startTransition(async () => {
-      const result = await createDebtAction({
+      const payload = {
         institution: data.institution,
         product: data.product,
         classification: data.classification,
@@ -79,16 +121,20 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
         cet_rate: data.cet_rate,
         installment_amount: data.installment_amount,
         installment_total: data.installment_total,
-      })
+      }
+
+      const result = editingDebt
+        ? await updateDebtAction(editingDebt.id, payload)
+        : await createDebtAction(payload)
 
       if (result?.error) {
-        toast.error('Erro ao criar dívida. Verifique os dados.')
+        toast.error('Erro ao salvar dívida. Verifique os dados.')
         return
       }
 
-      toast.success('Dívida cadastrada com sucesso!')
+      toast.success(editingDebt ? 'Dívida atualizada!' : 'Dívida cadastrada com sucesso!')
       reset()
-      setShowModal(false)
+      closeModal()
     })
   }
 
@@ -191,6 +237,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                   debt={debt}
                   payingId={payingId}
                   onPay={handlePayInstallment}
+                  onEdit={openEdit}
                   onDelete={setPendingDelete}
                 />
               ))}
@@ -208,6 +255,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                   debt={debt}
                   payingId={payingId}
                   onPay={handlePayInstallment}
+                  onEdit={openEdit}
                   onDelete={setPendingDelete}
                 />
               ))}
@@ -215,7 +263,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
           )}
 
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreate}
             className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground font-medium text-sm hover:border-muted-foreground hover:text-muted-foreground transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -230,7 +278,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             description="Cadastre suas dívidas para acompanhar o pagamento das parcelas e o saldo devedor."
             action={
               <button
-                onClick={() => setShowModal(true)}
+                onClick={openCreate}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -243,12 +291,14 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
       {showModal && (
         <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
           <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl safe-area-bottom">
             <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
-              <h2 className="text-lg font-bold text-foreground">Nova dívida</h2>
+              <h2 className="text-lg font-bold text-foreground">
+                {editingDebt ? 'Editar dívida' : 'Nova dívida'}
+              </h2>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
@@ -452,10 +502,11 @@ interface DebtCardProps {
   debt: Debt
   payingId: string | null
   onPay: (debt: Debt) => void
+  onEdit: (debt: Debt) => void
   onDelete: (debt: Debt) => void
 }
 
-function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
+function DebtCard({ debt, payingId, onPay, onEdit, onDelete }: DebtCardProps) {
   const isPaying = payingId === debt.id
 
   return (
@@ -474,6 +525,13 @@ function DebtCard({ debt, payingId, onPay, onDelete }: DebtCardProps) {
         ) : (
           <StatusBadge status="in_progress" />
         )}
+        <button
+          onClick={() => onEdit(debt)}
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+          aria-label="Editar dívida"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
         <button
           onClick={() => onDelete(debt)}
           className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
