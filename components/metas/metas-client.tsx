@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, PlusCircle, Pencil, Trash2, X, Target, Loader2 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { EmptyState } from '@/components/shared/empty-state'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { createGoalAction, updateGoalAction, addGoalAmountAction, deleteGoalAction } from '@/app/actions/goals'
 import { goalSchema, updateGoalSchema, type GoalInput, type UpdateGoalInput } from '@/lib/validations/goal'
 import type { FinancialGoal, GoalStatus } from '@/types'
@@ -56,6 +57,9 @@ export function MetasClient({ goals }: MetasClientProps) {
   const editForm = useForm<UpdateGoalInput>({
     resolver: zodResolver(updateGoalSchema) as never,
   })
+
+  const editIcon = useWatch({ control: editForm.control, name: 'icon' })
+  const editColor = useWatch({ control: editForm.control, name: 'color' })
 
   function openEdit(goal: FinancialGoal) {
     setEditingGoal(goal)
@@ -366,7 +370,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                       type="button"
                       onClick={() => editForm.setValue('icon', ic)}
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all ${
-                        editForm.watch('icon') === ic
+                        editIcon === ic
                           ? 'border-foreground bg-muted'
                           : 'border-border hover:border-border'
                       }`}
@@ -432,7 +436,7 @@ export function MetasClient({ goals }: MetasClientProps) {
                       type="button"
                       onClick={() => editForm.setValue('color', c)}
                       className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        editForm.watch('color') === c ? 'border-foreground scale-110' : 'border-transparent'
+                        editColor === c ? 'border-foreground scale-110' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
                       aria-label={`Cor ${c}`}
@@ -524,47 +528,22 @@ export function MetasClient({ goals }: MetasClientProps) {
         </div>
       )}
 
-      {deleteGoal && (
-        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteGoal(null)} />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm shadow-xl p-6 safe-area-bottom">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Excluir meta</h2>
-              <button
-                onClick={() => setDeleteGoal(null)}
-                className="p-1 rounded-lg hover:bg-accent"
-                aria-label="Fechar"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Tem certeza que deseja excluir permanentemente esta meta?
-            </p>
-            <p className="text-sm font-medium text-foreground mb-5">
-              {deleteGoal.icon} {deleteGoal.name}
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setDeleteGoal(null)}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-600 text-primary-foreground font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!deleteGoal}
+        onClose={() => { if (!isPending) setDeleteGoal(null) }}
+        onConfirm={handleDelete}
+        title="Excluir meta"
+        description={
+          <>
+            Tem certeza que deseja excluir permanentemente esta meta?
+            <span className="block font-medium text-foreground mt-2">
+              {deleteGoal?.icon} {deleteGoal?.name}
+            </span>
+          </>
+        }
+        confirmLabel="Excluir"
+        pending={isPending}
+      />
     </div>
   )
 }

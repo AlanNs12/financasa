@@ -22,6 +22,10 @@ model User {
   recurringBills   RecurringBill[]
   recurringIncomes RecurringIncome[]
   transactions     Transaction[]
+  transfers        Transfer[]
+  cardInvoicePayments CardInvoicePayment[]
+  savingsJars       SavingsJar[]
+  jarMovements      JarMovement[]
   household        Household       @relation(fields: [household_id], references: [id])
 }
 
@@ -42,6 +46,10 @@ model Household {
   recurringIncomes RecurringIncome[]
   transactions     Transaction[]
   users          User[]
+  accounts       Account[]
+  transfers      Transfer[]
+  cardInvoicePayments CardInvoicePayment[]
+  savingsJars    SavingsJar[]
 }
 
 model Category {
@@ -57,6 +65,8 @@ model Category {
   household      Household?      @relation(fields: [household_id], references: [id])
   recurringBills RecurringBill[]
   transactions   Transaction[]
+
+  @@index([household_id])
 }
 
 model Transaction {
@@ -75,17 +85,27 @@ model Transaction {
   updated_at        DateTime        @updatedAt
   credit_card_id     String?
   recurring_income_id String?
+  account_id         String?
   billing_month      Int?
-  billing_year      Int?
+  billing_year       Int?
   installment_group_id String?
   installment_total    Int?
   installment_current  Int?
   category          Category        @relation(fields: [category_id], references: [id])
+  account           Account?          @relation(fields: [account_id], references: [id])
   credit_card        CreditCard?       @relation(fields: [credit_card_id], references: [id])
   recurring_income   RecurringIncome?  @relation(fields: [recurring_income_id], references: [id])
   household          Household         @relation(fields: [household_id], references: [id])
   recurring_bill     RecurringBill?    @relation(fields: [recurring_bill_id], references: [id])
   user              User            @relation(fields: [user_id], references: [id])
+
+  @@index([household_id, date])
+  @@index([billing_month, billing_year])
+  @@index([credit_card_id])
+  @@index([account_id])
+  @@index([recurring_bill_id])
+  @@index([recurring_income_id])
+  @@index([installment_group_id])
 }
 
 model RecurringBill {
@@ -108,6 +128,8 @@ model RecurringBill {
   household           Household           @relation(fields: [household_id], references: [id])
   user                User                @relation(fields: [user_id], references: [id])
   transactions        Transaction[]
+
+  @@index([household_id])
 }
 
 model RecurringIncome {
@@ -126,6 +148,8 @@ model RecurringIncome {
   user                  User            @relation(fields: [user_id], references: [id])
   confirmedTransactions Transaction[]
   monthlyOverrides      IncomeMonthlyOverride[]
+
+  @@index([household_id])
 }
 
 model BillMonthlyStatus {
@@ -139,6 +163,7 @@ model BillMonthlyStatus {
   recurring_bill    RecurringBill @relation(fields: [recurring_bill_id], references: [id])
 
   @@unique([recurring_bill_id, month, year])
+  @@index([month, year])
 }
 
 model IncomeMonthlyOverride {
@@ -210,6 +235,8 @@ model FinancialGoal {
   household      Household    @relation(fields: [household_id], references: [id])
   user           User         @relation(fields: [user_id], references: [id])
   investments    Investment[]
+
+  @@index([household_id])
 }
 
 model BudgetGoal {
@@ -238,6 +265,9 @@ model Investment {
   goal             FinancialGoal? @relation(fields: [goal_id], references: [id])
   household        Household      @relation(fields: [household_id], references: [id])
   user             User           @relation(fields: [user_id], references: [id])
+
+  @@index([household_id])
+  @@index([goal_id])
 }
 
 model Debt {
@@ -258,6 +288,8 @@ model Debt {
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
   household          Household @relation(fields: [household_id], references: [id])
+
+  @@index([household_id])
 }
 
 model CreditCard {
@@ -272,6 +304,109 @@ model CreditCard {
   created_at   DateTime      @default(now())
   household    Household     @relation(fields: [household_id], references: [id])
   transactions Transaction[]
+  invoicePayments CardInvoicePayment[]
+
+  @@index([household_id])
+}
+
+model Account {
+  id              String        @id @default(uuid())
+  household_id    String
+  name            String
+  type            AccountType   @default(CHECKING)
+  institution     String?
+  initial_balance Decimal       @default(0) @db.Decimal(10, 2)
+  color           String?
+  icon            String?
+  is_active       Boolean       @default(true)
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  household       Household     @relation(fields: [household_id], references: [id])
+  transactions    Transaction[]
+  transfers_out   Transfer[]    @relation("TransferFromAccount")
+  transfers_in    Transfer[]    @relation("TransferToAccount")
+  invoicePayments CardInvoicePayment[]
+  savingsJars     SavingsJar[]
+
+  @@index([household_id])
+}
+
+model CardInvoicePayment {
+  id             String     @id @default(uuid())
+  household_id   String
+  user_id        String
+  credit_card_id String
+  account_id     String
+  billing_month  Int
+  billing_year   Int
+  amount         Decimal    @db.Decimal(10, 2)
+  paid_at        DateTime   @default(now())
+  created_at     DateTime   @default(now())
+  household      Household  @relation(fields: [household_id], references: [id])
+  user           User       @relation(fields: [user_id], references: [id])
+  credit_card    CreditCard @relation(fields: [credit_card_id], references: [id])
+  account        Account    @relation(fields: [account_id], references: [id])
+
+  @@unique([credit_card_id, billing_month, billing_year])
+  @@index([household_id, billing_month, billing_year])
+  @@index([account_id])
+}
+
+model SavingsJar {
+  id            String        @id @default(uuid())
+  household_id  String
+  account_id    String
+  user_id       String
+  name          String
+  target_amount Decimal?      @db.Decimal(10, 2)
+  color         String?
+  icon          String?
+  is_active     Boolean       @default(true)
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  household     Household     @relation(fields: [household_id], references: [id])
+  account       Account       @relation(fields: [account_id], references: [id])
+  user          User          @relation(fields: [user_id], references: [id])
+  movements     JarMovement[]
+
+  @@index([household_id])
+  @@index([account_id])
+}
+
+model JarMovement {
+  id         String        @id @default(uuid())
+  jar_id     String
+  user_id    String
+  type       JarMovementType
+  amount     Decimal       @db.Decimal(10, 2)
+  date       DateTime      @default(now()) @db.Date
+  note       String?
+  created_at DateTime      @default(now())
+  jar        SavingsJar    @relation(fields: [jar_id], references: [id])
+  user       User          @relation(fields: [user_id], references: [id])
+
+  @@index([jar_id])
+}
+
+model Transfer {
+  id              String   @id @default(uuid())
+  household_id    String
+  user_id         String
+  from_account_id String
+  to_account_id   String
+  amount          Decimal  @db.Decimal(10, 2)
+  date            DateTime @db.Date
+  description     String?
+  notes           String?
+  created_at      DateTime @default(now())
+  from_account    Account  @relation("TransferFromAccount", fields: [from_account_id], references: [id])
+  to_account      Account  @relation("TransferToAccount", fields: [to_account_id], references: [id])
+  household       Household @relation(fields: [household_id], references: [id])
+  user            User      @relation(fields: [user_id], references: [id])
+
+  @@index([household_id, date])
+  @@index([from_account_id])
+  @@index([to_account_id])
 }
 
 enum CategoryType {
@@ -292,6 +427,20 @@ enum PaymentMethod {
   CASH
   BANK_TRANSFER
   BOLETO
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  WALLET
+  INVESTMENT
+  OTHER
+}
+
+enum JarMovementType {
+  DEPOSIT
+  WITHDRAW
 }
 
 enum Recurrence {

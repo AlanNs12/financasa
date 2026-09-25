@@ -1,21 +1,42 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { updateBillStatus, createRecurringBill, createTransactionFromBill, deleteRecurringBill, updateRecurringBill } from '@/lib/db/queries/bills'
+import {
+  updateBillStatus,
+  createRecurringBill,
+  createTransactionFromBill,
+  deleteTransactionFromBill,
+  clearBillStatus,
+  deleteRecurringBill,
+  updateRecurringBill,
+} from '@/lib/db/queries/bills'
 import { updateRecurringBillSchema } from '@/lib/validations/bill'
 import { BillStatus, Recurrence } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
+import { categoryBelongsToHousehold } from '@/lib/db/queries/ownership'
+import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
 
 export async function markBillAsPaidAction(
   billId: string,
   month: number,
   year: number,
-  paidAmount?: number
+  paidAmount?: number,
+  accountId?: string
 ) {
   const current = await getCurrentUserHousehold()
   if (!current) {
     return { success: false, error: 'Usuário não autenticado.' }
+  }
+
+  if (accountId) {
+    const account = await prisma.account.findFirst({
+      where: { id: accountId, household_id: current.householdId },
+      select: { id: true },
+    })
+    if (!account) {
+      return { success: false, error: 'Conta inválida.' }
+    }
   }
 
   await updateBillStatus(billId, month, year, BillStatus.PAID, paidAmount)
@@ -24,14 +45,73 @@ export async function markBillAsPaidAction(
     billId,
     current.userId,
     month,
-    year
+    year,
+    accountId,
+    paidAmount
   )
 
   revalidatePath('/contas')
   revalidatePath('/transacoes')
   revalidatePath('/relatorios')
+  revalidatePath('/contas-bancarias')
   revalidatePath('/')
   return { success: true, transactionCreated }
+}
+
+export async function unmarkBillAsPaidAction(
+  billId: string,
+  month: number,
+  year: number
+) {
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { success: false, error: 'Usuário não autenticado.' }
+  }
+
+  const bill = await prisma.recurringBill.findFirst({
+    where: { id: billId, household_id: current.householdId },
+    select: { id: true },
+  })
+  if (!bill) {
+    return { success: false, error: 'Conta não encontrada.' }
+  }
+
+  await clearBillStatus(billId, month, year)
+  await deleteTransactionFromBill(billId, current.householdId, month, year)
+
+  revalidatePath('/contas')
+  revalidatePath('/transacoes')
+  revalidatePath('/relatorios')
+  revalidatePath('/contas-bancarias')
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function skipBillForMonthAction(
+  billId: string,
+  month: number,
+  year: number
+) {
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { success: false, error: 'Usuário não autenticado.' }
+  }
+
+  const bill = await prisma.recurringBill.findFirst({
+    where: { id: billId, household_id: current.householdId },
+    select: { id: true },
+  })
+  if (!bill) {
+    return { success: false, error: 'Conta não encontrada.' }
+  }
+
+  await deleteTransactionFromBill(billId, current.householdId, month, year)
+  await updateBillStatus(billId, month, year, BillStatus.SKIPPED)
+
+  revalidatePath('/contas')
+  revalidatePath('/transacoes')
+  revalidatePath('/')
+  return { success: true }
 }
 
 export async function createRecurringBillAction(data: {
@@ -52,6 +132,13 @@ export async function createRecurringBillAction(data: {
 
   if (!data.name || data.amount <= 0 || data.due_day < 1 || data.due_day > 31) {
     return { success: false, error: 'Dados inválidos.' }
+  }
+
+  if (
+    data.category_id &&
+    !(await categoryBelongsToHousehold(data.category_id, current.householdId))
+  ) {
+    return { success: false, error: 'Categoria inválida.' }
   }
 
   const isParcelada = data.bill_type === 'parcelada'
@@ -115,6 +202,13 @@ export async function updateRecurringBillAction(
   const parsed = updateRecurringBillSchema.safeParse(data)
   if (!parsed.success) {
     return { success: false, error: parsed.error.flatten().fieldErrors }
+  }
+
+  if (
+    parsed.data.category_id &&
+    !(await categoryBelongsToHousehold(parsed.data.category_id, current.householdId))
+  ) {
+    return { success: false, error: 'Categoria inválida.' }
   }
 
   await updateRecurringBill(billId, current.householdId, {

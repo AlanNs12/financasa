@@ -2,6 +2,7 @@ import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getRecurringBills, getBillsHistory } from '@/lib/db/queries/bills'
 import { getCategories } from '@/lib/db/queries/categories'
 import { getRecurringIncomes, getRecurringIncomesForMonth } from '@/lib/db/queries/recurring-incomes'
+import { getAccounts } from '@/lib/db/queries/accounts'
 import { ContasClient } from '@/components/contas/contas-client'
 import { PageHeader } from '@/components/shared/page-header'
 
@@ -26,12 +27,13 @@ export default async function ContasPage({
     )
   }
 
-  const [bills, history, categories, recurringIncomes, monthIncomes] = await Promise.all([
+  const [bills, history, categories, recurringIncomes, monthIncomes, accounts] = await Promise.all([
     getRecurringBills(current.householdId, month, year),
     getBillsHistory(current.householdId),
     getCategories(current.householdId),
     getRecurringIncomes(current.householdId),
     getRecurringIncomesForMonth(current.householdId, month, year),
+    getAccounts(current.householdId),
   ])
 
   const clientBills = bills.map((b) => ({
@@ -44,10 +46,12 @@ export default async function ContasPage({
     installment_current: b.installment_current,
     start_month: b.start_month,
     start_year: b.start_year,
+    category_id: b.category_id ?? null,
     created_at: b.created_at,
     monthlyStatus: b.monthlyStatus.map((ms) => ({
       status: ms.status,
       paid_at: ms.paid_at?.toISOString() ?? null,
+      paid_amount: ms.paid_amount != null ? Number(ms.paid_amount) : null,
     })),
   }))
 
@@ -73,6 +77,13 @@ export default async function ContasPage({
     start_year: i.start_year,
   }))
 
+  const clientAccounts = accounts.map((a) => ({
+    id: a.id,
+    name: a.name,
+    icon: a.icon ?? null,
+    color: a.color ?? null,
+  }))
+
   return (
     <ContasClient
       bills={clientBills}
@@ -82,6 +93,7 @@ export default async function ContasPage({
       categories={expenseCategories}
       recurringIncomes={clientIncomes}
       monthIncomes={clientMonthIncomes}
+      accounts={clientAccounts}
     />
   )
 }

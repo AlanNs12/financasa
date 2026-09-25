@@ -5,9 +5,10 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
 import { PersonAvatar } from '@/components/shared/person-avatar'
-import { Filter, Trash2, Pencil, AlertTriangle, Loader2, Download } from 'lucide-react'
+import { Filter, Trash2, Pencil, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { deleteTransactionAction } from '@/app/actions/transactions'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { deleteTransactionAction, deleteInstallmentGroupAction } from '@/app/actions/transactions'
 import { exportTransactionsCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
 
@@ -33,6 +34,7 @@ interface TransactionItem {
 
 interface TransactionListProps {
   transactions: TransactionItem[]
+  categories: { id: string; name: string; icon: string; color: string; type: string }[]
   month: number
   year: number
   onSelectTransaction: (t: TransactionItem) => void
@@ -50,22 +52,52 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
-export function TransactionList({ transactions, month, year, onSelectTransaction, onEdit }: TransactionListProps) {
+export function TransactionList({ transactions, categories, month, year, onSelectTransaction, onEdit }: TransactionListProps) {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
   const [showFilters, setShowFilters] = useState(false)
+  const [search, setSearch] = useState('')
+  const [filterCategory, setFilterCategory] = useState('ALL')
+  const [filterUser, setFilterUser] = useState('ALL')
   const [pendingDelete, setPendingDelete] = useState<TransactionItem | null>(null)
+  const [deleteAllInstallments, setDeleteAllInstallments] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  function requestDelete(tx: TransactionItem) {
+    setDeleteAllInstallments(false)
+    setPendingDelete(tx)
+  }
+
+  const users = Array.from(
+    new Set(transactions.map((t) => t.user?.name).filter((n): n is string => !!n))
+  )
+
+  const activeFilterCount =
+    (filter !== 'ALL' ? 1 : 0) +
+    (filterCategory !== 'ALL' ? 1 : 0) +
+    (filterUser !== 'ALL' ? 1 : 0) +
+    (search.trim() ? 1 : 0)
+
+  function clearFilters() {
+    setFilter('ALL')
+    setFilterCategory('ALL')
+    setFilterUser('ALL')
+    setSearch('')
+  }
 
   function confirmDelete() {
     if (!pendingDelete) return
     const tx = pendingDelete
+    const groupId = tx.installment_group_id
+    const deleteGroup = deleteAllInstallments && !!groupId
     startTransition(async () => {
-      const result = await deleteTransactionAction(tx.id)
+      const result = deleteGroup
+        ? await deleteInstallmentGroupAction(groupId!)
+        : await deleteTransactionAction(tx.id)
       if (result?.error) {
         toast.error('Erro ao excluir transação.')
         return
       }
-      toast.success('Transação excluída')
+      toast.success(deleteGroup ? 'Parcelas excluídas' : 'Transação excluída')
       setPendingDelete(null)
     })
   }
@@ -90,9 +122,14 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
     })
   }
 
+  const searchTerm = search.trim().toLowerCase()
+
   const filtered = transactions.filter((t) => {
-    if (filter === 'ALL') return true
-    return t.type === filter
+    if (filter !== 'ALL' && t.type !== filter) return false
+    if (filterCategory !== 'ALL' && t.category_id !== filterCategory) return false
+    if (filterUser !== 'ALL' && t.user?.name !== filterUser) return false
+    if (searchTerm && !t.description.toLowerCase().includes(searchTerm)) return false
+    return true
   })
 
   const groupedByDate = filtered.reduce(
@@ -110,10 +147,20 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-accent transition-colors"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+            showFilters || activeFilterCount > 0
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-muted-foreground bg-card border-border hover:bg-accent'
+          )}
         >
           <Filter className="w-3.5 h-3.5" />
           Filtrar
+          {activeFilterCount > 0 && (
+            <span className="ml-0.5 px-1.5 rounded-full bg-white/20 text-[10px] font-semibold">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
 
         <button
@@ -143,9 +190,72 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
         </div>
       </div>
 
+      {showFilters && (
+        <div className="bg-card rounded-xl border border-border p-3 mb-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por descrição..."
+              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground focus:outline-none"
+            />
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none"
+            >
+              <option value="ALL">Todas as categorias</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterUser}
+              onChange={(e) => setFilterUser(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none"
+            >
+              <option value="ALL">Todas as pessoas</option>
+              {users.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} de {transactions.length} transações
+            </span>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-xs text-primary underline underline-offset-2"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {Object.keys(groupedByDate).length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground text-sm">Nenhuma transação encontrada</p>
+          <p className="text-muted-foreground text-sm">
+            {activeFilterCount > 0
+              ? 'Nenhuma transação encontrada com os filtros aplicados'
+              : 'Nenhuma transação encontrada'}
+          </p>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearFilters}
+              className="mt-3 text-xs text-primary underline underline-offset-2"
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -214,7 +324,7 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
+                          onClick={(e) => { e.stopPropagation(); requestDelete(tx) }}
                           className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                           aria-label="Excluir transação"
                         >
@@ -274,7 +384,7 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); setPendingDelete(tx) }}
+                              onClick={(e) => { e.stopPropagation(); requestDelete(tx) }}
                               className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
                               aria-label="Excluir transação"
                             >
@@ -292,49 +402,35 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
         </div>
       )}
 
-      {pendingDelete && (
-        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => !isPending && setPendingDelete(null)}
-          />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
-            <div className="flex flex-col items-center text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground mb-1">
-                Excluir esta transação?
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {pendingDelete.description} · {formatCurrency(pendingDelete.amount)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        onClose={() => { if (!isPending) setPendingDelete(null) }}
+        onConfirm={confirmDelete}
+        title="Excluir esta transação?"
+        description={
+          <>
+            <span className="text-foreground font-medium">{pendingDelete?.description}</span>
+            {pendingDelete ? ` · ${formatCurrency(pendingDelete.amount)}` : ''}
+            {pendingDelete?.installment_group_id &&
+            pendingDelete.installment_total &&
+            pendingDelete.installment_total > 1 ? (
+              <label className="flex items-center gap-2 mt-3 text-xs text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteAllInstallments}
+                  onChange={(e) => setDeleteAllInstallments(e.target.checked)}
+                  className="accent-primary"
+                />
+                Excluir todas as {pendingDelete.installment_total} parcelas
+              </label>
+            ) : (
+              <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+            )}
+          </>
+        }
+        confirmLabel="Excluir"
+        pending={isPending}
+      />
     </div>
   )
 }

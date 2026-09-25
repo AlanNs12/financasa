@@ -14,6 +14,7 @@ export type CreateTransactionInput = {
   notes?: string
   recurring_bill_id?: string
   credit_card_id?: string
+  account_id?: string
   billing_month?: number | null
   billing_year?: number | null
 }
@@ -37,6 +38,7 @@ export async function getTransactionsByMonth(
     include: {
       category: { select: { id: true, name: true, icon: true, color: true } },
       user: { select: { id: true, name: true, avatar_url: true } },
+      account: { select: { id: true, name: true, color: true, icon: true } },
     },
     orderBy: { date: 'desc' },
   })
@@ -69,6 +71,7 @@ export async function createTransaction(data: CreateTransactionInput) {
       notes: data.notes,
       recurring_bill_id: data.recurring_bill_id,
       credit_card_id: data.credit_card_id,
+      account_id: data.account_id,
       billing_month: data.billing_month,
       billing_year: data.billing_year,
     },
@@ -85,6 +88,16 @@ export async function deleteTransaction(
   return result.count
 }
 
+export async function deleteInstallmentGroup(
+  groupId: string,
+  householdId: string
+): Promise<number> {
+  const result = await prisma.transaction.deleteMany({
+    where: { installment_group_id: groupId, household_id: householdId },
+  })
+  return result.count
+}
+
 export async function updateTransaction(
   id: string,
   householdId: string,
@@ -97,6 +110,7 @@ export async function updateTransaction(
     payment_method: string
     notes?: string
     credit_card_id?: string
+    account_id?: string
     billing_month?: number | null
     billing_year?: number | null
   }
@@ -112,6 +126,7 @@ export async function updateTransaction(
       payment_method: data.payment_method as PaymentMethod,
       notes: data.notes,
       credit_card_id: data.credit_card_id || null,
+      account_id: data.account_id || null,
       billing_month: data.billing_month,
       billing_year: data.billing_year,
     },

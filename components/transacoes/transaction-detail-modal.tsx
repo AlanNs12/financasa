@@ -1,6 +1,6 @@
 'use client'
 
-import { X, Calendar, Clock, Tag, CreditCard,
+import { X, Calendar, Clock, Tag, CreditCard, Wallet,
          User, FileText, TrendingUp, TrendingDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -20,6 +20,11 @@ interface TransactionDetail {
     name: string
     icon: string
     color: string
+  } | null
+  account?: {
+    name: string
+    icon: string | null
+    color: string | null
   } | null
   user: {
     name: string
@@ -155,6 +160,15 @@ export function TransactionDetailModal({
                transaction.payment_method}
             </span>
           </DetailRow>
+
+          {transaction.account && (
+            <DetailRow icon={Wallet} label="Conta">
+              <span className="text-sm text-foreground">
+                {transaction.account.icon ? `${transaction.account.icon} ` : ''}
+                {transaction.account.name}
+              </span>
+            </DetailRow>
+          )}
 
           {transaction.user && (
             <DetailRow icon={User} label="Registrado por">

@@ -93,8 +93,8 @@ export function DangerZone() {
               Limpar todos os dados
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Remove transações, contas, planejamentos, metas,
-              investimentos e dívidas permanentemente.
+              Remove transações, contas, contas bancárias, planejamentos,
+              metas, investimentos e dívidas permanentemente.
             </p>
           </div>
           <button
@@ -110,8 +110,9 @@ export function DangerZone() {
           <div>
             <p className="text-sm font-medium text-foreground">Apagar minha conta</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Remove seus dados pessoais e acesso permanentemente.
-              Os outros membros da casa não são afetados.
+              Remove seu acesso permanentemente. Se você for o único membro,
+              todos os dados da casa são apagados; se houver outros membros,
+              seus lançamentos passam para o membro mais antigo.
             </p>
           </div>
           <button
@@ -160,8 +161,10 @@ export function DangerZone() {
                   {[
                     'Todas as transações',
                     'Todas as contas recorrentes',
-                    'Todos os planejamentos',
-                    'Todas as metas financeiras',
+                    'Todas as receitas recorrentes e ajustes mensais',
+                    'Todas as contas bancárias e transferências',
+                    'Todos os planejamentos e planos de categoria',
+                    'Todas as metas financeiras e metas de orçamento',
                     'Todos os investimentos',
                     'Todas as dívidas',
                     'Todos os cartões de crédito',
@@ -266,18 +269,13 @@ export function DangerZone() {
                   Esta ação não pode ser desfeita
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Sua conta e todos os dados vinculados serão permanentemente apagados:
+                  Seu acesso será removido permanentemente:
                 </p>
                 <ul className="text-xs text-muted-foreground space-y-1 list-none">
                   {[
                     'Sua conta de acesso',
-                    'Todas as transações',
-                    'Todas as contas recorrentes',
-                    'Todos os planejamentos',
-                    'Todas as metas financeiras',
-                    'Todos os investimentos',
-                    'Todas as dívidas',
-                    'Todos os cartões de crédito',
+                    'Se você for o único membro: todos os dados da casa (transações, contas, contas bancárias, planejamentos, metas, investimentos, dívidas e cartões)',
+                    'Se houver outros membros: seus lançamentos são transferidos para o membro mais antigo e nada é apagado',
                   ].map(item => (
                     <li key={item} className="flex items-center gap-1.5">
                       <span className="w-1 h-1 rounded-full bg-muted-foreground shrink-0" />

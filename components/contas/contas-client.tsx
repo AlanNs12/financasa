@@ -6,10 +6,16 @@ import { formatCurrency, getMonthName } from '@/lib/format'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { NewBillModal } from '@/components/contas/new-bill-modal'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { BillsHistory } from '@/components/contas/bills-history'
 import { RecurringIncomeSection } from '@/components/contas/recurring-income-section'
 import { Fab } from '@/components/transacoes/fab'
-import { markBillAsPaidAction, deleteRecurringBillAction } from '@/app/actions/bills'
+import {
+  markBillAsPaidAction,
+  unmarkBillAsPaidAction,
+  skipBillForMonthAction,
+  deleteRecurringBillAction,
+} from '@/app/actions/bills'
 import { computeBillStatus } from '@/lib/db/queries/bills'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -25,8 +31,9 @@ interface Bill {
   installment_current: number | null
   start_month: number
   start_year: number
+  category_id?: string | null
   created_at: string
-  monthlyStatus: { status: string; paid_at: string | null }[]
+  monthlyStatus: { status: string; paid_at: string | null; paid_amount: number | null }[]
 }
 
 interface HistoryBill {
@@ -57,6 +64,7 @@ interface ContasClientProps {
   categories: { id: string; name: string; icon: string }[]
   recurringIncomes: RecurringIncomeItem[]
   monthIncomes: RecurringIncomeItem[]
+  accounts: { id: string; name: string; icon: string | null; color: string | null }[]
 }
 
 interface EditingBill {
@@ -125,15 +133,17 @@ function mapBillToEditing(bill: Bill): EditingBill {
     recurrence: bill.recurrence,
     is_fixed: !bill.installment_total,
     installment_total: bill.installment_total,
-    category_id: null,
+    category_id: bill.category_id ?? null,
   }
 }
 
-export function ContasClient({ bills, history, month, year, categories, recurringIncomes, monthIncomes }: ContasClientProps) {
+export function ContasClient({ bills, history, month, year, categories, recurringIncomes, monthIncomes, accounts }: ContasClientProps) {
   const router = useRouter()
   const [expandedBill, setExpandedBill] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [payingBill, setPayingBill] = useState<string | null>(null)
+  const [payAccountId, setPayAccountId] = useState('')
+  const [payAmount, setPayAmount] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('current')
   const [editingBill, setEditingBill] = useState<EditingBill | null>(null)
   const [deletingBill, setDeletingBill] = useState<Bill | null>(null)
@@ -144,15 +154,32 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
   const totalAmount = bills.reduce((sum, b) => sum + b.amount, 0)
   const paidAmount = bills
     .filter((b) => getBillStatus(b, month, year) === 'paid')
-    .reduce((sum, b) => sum + b.amount, 0)
+    .reduce((sum, b) => sum + (b.monthlyStatus?.[0]?.paid_amount ?? b.amount), 0)
   const remaining = totalAmount - paidAmount
   const paidPercentage = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0
 
   function handleMarkAsPaid(billId: string) {
+    if (accounts.length > 0 && !payAccountId) {
+      toast.error('Selecione a conta de onde o valor vai sair.')
+      return
+    }
+    const bill = bills.find((b) => b.id === billId)
+    const parsedAmount = Number(payAmount)
+    const paidAmount =
+      payAmount.trim() && parsedAmount > 0 ? parsedAmount : bill?.amount
+    if (!paidAmount || paidAmount <= 0) {
+      toast.error('Informe um valor válido.')
+      return
+    }
     setPayingBill(billId)
     startTransition(async () => {
-      const bill = bills.find((b) => b.id === billId)
-      const result = await markBillAsPaidAction(billId, month, year, bill?.amount)
+      const result = await markBillAsPaidAction(
+        billId,
+        month,
+        year,
+        paidAmount,
+        payAccountId || undefined
+      )
       if (!result?.success) {
         toast.error('Erro ao marcar conta.')
       } else {
@@ -160,6 +187,32 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
         router.refresh()
       }
       setPayingBill(null)
+      setExpandedBill(null)
+    })
+  }
+
+  function handleUnmarkPaid(billId: string) {
+    startTransition(async () => {
+      const result = await unmarkBillAsPaidAction(billId, month, year)
+      if (!result?.success) {
+        toast.error(result?.error ?? 'Erro ao desfazer pagamento.')
+      } else {
+        toast.success('Pagamento desfeito')
+        router.refresh()
+      }
+      setExpandedBill(null)
+    })
+  }
+
+  function handleSkip(billId: string) {
+    startTransition(async () => {
+      const result = await skipBillForMonthAction(billId, month, year)
+      if (!result?.success) {
+        toast.error(result?.error ?? 'Erro ao pular mês.')
+      } else {
+        toast.success('Mês pulado')
+        router.refresh()
+      }
       setExpandedBill(null)
     })
   }
@@ -226,7 +279,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
 
       {activeTab === 'current' ? (
         <>
-          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
+          <div className="hero-card">
             <p className="text-sm text-white/70 mb-1">{monthName}</p>
             <p className="text-3xl font-bold mb-1">{formatCurrency(totalAmount)}</p>
             <p className="text-sm text-white/50 mb-4">total de contas</p>
@@ -266,10 +319,12 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
               bills.map((bill) => {
                 const isExpanded = expandedBill === bill.id
                 const status = getBillStatus(bill, month, year)
+                const isSkipped = bill.monthlyStatus?.[0]?.status === 'SKIPPED'
                 const icon = extractIcon(bill.name)
                 const name = extractName(bill.name)
                 const isPaying = payingBill === bill.id
                 const isParcelada = !!bill.installment_total
+                const paidValue = bill.monthlyStatus?.[0]?.paid_amount ?? bill.amount
 
                 return (
                   <div
@@ -280,7 +335,13 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
                     )}
                   >
                     <button
-                      onClick={() => setExpandedBill(isExpanded ? null : bill.id)}
+                      onClick={() => {
+                        setExpandedBill(isExpanded ? null : bill.id)
+                        if (!isExpanded) {
+                          setPayAccountId(accounts[0]?.id ?? '')
+                          setPayAmount(String(bill.amount))
+                        }
+                      }}
                       className="w-full flex items-center gap-3 p-4 text-left"
                     >
                       <span className="text-xl">{icon}</span>
@@ -295,7 +356,13 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
                           <p className="text-sm font-bold text-foreground tabular-nums">
                             {formatCurrency(bill.amount)}
                           </p>
-                          <StatusBadge status={status} />
+                          {isSkipped ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+                              Pulado
+                            </span>
+                          ) : (
+                            <StatusBadge status={status} />
+                          )}
                         </div>
                         {status !== 'paid' && (
                           <>
@@ -319,20 +386,106 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
                     </button>
 
                     {isExpanded && (
-                      <div className="px-4 pb-4 border-t border-border pt-3">
-                        {status !== 'paid' ? (
-                          <button
-                            onClick={() => handleMarkAsPaid(bill.id)}
-                            disabled={isPaying}
-                            className="w-full py-2.5 rounded-xl bg-green-50 text-green-700 font-medium text-sm hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                          >
-                            {isPaying && <Loader2 className="w-4 h-4 animate-spin" />}
-                            {isParcelada ? 'Pagar parcela' : 'Marcar como pago'}
-                          </button>
+                      <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+                        {status === 'paid' ? (
+                          <>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-green-600 dark:text-green-400 font-medium">
+                                ✓ {isParcelada ? 'Parcela paga' : 'Pago'}
+                              </span>
+                              <span className="text-foreground font-semibold tabular-nums">
+                                {formatCurrency(paidValue)}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleUnmarkPaid(bill.id)}
+                              disabled={isPaying}
+                              className="w-full py-2.5 rounded-xl border border-border text-muted-foreground font-medium text-sm hover:bg-accent transition-colors disabled:opacity-50"
+                            >
+                              Desfazer pagamento
+                            </button>
+                          </>
+                        ) : isSkipped ? (
+                          <>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Este mês foi pulado.
+                            </p>
+                            <button
+                              onClick={() => handleUnmarkPaid(bill.id)}
+                              disabled={isPaying}
+                              className="w-full py-2.5 rounded-xl border border-border text-muted-foreground font-medium text-sm hover:bg-accent transition-colors disabled:opacity-50"
+                            >
+                              Desfazer pulo
+                            </button>
+                          </>
                         ) : (
-                          <p className="text-sm text-green-600 text-center font-medium">
-                            ✓ {isParcelada ? 'Parcela paga' : 'Pago'}
-                          </p>
+                          <>
+                            {accounts.length === 0 ? (
+                              <p className="text-xs text-muted-foreground text-center">
+                                Nenhuma conta cadastrada.{' '}
+                                <a href="/contas-bancarias" className="text-primary underline">
+                                  Cadastrar conta
+                                </a>
+                              </p>
+                            ) : (
+                              <select
+                                value={payAccountId}
+                                onChange={(e) => setPayAccountId(e.target.value)}
+                                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
+                              >
+                                <option value="">De qual conta?</option>
+                                {accounts.map((account) => (
+                                  <option key={account.id} value={account.id}>
+                                    {account.icon ? `${account.icon} ` : ''}
+                                    {account.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-muted-foreground shrink-0">
+                                Valor pago
+                              </label>
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                                  R$
+                                </span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  value={payAmount}
+                                  onChange={(e) => setPayAmount(e.target.value)}
+                                  placeholder={String(bill.amount)}
+                                  className="w-full h-10 pl-9 pr-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
+                                />
+                              </div>
+                            </div>
+                            {payAmount.trim() &&
+                              Number(payAmount) > 0 &&
+                              Number(payAmount) !== bill.amount && (
+                                <p className="text-[11px] text-warning-600 dark:text-warning-400">
+                                  Diferente do previsto ({formatCurrency(bill.amount)})
+                                </p>
+                              )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleSkip(bill.id)}
+                                disabled={isPaying}
+                                className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground font-medium text-sm hover:bg-accent transition-colors disabled:opacity-50"
+                              >
+                                Pular mês
+                              </button>
+                              <button
+                                onClick={() => handleMarkAsPaid(bill.id)}
+                                disabled={isPaying}
+                                className="flex-1 py-2.5 rounded-xl bg-green-600 text-white font-medium text-sm hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                              >
+                                {isPaying && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isParcelada ? 'Pagar parcela' : 'Marcar como pago'}
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     )}
@@ -354,6 +507,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
 
           <Fab onClick={() => setModalOpen(true)} />
           <NewBillModal
+            key={editingBill?.id ?? (modalOpen ? 'new' : 'idle')}
             isOpen={modalOpen || !!editingBill}
             onClose={handleModalClose}
             categories={categories}
@@ -362,42 +516,26 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
             currentYear={year}
           />
 
-          {deletingBill && (
-            <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-              <div className="absolute inset-0 bg-black/40" onClick={() => setDeletingBill(null)} />
-              <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm shadow-xl p-6 safe-area-bottom">
-                <h2 className="text-lg font-bold text-foreground mb-2">Excluir conta?</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  A conta <span className="text-foreground font-medium">{extractName(deletingBill.name)}</span> será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setDeletingBill(null)}
-                    className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isPending}
-                    className="flex-1 py-3 rounded-xl bg-expense text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Excluir
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <ConfirmDialog
+            isOpen={!!deletingBill}
+            onClose={() => { if (!isPending) setDeletingBill(null) }}
+            onConfirm={handleDelete}
+            title="Excluir conta?"
+            description={
+              <>
+                A conta{' '}
+                <span className="text-foreground font-medium">
+                  {deletingBill ? extractName(deletingBill.name) : ''}
+                </span>{' '}
+                será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.
+              </>
+            }
+            confirmLabel="Excluir"
+            pending={isPending}
+          />
         </>
       ) : activeTab === 'history' ? (
-        <BillsHistory
-          history={history}
-          currentMonth={month}
-          currentYear={year}
-        />
+        <BillsHistory history={history} />
       ) : (
         <RecurringIncomeSection
           recurringIncomes={recurringIncomes}

@@ -68,7 +68,7 @@ export function ValorRealClient({ data }: { data: ValorRealData }) {
         </p>
       </div>
 
-      <div className="rounded-2xl p-6 text-white shadow-theme-lg relative overflow-hidden bg-gradient-to-br from-[#0F1115] to-[#2D2F36]">
+      <div className="hero-card">
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/[0.04] -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">

@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { X, Loader2 } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { recurringBillSchema, updateRecurringBillSchema, type RecurringBillInput, type UpdateRecurringBillInput } from '@/lib/validations/bill'
 import { createRecurringBillAction, updateRecurringBillAction } from '@/app/actions/bills'
@@ -46,55 +46,36 @@ interface NewBillModalProps {
 
 export function NewBillModal({ isOpen, onClose, categories, editingBill, currentMonth, currentYear }: NewBillModalProps) {
   const isEditing = !!editingBill
+  const nameMatch = editingBill?.name.match(/^(\S+)\s+(.+)$/)
 
-  const [icon, setIcon] = useState('🏠')
-  const [billType, setBillType] = useState<'fixa' | 'parcelada'>('fixa')
-  const [categoryId, setCategoryId] = useState('')
+  const [icon, setIcon] = useState(nameMatch?.[1] ?? '🏠')
+  const [billType, setBillType] = useState<'fixa' | 'parcelada'>(
+    editingBill ? (editingBill.is_fixed ? 'fixa' : 'parcelada') : 'fixa'
+  )
+  const [categoryId, setCategoryId] = useState(editingBill?.category_id ?? '')
   const [isPending, startTransition] = useTransition()
 
   const {
     register,
     handleSubmit,
-    reset,
-    watch,
+    control,
     formState: { errors },
   } = useForm<RecurringBillInput & UpdateRecurringBillInput>({
     resolver: zodResolver(isEditing ? updateRecurringBillSchema : recurringBillSchema) as never,
-    defaultValues: {
-      recurrence: 'MONTHLY',
-    },
+    defaultValues: editingBill
+      ? {
+          name: nameMatch?.[2] ?? editingBill.name,
+          amount: editingBill.amount,
+          due_day: editingBill.due_day,
+          recurrence: editingBill.recurrence as 'MONTHLY' | 'BIMONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL',
+          category_id: editingBill.category_id ?? undefined,
+        }
+      : {
+          recurrence: 'MONTHLY',
+        },
   })
 
-  useEffect(() => {
-    if (!isOpen) return
-    if (editingBill) {
-      const match = editingBill.name.match(/^(\S+)\s+(.+)$/)
-      setIcon(match?.[1] ?? '🏠')
-      setBillType(editingBill.is_fixed ? 'fixa' : 'parcelada')
-      setCategoryId(editingBill.category_id ?? '')
-      reset({
-        name: match?.[2] ?? editingBill.name,
-        amount: editingBill.amount,
-        due_day: editingBill.due_day,
-        recurrence: editingBill.recurrence as 'MONTHLY' | 'BIMONTHLY' | 'QUARTERLY' | 'SEMIANNUAL' | 'ANNUAL',
-        category_id: editingBill.category_id ?? undefined,
-      })
-    } else {
-      setIcon('🏠')
-      setBillType('fixa')
-      setCategoryId('')
-      reset({
-        name: '',
-        amount: undefined as never,
-        due_day: undefined as never,
-        recurrence: 'MONTHLY',
-        bill_type: 'fixa' as never,
-        installment_total: undefined as never,
-      })
-    }
-  }, [isOpen, editingBill, reset])
-
-  const installmentTotal = watch('installment_total')
+  const installmentTotal = useWatch({ control, name: 'installment_total' })
 
   function handleFormSubmit(data: RecurringBillInput & UpdateRecurringBillInput) {
     startTransition(async () => {

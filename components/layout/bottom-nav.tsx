@@ -16,6 +16,8 @@ const NAV_ITEMS = [
 ]
 
 const MORE_ITEMS = [
+  { href: '/contas-bancarias', label: 'Contas banc.', icon: '🏦' },
+  { href: '/cofrinhos', label: 'Cofrinhos', icon: '🐷' },
   { href: '/metas', label: 'Metas', icon: '🎯' },
   { href: '/investimentos', label: 'Investimentos', icon: '📈' },
   { href: '/faturas', label: 'Faturas', icon: '🧾' },

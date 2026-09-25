@@ -1,11 +1,21 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createTransaction, deleteTransaction, updateTransaction } from '@/lib/db/queries/transactions'
+import {
+  createTransaction,
+  deleteTransaction,
+  deleteInstallmentGroup,
+  updateTransaction,
+} from '@/lib/db/queries/transactions'
 import { transactionSchema } from '@/lib/validations/transaction'
 import type { TransactionType, PaymentMethod } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { calculateBillingPeriod, calculateInstallmentPlan } from '@/lib/calculations/billing'
+import {
+  accountBelongsToHousehold,
+  categoryBelongsToHousehold,
+  creditCardBelongsToHousehold,
+} from '@/lib/db/queries/ownership'
 import { prisma } from '@/lib/db/prisma'
 import { randomUUID } from 'crypto'
 
@@ -29,6 +39,43 @@ async function computeBilling(
   return { billingMonth: period.billingMonth, billingYear: period.billingYear }
 }
 
+async function validateAccount(
+  paymentMethod: string,
+  accountId: string | null | undefined,
+  householdId: string
+): Promise<{ account_id: string[] } | null> {
+  if (paymentMethod === 'CREDIT_CARD') return null
+
+  if (!accountId) {
+    return { account_id: ['Selecione a conta de origem/destino.'] }
+  }
+
+  if (!(await accountBelongsToHousehold(accountId, householdId))) {
+    return { account_id: ['Conta inválida.'] }
+  }
+
+  return null
+}
+
+async function validateReferences(
+  data: { category_id: string; payment_method: string; credit_card_id?: string | null },
+  householdId: string
+): Promise<Record<string, string[]> | null> {
+  if (!(await categoryBelongsToHousehold(data.category_id, householdId))) {
+    return { category_id: ['Categoria inválida.'] }
+  }
+
+  if (
+    data.payment_method === 'CREDIT_CARD' &&
+    data.credit_card_id &&
+    !(await creditCardBelongsToHousehold(data.credit_card_id, householdId))
+  ) {
+    return { credit_card_id: ['Cartão inválido.'] }
+  }
+
+  return null
+}
+
 export async function createTransactionAction(data: {
   type: 'INCOME' | 'EXPENSE'
   description: string
@@ -38,6 +85,7 @@ export async function createTransactionAction(data: {
   payment_method: string
   notes?: string
   credit_card_id?: string | null
+  account_id?: string | null
   installments?: number
   total_amount?: number
 }) {
@@ -55,6 +103,7 @@ export async function createTransactionAction(data: {
     payment_method: data.payment_method,
     notes: data.notes,
     credit_card_id: data.credit_card_id || undefined,
+    account_id: data.account_id || undefined,
     installments: data.installments,
     total_amount: data.total_amount,
   }
@@ -63,6 +112,20 @@ export async function createTransactionAction(data: {
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const referenceError = await validateReferences(parsed.data, current.householdId)
+  if (referenceError) {
+    return { error: referenceError }
+  }
+
+  const accountError = await validateAccount(
+    parsed.data.payment_method,
+    parsed.data.account_id,
+    current.householdId
+  )
+  if (accountError) {
+    return { error: accountError }
   }
 
   const installments = parsed.data.installments ?? 1
@@ -111,6 +174,7 @@ export async function createTransactionAction(data: {
     revalidatePath('/transacoes')
     revalidatePath('/')
     revalidatePath('/faturas')
+    revalidatePath('/contas-bancarias')
 
     return {
       success: true,
@@ -144,12 +208,14 @@ export async function createTransactionAction(data: {
     payment_method: parsed.data.payment_method as PaymentMethod,
     notes: parsed.data.notes,
     credit_card_id: parsed.data.credit_card_id || undefined,
+    account_id: parsed.data.account_id || undefined,
     billing_month: billingMonth,
     billing_year: billingYear,
   })
 
   revalidatePath('/transacoes')
   revalidatePath('/')
+  revalidatePath('/contas-bancarias')
   return {
     success: true,
     billingMoved: billingMonth !== null && billingMonth !== purchaseMonth,
@@ -172,7 +238,27 @@ export async function deleteTransactionAction(id: string) {
 
   revalidatePath('/transacoes')
   revalidatePath('/')
+  revalidatePath('/contas-bancarias')
   return { success: true }
+}
+
+export async function deleteInstallmentGroupAction(groupId: string) {
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { error: 'Usuário não autenticado.' }
+  }
+
+  const count = await deleteInstallmentGroup(groupId, current.householdId)
+
+  if (count === 0) {
+    return { error: 'Parcelas não encontradas.' }
+  }
+
+  revalidatePath('/transacoes')
+  revalidatePath('/')
+  revalidatePath('/contas-bancarias')
+  revalidatePath('/faturas')
+  return { success: true, count }
 }
 
 export async function updateTransactionAction(
@@ -186,6 +272,7 @@ export async function updateTransactionAction(
     payment_method: string
     notes?: string
     credit_card_id?: string | null
+    account_id?: string | null
   }
 ) {
   const current = await getCurrentUserHousehold()
@@ -202,12 +289,27 @@ export async function updateTransactionAction(
     payment_method: data.payment_method,
     notes: data.notes,
     credit_card_id: data.credit_card_id || undefined,
+    account_id: data.account_id || undefined,
   }
 
   const parsed = transactionSchema.safeParse(rawData)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const referenceError = await validateReferences(parsed.data, current.householdId)
+  if (referenceError) {
+    return { error: referenceError }
+  }
+
+  const accountError = await validateAccount(
+    parsed.data.payment_method,
+    parsed.data.account_id,
+    current.householdId
+  )
+  if (accountError) {
+    return { error: accountError }
   }
 
   let billingMonth: number | null = null
@@ -240,11 +342,13 @@ export async function updateTransactionAction(
     payment_method: parsed.data.payment_method,
     notes: parsed.data.notes,
     credit_card_id: parsed.data.credit_card_id || undefined,
+    account_id: parsed.data.account_id || undefined,
     billing_month: billingMonth,
     billing_year: billingYear,
   })
 
   revalidatePath('/transacoes')
   revalidatePath('/')
+  revalidatePath('/contas-bancarias')
   return { success: true }
 }

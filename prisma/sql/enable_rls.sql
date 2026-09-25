@@ -65,11 +65,18 @@ ALTER TABLE "RecurringBill"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BillMonthlyStatus" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Budget"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BudgetItem"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "CategoryBudgetPlan" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "IncomeMonthlyOverride" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "FinancialGoal"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BudgetGoal"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Investment"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Debt"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "CreditCard"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Account"          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Transfer"         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "CardInvoicePayment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "SavingsJar"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "JarMovement"      ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- 2. Policies — Household
@@ -261,10 +268,95 @@ CREATE POLICY "credit_card_isolation"
   WITH CHECK (household_id = auth.current_household_id());
 
 -- ---------------------------------------------------------------------------
+-- 15. Policies — Account
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "account_isolation"
+  ON "Account" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 16. Policies — Transfer
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "transfer_isolation"
+  ON "Transfer" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 17. Policies — CardInvoicePayment
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "card_invoice_payment_isolation"
+  ON "CardInvoicePayment" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 20. Policies — SavingsJar
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "savings_jar_isolation"
+  ON "SavingsJar" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 21. Policies — JarMovement (sem household_id direto)
+-- ---------------------------------------------------------------------------
+-- Filtra via jar_id → SavingsJar.household_id.
+
+CREATE POLICY "jar_movement_isolation"
+  ON "JarMovement" FOR ALL TO authenticated
+  USING (
+    jar_id IN (
+      SELECT id FROM "SavingsJar"
+      WHERE household_id = auth.current_household_id()
+    )
+  )
+  WITH CHECK (
+    jar_id IN (
+      SELECT id FROM "SavingsJar"
+      WHERE household_id = auth.current_household_id()
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 18. Policies — CategoryBudgetPlan
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "category_budget_plan_isolation"
+  ON "CategoryBudgetPlan" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 19. Policies — IncomeMonthlyOverride (sem household_id direto)
+-- ---------------------------------------------------------------------------
+-- Filtra via recurring_income_id → RecurringIncome.household_id.
+
+CREATE POLICY "income_monthly_override_isolation"
+  ON "IncomeMonthlyOverride" FOR ALL TO authenticated
+  USING (
+    recurring_income_id IN (
+      SELECT id FROM "RecurringIncome"
+      WHERE household_id = auth.current_household_id()
+    )
+  )
+  WITH CHECK (
+    recurring_income_id IN (
+      SELECT id FROM "RecurringIncome"
+      WHERE household_id = auth.current_household_id()
+    )
+  );
+
+-- ---------------------------------------------------------------------------
 -- FIM
 -- ---------------------------------------------------------------------------
--- Após executar este script, todas as 13 tabelas têm RLS habilitado com
--- policies que isolam dados por household.
+-- Após executar este script, todas as tabelas com dados de household têm RLS
+-- habilitado com policies que isolam dados por household.
 --
 -- Para reverter (em caso de emergência):
 --   ALTER TABLE "Transaction" DISABLE ROW LEVEL SECURITY;

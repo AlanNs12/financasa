@@ -61,9 +61,10 @@ interface PlanejamentoClientProps {
     confirmedAmount: number | null
     confirmedTransactionId: string | null
   }>
+  accounts: { id: string; name: string; icon: string | null; color: string | null }[]
 }
 
-export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeData, allTransactions, monthIncomes }: PlanejamentoClientProps) {
+export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeData, allTransactions, monthIncomes, accounts }: PlanejamentoClientProps) {
   const router = useRouter()
   const { effectiveIncome: effectiveBudgetIncome, actualIncome, expectedIncome } = incomeData
   const [editMode, setEditMode] = useState(false)
@@ -75,6 +76,7 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
   const [isPending, startTransition] = useTransition()
   const [confirmingIncomeId, setConfirmingIncomeId] = useState<string | null>(null)
   const [confirmAmount, setConfirmAmount] = useState('')
+  const [confirmAccountId, setConfirmAccountId] = useState('')
   const [isConfirming, startConfirmTransition] = useTransition()
   const [selectedCategory, setSelectedCategory] = useState<{
     id: string
@@ -351,6 +353,7 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                         onClick={() => {
                           setConfirmingIncomeId(income.id)
                           setConfirmAmount(String(income.confirmedAmount))
+                          setConfirmAccountId(accounts[0]?.id ?? '')
                         }}
                         className="text-[10px] text-muted-foreground hover:text-foreground
                                    underline underline-offset-2 transition-colors"
@@ -385,6 +388,7 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                         onClick={() => {
                           setConfirmingIncomeId(income.id)
                           setConfirmAmount(String(income.amount))
+                          setConfirmAccountId(accounts[0]?.id ?? '')
                         }}
                         className="text-[10px] px-2 py-1 rounded-lg font-medium
                                    border border-[#22C55E]/40 text-[#16a34a] dark:text-[#4ade80]
@@ -398,9 +402,25 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                 </div>
 
                 {confirmingIncomeId === income.id && (
-                  <div className="ml-5 flex items-center gap-2 p-3 rounded-xl
+                  <div className="ml-5 flex flex-wrap items-center gap-2 p-3 rounded-xl
                                   bg-[#f0fdf4] dark:bg-[#22c55e]/8
                                   border border-[#bbf7d0] dark:border-[#22c55e]/25">
+                    <select
+                      value={confirmAccountId}
+                      onChange={e => setConfirmAccountId(e.target.value)}
+                      className="w-full h-9 px-3 rounded-lg border border-[#bbf7d0]
+                                 dark:border-[#22c55e]/25 bg-white dark:bg-background
+                                 text-foreground text-sm
+                                 focus:outline-none focus:border-[#22C55E] transition-colors"
+                    >
+                      <option value="">Para qual conta?</option>
+                      {accounts.map(account => (
+                        <option key={account.id} value={account.id}>
+                          {account.icon ? `${account.icon} ` : ''}
+                          {account.name}
+                        </option>
+                      ))}
+                    </select>
                     <div className="flex-1">
                       <label className="text-[10px] font-medium text-[#15803d] dark:text-[#4ade80]
                                         uppercase tracking-wide block mb-1">
@@ -427,7 +447,12 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0">
                       <button
-                        disabled={isConfirming || !confirmAmount || Number(confirmAmount) <= 0}
+                        disabled={
+                          isConfirming ||
+                          !confirmAmount ||
+                          Number(confirmAmount) <= 0 ||
+                          (accounts.length > 0 && !confirmAccountId)
+                        }
                         onClick={() => {
                           startConfirmTransition(async () => {
                             const today = new Date().toISOString().split('T')[0]
@@ -436,7 +461,8 @@ export function PlanejamentoClient({ data, billsBreakdown, month, year, incomeDa
                               Number(confirmAmount),
                               today,
                               month,
-                              year
+                              year,
+                              confirmAccountId || undefined
                             )
                             if (r?.error) {
                               toast.error(r.error)
