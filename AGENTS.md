@@ -59,7 +59,7 @@ Projeto Next.js 16 + React 19 + Tailwind v4. App de controle financeiro familiar
 - Página `/contas-bancarias` (a rota `/contas` são contas a pagar)
 - Transferências entre contas: model `Transfer` (não afeta receita/despesa)
 - Pagamento de fatura: model `CardInvoicePayment` (debita a conta sem criar despesa)
-- Cofrinhos: models `SavingsJar`/`JarMovement`; valor guardado fica fora do "disponível" (saldo total não muda); guardar/resgatar em `/contas-bancarias`
+- Cofrinhos: models `SavingsJar`/`JarMovement`; valor guardado fica fora do "disponível" (saldo total não muda). Gerenciáveis em `/cofrinhos` (página dedicada, por conta) e também na seção expansível de `/contas-bancarias`
 - Backfill de transações antigas: `npm run backfill:accounts`
 
 ## Lint
