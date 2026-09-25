@@ -224,6 +224,17 @@ export interface AccountWithBalance extends Account {
   expenses: number
   transfersIn: number
   transfersOut: number
+  cardPayments: number
+}
+
+export interface CardInvoicePayment {
+  id: string
+  credit_card_id: string
+  account_id: string
+  billing_month: number
+  billing_year: number
+  amount: number
+  paid_at: string
 }
 
 export interface AccountRef {

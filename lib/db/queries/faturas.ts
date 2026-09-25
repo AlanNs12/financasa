@@ -14,6 +14,14 @@ export interface FaturaTransaction {
   installment_current: number | null
 }
 
+export interface FaturaPayment {
+  id: string
+  account_id: string
+  accountName: string
+  amount: number
+  paid_at: string
+}
+
 export interface FaturaCard {
   cardId: string
   cardName: string
@@ -22,6 +30,7 @@ export interface FaturaCard {
   closingDay: number | null
   total: number
   transactions: FaturaTransaction[]
+  payment: FaturaPayment | null
 }
 
 export interface FaturaData {
@@ -38,36 +47,44 @@ export async function getFaturaData(
   month: number,
   year: number
 ): Promise<FaturaData> {
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      household_id: householdId,
-      type: 'EXPENSE',
-      payment_method: 'CREDIT_CARD',
-      OR: [
-        { billing_month: month, billing_year: year },
-        {
-          billing_month: null,
-          date: {
-            gte: new Date(year, month - 1, 1),
-            lt: new Date(year, month, 1),
+  const [transactions, payments] = await Promise.all([
+    prisma.transaction.findMany({
+      where: {
+        household_id: householdId,
+        type: 'EXPENSE',
+        payment_method: 'CREDIT_CARD',
+        OR: [
+          { billing_month: month, billing_year: year },
+          {
+            billing_month: null,
+            date: {
+              gte: new Date(year, month - 1, 1),
+              lt: new Date(year, month, 1),
+            },
+          },
+        ],
+      },
+      include: {
+        category: { select: { name: true, icon: true, color: true } },
+        credit_card: {
+          select: {
+            id: true,
+            name: true,
+            issuer: true,
+            due_day: true,
+            closing_day: true,
           },
         },
-      ],
-    },
-    include: {
-      category: { select: { name: true, icon: true, color: true } },
-      credit_card: {
-        select: {
-          id: true,
-          name: true,
-          issuer: true,
-          due_day: true,
-          closing_day: true,
-        },
       },
-    },
-    orderBy: { date: 'asc' },
-  })
+      orderBy: { date: 'asc' },
+    }),
+    prisma.cardInvoicePayment.findMany({
+      where: { household_id: householdId, billing_month: month, billing_year: year },
+      include: { account: { select: { name: true } } },
+    }),
+  ])
+
+  const paymentByCard = new Map(payments.map((p) => [p.credit_card_id, p]))
 
   const cardMap = new Map<string, FaturaCard>()
   const semCartao: FaturaTransaction[] = []
@@ -111,6 +128,7 @@ export async function getFaturaData(
         closingDay: t.credit_card.closing_day,
         total: 0,
         transactions: [],
+        payment: null,
       })
     }
     const card = cardMap.get(cid)!
@@ -118,7 +136,23 @@ export async function getFaturaData(
     card.transactions.push(ft)
   }
 
-  const cards = Array.from(cardMap.values()).sort((a, b) => b.total - a.total)
+  const cards = Array.from(cardMap.values())
+    .sort((a, b) => b.total - a.total)
+    .map((c) => {
+      const p = paymentByCard.get(c.cardId)
+      return {
+        ...c,
+        payment: p
+          ? {
+              id: p.id,
+              account_id: p.account_id,
+              accountName: p.account.name,
+              amount: Number(p.amount),
+              paid_at: p.paid_at.toISOString(),
+            }
+          : null,
+      }
+    })
 
   const totalSemCartao = semCartao.reduce((s, t) => s + t.amount, 0)
   const totalGeral = cards.reduce((s, c) => s + c.total, 0) + totalSemCartao
@@ -131,4 +165,48 @@ export async function getFaturaData(
     transactionsSemCartao: semCartao,
     totalSemCartao,
   }
+}
+
+export async function upsertCardInvoicePayment(data: {
+  household_id: string
+  user_id: string
+  credit_card_id: string
+  account_id: string
+  billing_month: number
+  billing_year: number
+  amount: number
+}) {
+  return prisma.cardInvoicePayment.upsert({
+    where: {
+      credit_card_id_billing_month_billing_year: {
+        credit_card_id: data.credit_card_id,
+        billing_month: data.billing_month,
+        billing_year: data.billing_year,
+      },
+    },
+    create: data,
+    update: {
+      account_id: data.account_id,
+      amount: data.amount,
+      user_id: data.user_id,
+      paid_at: new Date(),
+    },
+  })
+}
+
+export async function deleteCardInvoicePayment(
+  creditCardId: string,
+  month: number,
+  year: number,
+  householdId: string
+): Promise<number> {
+  const result = await prisma.cardInvoicePayment.deleteMany({
+    where: {
+      credit_card_id: creditCardId,
+      billing_month: month,
+      billing_year: year,
+      household_id: householdId,
+    },
+  })
+  return result.count
 }

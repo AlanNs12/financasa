@@ -72,6 +72,7 @@ ALTER TABLE "Debt"             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "CreditCard"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Account"          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Transfer"         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "CardInvoicePayment" ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- 2. Policies — Household
@@ -277,6 +278,15 @@ CREATE POLICY "account_isolation"
 
 CREATE POLICY "transfer_isolation"
   ON "Transfer" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 17. Policies — CardInvoicePayment
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "card_invoice_payment_isolation"
+  ON "CardInvoicePayment" FOR ALL TO authenticated
   USING (household_id = auth.current_household_id())
   WITH CHECK (household_id = auth.current_household_id());
 

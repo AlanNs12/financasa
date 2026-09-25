@@ -12,6 +12,7 @@ function householdDataDeletions(householdId: string) {
     prisma.billMonthlyStatus.deleteMany({
       where: { recurring_bill: { household_id: householdId } },
     }),
+    prisma.cardInvoicePayment.deleteMany({ where: { household_id: householdId } }),
     prisma.transaction.deleteMany({ where: { household_id: householdId } }),
     prisma.incomeMonthlyOverride.deleteMany({
       where: { recurring_income: { household_id: householdId } },
@@ -99,6 +100,10 @@ export async function deleteAccountAction() {
           data: { user_id: newOwnerId },
         }),
         prisma.transfer.updateMany({
+          where: { user_id: userId, household_id: householdId },
+          data: { user_id: newOwnerId },
+        }),
+        prisma.cardInvoicePayment.updateMany({
           where: { user_id: userId, household_id: householdId },
           data: { user_id: newOwnerId },
         }),

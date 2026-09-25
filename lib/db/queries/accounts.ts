@@ -61,7 +61,7 @@ export async function getAccountsWithBalances(
 
   const ids = accounts.map((a) => a.id)
 
-  const [transactions, transfers] = await Promise.all([
+  const [transactions, transfers, cardPayments] = await Promise.all([
     prisma.transaction.findMany({
       where: { household_id: householdId, account_id: { in: ids } },
       select: { account_id: true, type: true, amount: true },
@@ -72,6 +72,10 @@ export async function getAccountsWithBalances(
         OR: [{ from_account_id: { in: ids } }, { to_account_id: { in: ids } }],
       },
       select: { from_account_id: true, to_account_id: true, amount: true },
+    }),
+    prisma.cardInvoicePayment.findMany({
+      where: { household_id: householdId, account_id: { in: ids } },
+      select: { account_id: true, amount: true },
     }),
   ])
 
@@ -91,11 +95,16 @@ export async function getAccountsWithBalances(
       .filter((t) => t.from_account_id === account.id)
       .map((t) => ({ amount: Number(t.amount) }))
 
+    const payments = cardPayments
+      .filter((p) => p.account_id === account.id)
+      .map((p) => ({ amount: Number(p.amount) }))
+
     const parts = computeAccountBalance(
       account.initial_balance,
       accountTransactions,
       transfersIn,
-      transfersOut
+      transfersOut,
+      payments
     )
 
     return { ...account, ...parts }

@@ -1,5 +1,6 @@
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getFaturaData } from '@/lib/db/queries/faturas'
+import { getAccounts } from '@/lib/db/queries/accounts'
 import { redirect } from 'next/navigation'
 import { FaturasClient } from '@/components/faturas/faturas-client'
 
@@ -18,7 +19,22 @@ export default async function FaturasPage({ searchParams }: Props) {
   const month = Number(p.month) || now.getMonth() + 1
   const year = Number(p.year) || now.getFullYear()
 
-  const data = await getFaturaData(user.householdId, month, year)
+  const [data, accounts] = await Promise.all([
+    getFaturaData(user.householdId, month, year),
+    getAccounts(user.householdId),
+  ])
 
-  return <FaturasClient data={data} month={month} year={year} />
+  return (
+    <FaturasClient
+      data={data}
+      month={month}
+      year={year}
+      accounts={accounts.map((a) => ({
+        id: a.id,
+        name: a.name,
+        icon: a.icon ?? null,
+        color: a.color ?? null,
+      }))}
+    />
+  )
 }

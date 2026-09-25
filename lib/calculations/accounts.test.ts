@@ -44,6 +44,12 @@ describe('computeAccountBalance', () => {
     expect(month2.balance).toBe(2500)
   })
 
+  it('subtrai pagamentos de fatura do cartão', () => {
+    const result = computeAccountBalance(1000, [], [], [], [{ amount: 300 }])
+    expect(result.cardPayments).toBe(300)
+    expect(result.balance).toBe(700)
+  })
+
   it('permite saldo negativo', () => {
     const result = computeAccountBalance(100, [{ type: 'EXPENSE', amount: 350 }])
     expect(result.balance).toBe(-250)

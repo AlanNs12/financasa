@@ -12,6 +12,7 @@ export interface AccountBalanceParts {
   expenses: number
   transfersIn: number
   transfersOut: number
+  cardPayments: number
   balance: number
 }
 
@@ -23,7 +24,8 @@ export function computeAccountBalance(
   initialBalance: number,
   transactions: BalanceTransaction[],
   transfersIn: BalanceMovement[] = [],
-  transfersOut: BalanceMovement[] = []
+  transfersOut: BalanceMovement[] = [],
+  cardPayments: BalanceMovement[] = []
 ): AccountBalanceParts {
   const income = transactions
     .filter((t) => t.type === 'INCOME')
@@ -35,14 +37,21 @@ export function computeAccountBalance(
 
   const transfersInTotal = transfersIn.reduce((sum, t) => sum + t.amount, 0)
   const transfersOutTotal = transfersOut.reduce((sum, t) => sum + t.amount, 0)
+  const cardPaymentsTotal = cardPayments.reduce((sum, t) => sum + t.amount, 0)
 
   return {
     income: round2(income),
     expenses: round2(expenses),
     transfersIn: round2(transfersInTotal),
     transfersOut: round2(transfersOutTotal),
+    cardPayments: round2(cardPaymentsTotal),
     balance: round2(
-      initialBalance + income - expenses + transfersInTotal - transfersOutTotal
+      initialBalance +
+        income -
+        expenses +
+        transfersInTotal -
+        transfersOutTotal -
+        cardPaymentsTotal
     ),
   }
 }

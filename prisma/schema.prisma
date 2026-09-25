@@ -23,6 +23,7 @@ model User {
   recurringIncomes RecurringIncome[]
   transactions     Transaction[]
   transfers        Transfer[]
+  cardInvoicePayments CardInvoicePayment[]
   household        Household       @relation(fields: [household_id], references: [id])
 }
 
@@ -45,6 +46,7 @@ model Household {
   users          User[]
   accounts       Account[]
   transfers      Transfer[]
+  cardInvoicePayments CardInvoicePayment[]
 }
 
 model Category {
@@ -275,8 +277,9 @@ model CreditCard {
   due_day      Int?
   is_active    Boolean       @default(true)
   created_at   DateTime      @default(now())
-  household    Household     @relation(fields: [household_id], references: [id])
+  household        Household     @relation(fields: [household_id], references: [id])
   transactions Transaction[]
+  invoicePayments CardInvoicePayment[]
 }
 
 model Account {
@@ -295,6 +298,26 @@ model Account {
   transactions    Transaction[]
   transfers_out   Transfer[]    @relation("TransferFromAccount")
   transfers_in    Transfer[]    @relation("TransferToAccount")
+  invoicePayments CardInvoicePayment[]
+}
+
+model CardInvoicePayment {
+  id             String     @id @default(uuid())
+  household_id   String
+  user_id        String
+  credit_card_id String
+  account_id     String
+  billing_month  Int
+  billing_year   Int
+  amount         Decimal    @db.Decimal(10, 2)
+  paid_at        DateTime   @default(now())
+  created_at     DateTime   @default(now())
+  household      Household  @relation(fields: [household_id], references: [id])
+  user           User       @relation(fields: [user_id], references: [id])
+  credit_card    CreditCard @relation(fields: [credit_card_id], references: [id])
+  account        Account    @relation(fields: [account_id], references: [id])
+
+  @@unique([credit_card_id, billing_month, billing_year])
 }
 
 model Transfer {
