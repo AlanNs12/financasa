@@ -117,7 +117,8 @@ export async function confirmRecurringIncomeAction(
   amount: number,
   date: string,
   month: number,
-  year: number
+  year: number,
+  accountId?: string
 ) {
   const user = await getCurrentUserHousehold()
   if (!user) return { error: 'Não autorizado' }
@@ -125,6 +126,14 @@ export async function confirmRecurringIncomeAction(
   const amountSchema = z.number().positive('Valor deve ser positivo')
   const parsed = amountSchema.safeParse(amount)
   if (!parsed.success) return { error: 'Valor inválido' }
+
+  if (accountId) {
+    const account = await prisma.account.findFirst({
+      where: { id: accountId, household_id: user.householdId },
+      select: { id: true },
+    })
+    if (!account) return { error: 'Conta inválida' }
+  }
 
   const income = await prisma.recurringIncome.findFirst({
     where: { id: recurringIncomeId, household_id: user.householdId },
@@ -161,7 +170,10 @@ export async function confirmRecurringIncomeAction(
   if (existing) {
     await prisma.transaction.update({
       where: { id: existing.id },
-      data: { amount: parsed.data },
+      data: {
+        amount: parsed.data,
+        account_id: accountId ?? null,
+      },
     })
   } else {
     await prisma.transaction.create({
@@ -175,6 +187,7 @@ export async function confirmRecurringIncomeAction(
         date:                new Date(date + 'T12:00:00'),
         payment_method:      'BANK_TRANSFER',
         recurring_income_id: recurringIncomeId,
+        account_id:          accountId ?? null,
         billing_month:       month,
         billing_year:        year,
       },
@@ -184,6 +197,7 @@ export async function confirmRecurringIncomeAction(
   revalidatePath('/planejamento')
   revalidatePath('/')
   revalidatePath('/transacoes')
+  revalidatePath('/contas-bancarias')
   return { success: true }
 }
 

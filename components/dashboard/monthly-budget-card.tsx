@@ -42,11 +42,7 @@ export function MonthlyBudgetCard({
   const { getHref } = useMonth()
 
   return (
-    <div className="rounded-2xl p-6 text-white shadow-theme-lg relative
-                    overflow-hidden
-                    bg-gradient-to-br from-[#0F1115] to-[#2D2F36]
-                    dark:from-[#2D2F36] dark:to-[#0F1115]
-                    border border-white/5">
+    <div className="hero-card">
       <div className="absolute top-0 right-0 w-40 h-40 rounded-full
                       bg-white/[0.04] -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full

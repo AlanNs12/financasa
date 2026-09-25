@@ -79,7 +79,7 @@ export async function updateGoalAction(
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  await updateFinancialGoal(id, {
+  const result = await updateFinancialGoal(id, current.householdId, {
     name: parsed.data.name,
     description: parsed.data.description ?? undefined,
     target_amount: parsed.data.target_amount,
@@ -87,6 +87,10 @@ export async function updateGoalAction(
     icon: parsed.data.icon,
     color: parsed.data.color,
   })
+
+  if (result.count === 0) {
+    return { error: { _form: 'Meta não encontrada.' } }
+  }
 
   revalidatePath('/metas')
   revalidatePath('/')
@@ -104,7 +108,11 @@ export async function addGoalAmountAction(id: string, amount: number) {
     return { error: 'Valor inválido.' }
   }
 
-  const goal = await addAmountToGoal(id, parsed.data.amount)
+  const goal = await addAmountToGoal(id, current.householdId, parsed.data.amount)
+
+  if (!goal) {
+    return { error: 'Meta não encontrada.' }
+  }
 
   const currentAmount = Number(goal.current_amount)
   const targetAmount = Number(goal.target_amount)

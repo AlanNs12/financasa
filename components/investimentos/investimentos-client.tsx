@@ -12,8 +12,8 @@ import {
   TrendingDown,
   PieChart as PieChartIcon,
   Trash2,
-  AlertTriangle,
   Calculator,
+  Pencil,
 } from 'lucide-react'
 import {
   PieChart,
@@ -24,7 +24,12 @@ import {
 } from 'recharts'
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/format'
 import { EmptyState } from '@/components/shared/empty-state'
-import { createInvestmentAction, deleteInvestmentAction } from '@/app/actions/investments'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import {
+  createInvestmentAction,
+  updateInvestmentAction,
+  deleteInvestmentAction,
+} from '@/app/actions/investments'
 import { investmentSchema, type InvestmentInput } from '@/lib/validations/investment'
 import { useMonth } from '@/lib/month-context'
 import type { Investment, InvestmentType, FinancialGoal } from '@/types'
@@ -69,6 +74,7 @@ export function InvestimentosClient({
   goals,
 }: InvestimentosClientProps) {
   const [showModal, setShowModal] = useState(false)
+  const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Investment | null>(null)
   const [isPending, startTransition] = useTransition()
   const { getHref } = useMonth()
@@ -91,9 +97,46 @@ export function InvestimentosClient({
     },
   })
 
+  function openCreate() {
+    setEditingInvestment(null)
+    reset({
+      name: '',
+      asset_type: 'RENDA_FIXA',
+      goal_id: undefined,
+      rate_description: undefined,
+      applied_at: new Date().toISOString().split('T')[0],
+      maturity_at: undefined,
+      gross_invested: 0,
+      gross_current: 0,
+      net_current: 0,
+    })
+    setShowModal(true)
+  }
+
+  function openEdit(inv: Investment) {
+    setEditingInvestment(inv)
+    reset({
+      name: inv.name,
+      asset_type: inv.asset_type,
+      goal_id: inv.goal_id ?? undefined,
+      rate_description: inv.rate_description ?? undefined,
+      applied_at: inv.applied_at.split('T')[0],
+      maturity_at: inv.maturity_at ? inv.maturity_at.split('T')[0] : undefined,
+      gross_invested: inv.gross_invested,
+      gross_current: inv.gross_current,
+      net_current: inv.net_current,
+    })
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditingInvestment(null)
+  }
+
   function handleFormSubmit(data: InvestmentInput) {
     startTransition(async () => {
-      const result = await createInvestmentAction({
+      const payload = {
         name: data.name,
         asset_type: data.asset_type,
         goal_id: data.goal_id || null,
@@ -103,16 +146,20 @@ export function InvestimentosClient({
         gross_invested: data.gross_invested,
         gross_current: data.gross_current,
         net_current: data.net_current,
-      })
+      }
+
+      const result = editingInvestment
+        ? await updateInvestmentAction(editingInvestment.id, payload)
+        : await createInvestmentAction(payload)
 
       if (result?.error) {
-        toast.error('Erro ao criar investimento. Verifique os dados.')
+        toast.error('Erro ao salvar investimento. Verifique os dados.')
         return
       }
 
-      toast.success('Investimento criado com sucesso!')
+      toast.success(editingInvestment ? 'Investimento atualizado!' : 'Investimento criado com sucesso!')
       reset()
-      setShowModal(false)
+      closeModal()
     })
   }
 
@@ -157,10 +204,10 @@ export function InvestimentosClient({
 
       {hasInvestments ? (
         <>
-          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
+          <div className="hero-card">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                   Total investido
                 </p>
                 <p className="text-xl font-bold tabular-nums">
@@ -168,7 +215,7 @@ export function InvestimentosClient({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                   Valor atual líquido
                 </p>
                 <p className="text-xl font-bold tabular-nums">
@@ -184,7 +231,7 @@ export function InvestimentosClient({
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span className="text-xs text-muted-foreground">Rentabilidade</span>
+                  <span className="text-xs text-white/60">Rentabilidade</span>
                 </div>
                 <div className="text-right">
                   <p
@@ -316,6 +363,13 @@ export function InvestimentosClient({
                       </p>
                     </div>
                     <button
+                      onClick={() => openEdit(inv)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                      aria-label="Editar investimento"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => setPendingDelete(inv)}
                       className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                       aria-label="Excluir investimento"
@@ -370,7 +424,7 @@ export function InvestimentosClient({
           </div>
 
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreate}
             className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground font-medium text-sm hover:border-muted-foreground hover:text-muted-foreground transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -385,7 +439,7 @@ export function InvestimentosClient({
             description="Cadastre seu primeiro investimento para acompanhar a evolução da sua carteira."
             action={
               <button
-                onClick={() => setShowModal(true)}
+                onClick={openCreate}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -398,12 +452,14 @@ export function InvestimentosClient({
 
       {showModal && (
         <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
           <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-md max-h-[90vh] overflow-y-auto shadow-xl safe-area-bottom">
             <div className="sticky top-0 bg-card px-6 py-4 border-b border-border flex items-center justify-between rounded-t-3xl">
-              <h2 className="text-lg font-bold text-foreground">Novo investimento</h2>
+              <h2 className="text-lg font-bold text-foreground">
+                {editingInvestment ? 'Editar investimento' : 'Novo investimento'}
+              </h2>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="p-1 rounded-lg hover:bg-accent"
                 aria-label="Fechar"
               >
@@ -569,49 +625,21 @@ export function InvestimentosClient({
         </div>
       )}
 
-      {pendingDelete && (
-        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => !isPending && setPendingDelete(null)}
-          />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
-            <div className="flex flex-col items-center text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground mb-1">
-                Excluir este investimento?
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {pendingDelete.name} · {formatCurrency(pendingDelete.net_current)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        onClose={() => { if (!isPending) setPendingDelete(null) }}
+        onConfirm={confirmDelete}
+        title="Excluir este investimento?"
+        description={
+          <>
+            <span className="text-foreground font-medium">{pendingDelete?.name}</span>
+            {pendingDelete ? ` · ${formatCurrency(pendingDelete.net_current)}` : ''}
+            <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+          </>
+        }
+        confirmLabel="Excluir"
+        pending={isPending}
+      />
     </div>
   )
 }

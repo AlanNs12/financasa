@@ -46,7 +46,7 @@ export async function createCategory(data: {
 export async function updateCategory(
   id: string,
   householdId: string,
-  data: { name: string; icon: string; color: string }
+  data: { name: string; icon: string; color: string; type?: 'INCOME' | 'EXPENSE' | 'BOTH' }
 ) {
   return prisma.category.updateMany({
     where: { id, household_id: householdId },
@@ -56,7 +56,7 @@ export async function updateCategory(
 
 export async function deleteCategory(id: string, householdId: string) {
   const hasTransactions = await prisma.transaction.count({
-    where: { category_id: id }
+    where: { category_id: id, household_id: householdId }
   })
   if (hasTransactions > 0) {
     throw new Error('Categoria em uso — não pode ser apagada')

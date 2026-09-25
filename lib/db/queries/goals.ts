@@ -33,6 +33,7 @@ export async function createFinancialGoal(data: {
 
 export async function updateFinancialGoal(
   id: string,
+  householdId: string,
   data: {
     name?: string
     description?: string | null
@@ -43,30 +44,38 @@ export async function updateFinancialGoal(
     color?: string | null
   }
 ) {
-  return prisma.financialGoal.update({
-    where: { id },
+  return prisma.financialGoal.updateMany({
+    where: { id, household_id: householdId },
     data,
   })
 }
 
-export async function addAmountToGoal(id: string, amount: number) {
-  const goal = await prisma.financialGoal.update({
-    where: { id },
+export async function addAmountToGoal(id: string, householdId: string, amount: number) {
+  const updated = await prisma.financialGoal.updateMany({
+    where: { id, household_id: householdId },
     data: {
       current_amount: { increment: amount },
     },
+  })
+
+  if (updated.count === 0) return null
+
+  const goal = await prisma.financialGoal.findFirst({
+    where: { id, household_id: householdId },
     select: {
       target_amount: true,
       current_amount: true,
     },
   })
 
+  if (!goal) return null
+
   const current = Number(goal.current_amount)
   const target = Number(goal.target_amount)
 
   if (current >= target) {
-    await prisma.financialGoal.update({
-      where: { id },
+    await prisma.financialGoal.updateMany({
+      where: { id, household_id: householdId },
       data: { status: 'COMPLETED' },
     })
   }

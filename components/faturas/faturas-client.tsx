@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { CreditCard, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { CreditCard, ChevronDown, ChevronUp, Check, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import type { FaturaData } from '@/lib/db/queries/faturas'
+import { payCardInvoiceAction, unpayCardInvoiceAction } from '@/app/actions/faturas'
+import type { FaturaCard, FaturaData } from '@/lib/db/queries/faturas'
 
 const MONTH_NAMES = [
   'Janeiro',
@@ -27,12 +29,18 @@ export function FaturasClient({
   data,
   month,
   year,
+  accounts,
 }: {
   data: FaturaData
   month: number
   year: number
+  accounts: { id: string; name: string; icon: string | null; color: string | null }[]
 }) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [payingCardId, setPayingCardId] = useState<string | null>(null)
+  const [payAccountId, setPayAccountId] = useState('')
+  const [payAmount, setPayAmount] = useState('')
+  const [isPending, startTransition] = useTransition()
 
   function toggle(id: string) {
     setExpandedCards((prev) => {
@@ -46,6 +54,50 @@ export function FaturasClient({
     })
   }
 
+  function startPay(card: FaturaCard) {
+    setPayingCardId(card.cardId)
+    setPayAccountId(accounts[0]?.id ?? '')
+    setPayAmount(String(card.total))
+  }
+
+  function handlePay(card: FaturaCard) {
+    if (accounts.length > 0 && !payAccountId) {
+      toast.error('Selecione a conta de onde o valor vai sair.')
+      return
+    }
+    const amount = Number(payAmount) > 0 ? Number(payAmount) : card.total
+    if (amount <= 0) {
+      toast.error('Informe um valor válido.')
+      return
+    }
+    startTransition(async () => {
+      const result = await payCardInvoiceAction(
+        card.cardId,
+        month,
+        year,
+        payAccountId,
+        amount
+      )
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Fatura paga!')
+      setPayingCardId(null)
+    })
+  }
+
+  function handleUnpay(card: FaturaCard) {
+    startTransition(async () => {
+      const result = await unpayCardInvoiceAction(card.cardId, month, year)
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Pagamento desfeito')
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -55,11 +107,7 @@ export function FaturasClient({
         </p>
       </div>
 
-      <div
-        className="rounded-2xl p-6 text-white shadow-theme-lg
-                    bg-gradient-to-br from-[#0F1115] to-[#2D2F36]
-                    border border-white/5 relative overflow-hidden"
-      >
+      <div className="hero-card">
         <div
           className="absolute top-0 right-0 w-40 h-40 rounded-full
                       bg-white/[0.04] -translate-y-1/2 translate-x-1/2"
@@ -130,6 +178,11 @@ export function FaturasClient({
                   {card.transactions.length} compras
                 </span>
               </div>
+              {card.payment && (
+                <span className="inline-flex items-center gap-1 mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400">
+                  ✓ Fatura paga
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <p className="text-base font-bold text-[#EF4444]">
@@ -207,6 +260,92 @@ export function FaturasClient({
                 <span className="text-sm font-bold text-[#EF4444]">
                   {formatCurrency(card.total)}
                 </span>
+              </div>
+
+              <div className="px-4 py-3 border-t border-border">
+                {card.payment ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="text-success-600 dark:text-success-400 font-medium">
+                        ✓ Paga
+                      </span>{' '}
+                      via {card.payment.accountName} em{' '}
+                      {format(new Date(card.payment.paid_at), 'dd/MM/yyyy')}
+                    </p>
+                    <button
+                      onClick={() => handleUnpay(card)}
+                      disabled={isPending}
+                      className="text-xs text-muted-foreground hover:text-error-500 underline underline-offset-2 shrink-0 disabled:opacity-50"
+                    >
+                      Desfazer
+                    </button>
+                  </div>
+                ) : payingCardId === card.cardId ? (
+                  <div className="space-y-2">
+                    {accounts.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhuma conta cadastrada.{' '}
+                        <a href="/contas-bancarias" className="text-primary underline">
+                          Cadastrar conta
+                        </a>
+                      </p>
+                    ) : (
+                      <select
+                        value={payAccountId}
+                        onChange={(e) => setPayAccountId(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
+                      >
+                        <option value="">De qual conta?</option>
+                        {accounts.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.icon ? `${account.icon} ` : ''}
+                            {account.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                        R$
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        placeholder={String(card.total)}
+                        className="w-full h-10 pl-9 pr-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPayingCardId(null)}
+                        disabled={isPending}
+                        className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => handlePay(card)}
+                        disabled={isPending}
+                        className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Pagar fatura
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => startPay(card)}
+                    disabled={isPending || accounts.length === 0}
+                    className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-[#2D2F36] dark:hover:bg-[#3D3F47] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    Pagar fatura
+                  </button>
+                )}
               </div>
             </div>
           )}

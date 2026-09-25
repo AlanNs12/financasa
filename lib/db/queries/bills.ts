@@ -1,34 +1,9 @@
 import { prisma } from '@/lib/db/prisma'
 import type { BillStatus, Recurrence } from '@prisma/client'
+import { billAppliesInMonth } from '@/lib/calculations/bills'
 
-export type ComputedBillStatus = 'PAID' | 'PENDING' | 'OVERDUE'
-
-export function computeBillStatus(
-  dueDay: number,
-  month: number,
-  year: number,
-  savedStatus?: string | null
-): ComputedBillStatus {
-  if (savedStatus === 'PAID') return 'PAID'
-  if (savedStatus === 'SKIPPED') return 'PENDING'
-
-  const now = new Date()
-  const currentDay = now.getDate()
-  const currentMonth = now.getMonth() + 1
-  const currentYear = now.getFullYear()
-
-  if (year < currentYear) return 'OVERDUE'
-  if (year === currentYear && month < currentMonth) return 'OVERDUE'
-
-  const dim = new Date(year, month, 0).getDate()
-  const effectiveDueDay = dueDay > dim ? dim : dueDay
-
-  if (year === currentYear && month === currentMonth && effectiveDueDay < currentDay) {
-    return 'OVERDUE'
-  }
-
-  return 'PENDING'
-}
+export { computeBillStatus } from '@/lib/calculations/bills'
+export type { ComputedBillStatus } from '@/lib/calculations/bills'
 
 export async function getRecurringBills(householdId: string, month?: number, year?: number) {
   const targetMonth = month ?? new Date().getMonth() + 1
@@ -60,23 +35,36 @@ export async function getRecurringBills(householdId: string, month?: number, yea
     orderBy: { due_day: 'asc' },
   })
 
-  return bills.map((b) => ({
-    id: b.id,
-    household_id: b.household_id,
-    user_id: b.user_id,
-    name: b.name,
-    amount: Number(b.amount),
-    due_day: b.due_day,
-    recurrence: b.recurrence,
-    is_active: b.is_active,
-    installment_total: b.installment_total,
-    installment_current: b.installment_current,
-    start_month: b.start_month,
-    start_year: b.start_year,
-    created_at: b.created_at.toISOString(),
-    user: b.user,
-    monthlyStatus: b.monthlyStatus,
-  }))
+  return bills
+    .filter(
+      (b) =>
+        b.monthlyStatus.length > 0 ||
+        billAppliesInMonth(
+          b.start_month,
+          b.start_year,
+          b.recurrence,
+          targetMonth,
+          targetYear
+        )
+    )
+    .map((b) => ({
+      id: b.id,
+      household_id: b.household_id,
+      user_id: b.user_id,
+      name: b.name,
+      amount: Number(b.amount),
+      due_day: b.due_day,
+      recurrence: b.recurrence,
+      is_active: b.is_active,
+      installment_total: b.installment_total,
+      installment_current: b.installment_current,
+      start_month: b.start_month,
+      start_year: b.start_year,
+      category_id: b.category_id,
+      created_at: b.created_at.toISOString(),
+      user: b.user,
+      monthlyStatus: b.monthlyStatus,
+    }))
 }
 
 export async function getBillsHistory(householdId: string, monthsBack = 6) {
@@ -120,8 +108,11 @@ export async function getBillsHistory(householdId: string, monthsBack = 6) {
 
     const monthBills = bills
       .filter((b) => {
-        const created = new Date(b.created_at)
-        return created <= new Date(year, month, 0)
+        const ms = b.monthlyStatus.find((s) => s.month === month && s.year === year)
+        return (
+          !!ms ||
+          billAppliesInMonth(b.start_month, b.start_year, b.recurrence, month, year)
+        )
       })
       .map((b) => {
         const ms = b.monthlyStatus.find((s) => s.month === month && s.year === year)
@@ -242,7 +233,9 @@ export async function createTransactionFromBill(
   billId: string,
   userId: string,
   month: number,
-  year: number
+  year: number,
+  accountId?: string | null,
+  amountOverride?: number
 ): Promise<boolean> {
   const existing = await prisma.transaction.findFirst({
     where: {
@@ -282,15 +275,41 @@ export async function createTransactionFromBill(
       user_id: userId,
       category_id: categoryId,
       type: 'EXPENSE',
-      amount: bill.amount,
+      amount: amountOverride ?? bill.amount,
       description: bill.name,
       date: new Date(year, month - 1, day),
       payment_method: 'PIX',
       recurring_bill_id: bill.id,
+      account_id: accountId ?? null,
     },
   })
 
   return true
+}
+
+export async function deleteTransactionFromBill(
+  billId: string,
+  householdId: string,
+  month: number,
+  year: number
+): Promise<number> {
+  const result = await prisma.transaction.deleteMany({
+    where: {
+      recurring_bill_id: billId,
+      household_id: householdId,
+      date: {
+        gte: new Date(year, month - 1, 1),
+        lt: new Date(year, month, 1),
+      },
+    },
+  })
+  return result.count
+}
+
+export async function clearBillStatus(billId: string, month: number, year: number) {
+  return prisma.billMonthlyStatus.deleteMany({
+    where: { recurring_bill_id: billId, month, year },
+  })
 }
 
 export async function getTotalBillsForMonth(householdId: string, month?: number, year?: number) {
@@ -354,26 +373,6 @@ export interface BillsBreakdown {
   total: number
   paid: number
   pending: number
-}
-
-function billAppliesInMonth(
-  startMonth: number,
-  startYear: number,
-  recurrence: string,
-  month: number,
-  year: number
-): boolean {
-  const monthDiff = (year - startYear) * 12 + (month - startMonth)
-  if (monthDiff < 0) return false
-
-  switch (recurrence) {
-    case 'MONTHLY': return true
-    case 'BIMONTHLY': return monthDiff % 2 === 0
-    case 'QUARTERLY': return monthDiff % 3 === 0
-    case 'SEMIANNUAL': return monthDiff % 6 === 0
-    case 'ANNUAL': return monthDiff % 12 === 0
-    default: return true
-  }
 }
 
 export async function getBillsBreakdownForMonth(

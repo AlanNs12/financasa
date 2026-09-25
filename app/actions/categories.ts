@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
-import { createCategory, deleteCategory } from '@/lib/db/queries/categories'
+import { createCategory, updateCategory, deleteCategory } from '@/lib/db/queries/categories'
 import { revalidatePath } from 'next/cache'
 
 const categorySchema = z.object({
@@ -20,6 +20,22 @@ export async function createCategoryAction(data: unknown) {
   if (!parsed.success) return { error: 'Dados inválidos' }
 
   await createCategory({ household_id: user.householdId, ...parsed.data })
+  revalidatePath('/configuracoes')
+  revalidatePath('/transacoes')
+  revalidatePath('/planejamento')
+  return { success: true }
+}
+
+export async function updateCategoryAction(id: string, data: unknown) {
+  const user = await getCurrentUserHousehold()
+  if (!user) return { error: 'Não autorizado' }
+
+  const parsed = categorySchema.safeParse(data)
+  if (!parsed.success) return { error: 'Dados inválidos' }
+
+  const result = await updateCategory(id, user.householdId, parsed.data)
+  if (result.count === 0) return { error: 'Categoria não encontrada' }
+
   revalidatePath('/configuracoes')
   revalidatePath('/transacoes')
   revalidatePath('/planejamento')

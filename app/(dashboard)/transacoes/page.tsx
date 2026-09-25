@@ -2,6 +2,7 @@
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
 import { getCategories } from '@/lib/db/queries/categories'
 import { getCreditCards } from '@/lib/db/queries/credit-cards'
+import { getAccounts } from '@/lib/db/queries/accounts'
 import { TransactionsClient } from '@/components/transacoes/transactions-client'
 import { PageHeader } from '@/components/shared/page-header'
 
@@ -26,10 +27,11 @@ export default async function TransacoesPage({
     )
   }
 
-  const [transactions, categories, creditCards] = await Promise.all([
+  const [transactions, categories, creditCards, accounts] = await Promise.all([
     getTransactionsByMonth(current.householdId, month, year),
     getCategories(current.householdId),
     getCreditCards(current.householdId),
+    getAccounts(current.householdId),
   ])
 
   const clientTransactions = transactions.map((t) => ({
@@ -43,9 +45,11 @@ export default async function TransacoesPage({
     category_id: t.category_id,
     payment_method: t.payment_method,
     credit_card_id: t.credit_card_id ?? null,
+    account_id: t.account_id ?? null,
     billing_month: t.billing_month ?? null,
     billing_year: t.billing_year ?? null,
     category: t.category ? { name: t.category.name, icon: t.category.icon, color: t.category.color } : null,
+    account: t.account ? { name: t.account.name, icon: t.account.icon ?? null, color: t.account.color ?? null } : null,
     user: t.user ? { name: t.user.name, avatar_url: t.user.avatar_url ?? null } : null,
   }))
 
@@ -64,6 +68,13 @@ export default async function TransacoesPage({
     closing_day: c.closing_day ?? null,
   }))
 
+  const clientAccounts = accounts.map((a) => ({
+    id: a.id,
+    name: a.name,
+    icon: a.icon ?? null,
+    color: a.color ?? null,
+  }))
+
   return (
     <div className="space-y-4">
       <PageHeader title="Transações" description="Gerencie suas entradas e saídas" />
@@ -72,6 +83,7 @@ export default async function TransacoesPage({
         transactions={clientTransactions}
         categories={clientCategories}
         creditCards={clientCreditCards}
+        accounts={clientAccounts}
         month={month}
         year={year}
       />

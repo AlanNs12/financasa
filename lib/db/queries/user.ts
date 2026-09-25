@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { prisma } from '@/lib/db/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { createDefaultCategories } from '@/lib/db/queries/categories'
@@ -21,50 +22,51 @@ async function createUniqueInviteCode(): Promise<string> {
   return code
 }
 
-export async function getCurrentUserHousehold(): Promise<{
-  userId: string
-  householdId: string
-} | null> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export const getCurrentUserHousehold = cache(
+  async (): Promise<{ userId: string; householdId: string } | null> => {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) return null
+    if (!user) return null
 
-  const dbUser = await prisma.user.findUnique({
-    where: { supabase_id: user.id },
-    select: { id: true, household_id: true },
-  })
+    const dbUser = await prisma.user.findUnique({
+      where: { supabase_id: user.id },
+      select: { id: true, household_id: true },
+    })
 
-  if (!dbUser) return null
+    if (!dbUser) return null
 
-  return { userId: dbUser.id, householdId: dbUser.household_id }
-}
-
-export async function getCurrentUser(): Promise<{
-  id: string
-  name: string
-  avatarUrl: string | null
-  householdId: string
-} | null> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return null
-
-  const dbUser = await prisma.user.findUnique({
-    where: { supabase_id: user.id },
-    select: { id: true, name: true, avatar_url: true, household_id: true },
-  })
-
-  if (!dbUser) return null
-
-  return {
-    id: dbUser.id,
-    name: dbUser.name,
-    avatarUrl: dbUser.avatar_url,
-    householdId: dbUser.household_id,
+    return { userId: dbUser.id, householdId: dbUser.household_id }
   }
-}
+)
+
+export const getCurrentUser = cache(
+  async (): Promise<{
+    id: string
+    name: string
+    avatarUrl: string | null
+    householdId: string
+  } | null> => {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    const dbUser = await prisma.user.findUnique({
+      where: { supabase_id: user.id },
+      select: { id: true, name: true, avatar_url: true, household_id: true },
+    })
+
+    if (!dbUser) return null
+
+    return {
+      id: dbUser.id,
+      name: dbUser.name,
+      avatarUrl: dbUser.avatar_url,
+      householdId: dbUser.household_id,
+    }
+  }
+)
 
 export async function createUserAndHousehold(
   supabaseId: string,

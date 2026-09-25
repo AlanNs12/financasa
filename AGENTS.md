@@ -53,27 +53,33 @@ Projeto Next.js 16 + React 19 + Tailwind v4. App de controle financeiro familiar
 - Metadata configurado em `app/layout.tsx:13-44`
 - Caminhos: `/financasa-icons/favicon.ico`, `/financasa-icons/icon-192x192.png`, etc.
 
-## Erros existentes (pré-existentes — não corrigir nesta task)
+## Contas bancárias
 
-**8 erros** em `app/(dashboard)/page.tsx` (lines 94-120):
-- `Avoid constructing JSX within try/catch` (react-hooks/error-boundaries)
-- Causa: O JSX de retorno do dashboard está dentro de um bloco `try {}` (line 40-121). React não renderiza componentes imediatamente, então erros de renderização não são capturados pelo try/catch.
-- Solução: Extrair o JSX para fora do try/catch, ou usar um Error Boundary (`error.tsx` na mesma rota).
+- Saldo acumulado: `lib/calculations/accounts.ts` (`saldo = inicial + receitas − despesas + transferências recebidas − enviadas − pagamentos de fatura`)
+- Página `/contas-bancarias` (a rota `/contas` são contas a pagar)
+- Transferências entre contas: model `Transfer` (não afeta receita/despesa)
+- Pagamento de fatura: model `CardInvoicePayment` (debita a conta sem criar despesa)
+- Cofrinhos: models `SavingsJar`/`JarMovement`; valor guardado fica fora do "disponível" (saldo total não muda). Gerenciáveis em `/cofrinhos` (página dedicada, por conta) e também na seção expansível de `/contas-bancarias`
+- Backfill de transações antigas: `npm run backfill:accounts`
 
-**8 warnings** (pré-existentes):
-| Arquivo | Warning |
-|---|---|
-| `components/contas/bills-history.tsx:8,52` | `cn`, `currentMonth`, `currentYear` não usados |
-| `components/contas/new-bill-modal.tsx:95` | React Hook Form `watch()` não memoizável |
-| `components/dashboard/upcoming-bills.tsx:20` | `month` não usado |
-| `components/metas/metas-client.tsx:369` | React Hook Form `watch()` não memoizável |
-| `components/shared/person-avatar.tsx:44` | `<img>` ao invés de `<Image />` |
-| `components/transacoes/new-transaction-modal.tsx:69` | React Hook Form `watch()` não memoizável |
+## Lint
+
+`npm run lint` está limpo (0 erros, 0 warnings). Ao usar React Hook Form, prefira `useWatch({ control, name })` em vez de `watch(name)` e evite `setState` dentro de `useEffect` (use remontagem via `key`).
+
+## Banco de dados
+
+- Migrations versionadas em `prisma/migrations/` (baseline `0000000000000_init`).
+- `npm run db:migrate` (dev) / `npm run db:migrate:status`. `npm run db:push` continua disponível.
+- RLS em `prisma/sql/enable_rls.sql` (aplicação manual no Supabase).
+
+## Proxy
+
+A antiga convenção `middleware.ts` foi migrada para `proxy.ts` (`export function proxy`) no Next 16.
 
 ## Comandos
 
 ```bash
 npm run lint     # ESLint
 npm run build    # Next.js build (Turbopack)
-npm run test     # Vitest (142 testes, 13 suites)
+npm run test     # Vitest (197 testes, 18 suites)
 ```

@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, ArrowUpCircle, ArrowDownCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch, type DefaultValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { transactionSchema, type TransactionOutput } from '@/lib/validations/transaction'
 import { createTransactionAction, updateTransactionAction } from '@/app/actions/transactions'
@@ -28,6 +28,13 @@ interface CreditCard {
   closing_day: number | null
 }
 
+interface AccountOption {
+  id: string
+  name: string
+  icon: string | null
+  color: string | null
+}
+
 const PAYMENT_METHODS = [
   { id: 'PIX', label: 'Pix' },
   { id: 'CREDIT_CARD', label: 'Crédito' },
@@ -42,6 +49,7 @@ interface NewTransactionModalProps {
   onClose: () => void
   categories: Category[]
   creditCards: CreditCard[]
+  accounts: AccountOption[]
   defaultDate?: string
   editingTransaction?: {
     id: string
@@ -53,10 +61,11 @@ interface NewTransactionModalProps {
     payment_method: string
     notes: string | null
     credit_card_id?: string | null
+    account_id?: string | null
   }
 }
 
-export function NewTransactionModal({ isOpen, onClose, categories, creditCards, defaultDate, editingTransaction }: NewTransactionModalProps) {
+export function NewTransactionModal({ isOpen, onClose, categories, creditCards, accounts, defaultDate, editingTransaction }: NewTransactionModalProps) {
   const router = useRouter()
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>(editingTransaction?.type ?? 'EXPENSE')
   const [isPending, startTransition] = useTransition()
@@ -67,68 +76,48 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
     (c) => c.type === type || c.type === 'BOTH'
   )
 
-  const defaultValues = editingTransaction
+  const defaultValues: DefaultValues<TransactionOutput> = editingTransaction
     ? {
         type: editingTransaction.type as 'INCOME' | 'EXPENSE',
         amount: editingTransaction.amount,
         description: editingTransaction.description,
         date: editingTransaction.date.split('T')[0],
         category_id: editingTransaction.category_id,
-        payment_method: editingTransaction.payment_method,
+        payment_method: editingTransaction.payment_method as TransactionOutput['payment_method'],
         notes: editingTransaction.notes ?? '',
         credit_card_id: editingTransaction.credit_card_id ?? '',
+        account_id: editingTransaction.account_id ?? accounts[0]?.id ?? '',
       }
     : {
-        type: 'EXPENSE' as const,
-        payment_method: 'PIX' as const,
+        type: 'EXPENSE',
+        payment_method: 'PIX',
         date: defaultDate ?? (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}` })(),
+        account_id: accounts[0]?.id ?? '',
       }
 
   const {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     reset,
     formState: { errors },
   } = useForm<TransactionOutput>({
-    resolver: zodResolver(transactionSchema) as any,
-    defaultValues: editingTransaction ? (defaultValues as any) : defaultValues,
+    resolver: zodResolver(transactionSchema) as never,
+    defaultValues,
   })
 
-  const categoryId = watch('category_id')
-  const paymentMethod = watch('payment_method')
-  const creditCardId = watch('credit_card_id')
-  const dateValue = watch('date')
-
-  useEffect(() => {
-    if (editingTransaction) {
-      setType(editingTransaction.type)
-      setInstallments(1)
-      reset({
-        type: editingTransaction.type,
-        amount: editingTransaction.amount,
-        description: editingTransaction.description,
-        date: editingTransaction.date.split('T')[0],
-        category_id: editingTransaction.category_id,
-        payment_method: editingTransaction.payment_method,
-        notes: editingTransaction.notes ?? '',
-        credit_card_id: editingTransaction.credit_card_id ?? '',
-      } as any)
-    } else if (isOpen) {
-      setType('EXPENSE')
-      setInstallments(1)
-      reset({
-        type: 'EXPENSE' as const,
-        payment_method: 'PIX' as const,
-        date: defaultDate ?? (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}` })(),
-      } as any)
-    }
-  }, [editingTransaction, isOpen, reset, defaultDate])
+  const categoryId = useWatch({ control, name: 'category_id' })
+  const paymentMethod = useWatch({ control, name: 'payment_method' })
+  const creditCardId = useWatch({ control, name: 'credit_card_id' })
+  const dateValue = useWatch({ control, name: 'date' })
+  const amountValue = useWatch({ control, name: 'amount' })
 
   useEffect(() => {
     if (paymentMethod !== 'CREDIT_CARD') {
       setValue('credit_card_id', '')
+    } else {
+      setValue('account_id', '')
     }
   }, [paymentMethod, setValue])
 
@@ -158,6 +147,7 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
           payment_method: values.payment_method,
           notes: values.notes || undefined,
           credit_card_id: values.credit_card_id || undefined,
+          account_id: values.account_id || undefined,
         }
 
         if (editingTransaction) {
@@ -342,6 +332,40 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
             </div>
           </div>
 
+          {paymentMethod !== 'CREDIT_CARD' && (
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {type === 'INCOME' ? 'Para qual conta?' : 'De qual conta?'}
+              </label>
+              {accounts.length === 0 ? (
+                <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-xs text-muted-foreground text-center">
+                    Nenhuma conta cadastrada.{' '}
+                    <a href={getHref('/contas-bancarias')} className="text-primary underline">
+                      Cadastrar conta
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                <select
+                  {...register('account_id')}
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:border-ring transition-colors appearance-none"
+                >
+                  <option value="">Selecione uma conta</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.icon ? `${account.icon} ` : ''}
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.account_id && (
+                <p className="text-error-500 text-xs mt-1">{errors.account_id.message}</p>
+              )}
+            </div>
+          )}
+
           {paymentMethod === 'CREDIT_CARD' && (
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
@@ -420,25 +444,25 @@ export function NewTransactionModal({ isOpen, onClose, categories, creditCards, 
                     </span>
                   </div>
 
-                  {watch('amount') && Number(watch('amount')) > 0 && (
+                  {amountValue && Number(amountValue) > 0 && (
                     <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-1.5">
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Valor total</span>
                         <span className="font-semibold text-foreground">
-                          {formatCurrency(Number(watch('amount')))}
+                          {formatCurrency(Number(amountValue))}
                         </span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Cada parcela</span>
                         <span className="font-semibold text-foreground">
                           {formatCurrency(
-                            Math.round((Number(watch('amount')) / installments) * 100) / 100
+                            Math.round((Number(amountValue) / installments) * 100) / 100
                           )}
                         </span>
                       </div>
                       {(() => {
                         const card = creditCards.find((c) => c.id === creditCardId)
-                        const dateVal = watch('date')
+                        const dateVal = dateValue
                         if (!card?.closing_day || !dateVal) return null
                         const firstBilling = previewBillingPeriod(dateVal, card.closing_day)
                         if (!firstBilling) return null

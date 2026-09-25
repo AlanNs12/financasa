@@ -41,6 +41,7 @@ export function PersonAvatar({ user, size = 'md', className }: PersonAvatarProps
 
   if (user?.avatar_url) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={user.avatar_url}
         alt={user.name || ''}

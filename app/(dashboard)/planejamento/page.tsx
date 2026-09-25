@@ -4,6 +4,7 @@ import { getPlanejamentoData, getEffectiveIncome } from '@/lib/db/queries/budget
 import { getBillsBreakdownForMonth } from '@/lib/db/queries/bills'
 import { getRecurringIncomesWithStatus } from '@/lib/db/queries/recurring-incomes'
 import { getTransactionsByMonth } from '@/lib/db/queries/transactions'
+import { getAccounts } from '@/lib/db/queries/accounts'
 import { prisma } from '@/lib/db/prisma'
 import { PlanejamentoClient } from '@/components/planejamento/planejamento-client'
 import { PageHeader } from '@/components/shared/page-header'
@@ -46,12 +47,13 @@ export default async function PlanejamentoPage({
     })
   }
 
-  const [data, billsBreakdown, incomeData, allTransactions, monthIncomes] = await Promise.all([
+  const [data, billsBreakdown, incomeData, allTransactions, monthIncomes, accounts] = await Promise.all([
     getPlanejamentoData(current.householdId, month, year),
     getBillsBreakdownForMonth(current.householdId, month, year),
     getEffectiveIncome(current.householdId, month, year),
     getTransactionsByMonth(current.householdId, month, year),
     getRecurringIncomesWithStatus(current.householdId, month, year),
+    getAccounts(current.householdId),
   ])
 
   const clientTransactions = allTransactions.map((t) => ({
@@ -88,6 +90,12 @@ export default async function PlanejamentoPage({
         incomeData={incomeData}
         allTransactions={clientTransactions}
         monthIncomes={clientMonthIncomes}
+        accounts={accounts.map((a) => ({
+          id: a.id,
+          name: a.name,
+          icon: a.icon ?? null,
+          color: a.color ?? null,
+        }))}
       />
     </Suspense>
   )
