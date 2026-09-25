@@ -62,6 +62,8 @@ model Category {
   household      Household?      @relation(fields: [household_id], references: [id])
   recurringBills RecurringBill[]
   transactions   Transaction[]
+
+  @@index([household_id])
 }
 
 model Transaction {
@@ -93,6 +95,14 @@ model Transaction {
   household          Household         @relation(fields: [household_id], references: [id])
   recurring_bill     RecurringBill?    @relation(fields: [recurring_bill_id], references: [id])
   user              User            @relation(fields: [user_id], references: [id])
+
+  @@index([household_id, date])
+  @@index([billing_month, billing_year])
+  @@index([credit_card_id])
+  @@index([account_id])
+  @@index([recurring_bill_id])
+  @@index([recurring_income_id])
+  @@index([installment_group_id])
 }
 
 model RecurringBill {
@@ -115,6 +125,8 @@ model RecurringBill {
   household           Household           @relation(fields: [household_id], references: [id])
   user                User                @relation(fields: [user_id], references: [id])
   transactions        Transaction[]
+
+  @@index([household_id])
 }
 
 model RecurringIncome {
@@ -133,6 +145,8 @@ model RecurringIncome {
   user                  User            @relation(fields: [user_id], references: [id])
   confirmedTransactions Transaction[]
   monthlyOverrides      IncomeMonthlyOverride[]
+
+  @@index([household_id])
 }
 
 model BillMonthlyStatus {
@@ -146,6 +160,7 @@ model BillMonthlyStatus {
   recurring_bill    RecurringBill @relation(fields: [recurring_bill_id], references: [id])
 
   @@unique([recurring_bill_id, month, year])
+  @@index([month, year])
 }
 
 model IncomeMonthlyOverride {
@@ -217,6 +232,8 @@ model FinancialGoal {
   household      Household    @relation(fields: [household_id], references: [id])
   user           User         @relation(fields: [user_id], references: [id])
   investments    Investment[]
+
+  @@index([household_id])
 }
 
 model BudgetGoal {
@@ -245,6 +262,9 @@ model Investment {
   goal             FinancialGoal? @relation(fields: [goal_id], references: [id])
   household        Household      @relation(fields: [household_id], references: [id])
   user             User           @relation(fields: [user_id], references: [id])
+
+  @@index([household_id])
+  @@index([goal_id])
 }
 
 model Debt {
@@ -265,6 +285,8 @@ model Debt {
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
   household          Household @relation(fields: [household_id], references: [id])
+
+  @@index([household_id])
 }
 
 model CreditCard {
@@ -277,9 +299,11 @@ model CreditCard {
   due_day      Int?
   is_active    Boolean       @default(true)
   created_at   DateTime      @default(now())
-  household        Household     @relation(fields: [household_id], references: [id])
+  household    Household     @relation(fields: [household_id], references: [id])
   transactions Transaction[]
   invoicePayments CardInvoicePayment[]
+
+  @@index([household_id])
 }
 
 model Account {
@@ -299,6 +323,8 @@ model Account {
   transfers_out   Transfer[]    @relation("TransferFromAccount")
   transfers_in    Transfer[]    @relation("TransferToAccount")
   invoicePayments CardInvoicePayment[]
+
+  @@index([household_id])
 }
 
 model CardInvoicePayment {
@@ -318,6 +344,8 @@ model CardInvoicePayment {
   account        Account    @relation(fields: [account_id], references: [id])
 
   @@unique([credit_card_id, billing_month, billing_year])
+  @@index([household_id, billing_month, billing_year])
+  @@index([account_id])
 }
 
 model Transfer {
@@ -335,6 +363,10 @@ model Transfer {
   to_account      Account  @relation("TransferToAccount", fields: [to_account_id], references: [id])
   household       Household @relation(fields: [household_id], references: [id])
   user            User      @relation(fields: [user_id], references: [id])
+
+  @@index([household_id, date])
+  @@index([from_account_id])
+  @@index([to_account_id])
 }
 
 enum CategoryType {

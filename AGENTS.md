@@ -64,10 +64,20 @@ Projeto Next.js 16 + React 19 + Tailwind v4. App de controle financeiro familiar
 
 `npm run lint` está limpo (0 erros, 0 warnings). Ao usar React Hook Form, prefira `useWatch({ control, name })` em vez de `watch(name)` e evite `setState` dentro de `useEffect` (use remontagem via `key`).
 
+## Banco de dados
+
+- Migrations versionadas em `prisma/migrations/` (baseline `0000000000000_init`).
+- `npm run db:migrate` (dev) / `npm run db:migrate:status`. `npm run db:push` continua disponível.
+- RLS em `prisma/sql/enable_rls.sql` (aplicação manual no Supabase).
+
+## Proxy
+
+A antiga convenção `middleware.ts` foi migrada para `proxy.ts` (`export function proxy`) no Next 16.
+
 ## Comandos
 
 ```bash
 npm run lint     # ESLint
 npm run build    # Next.js build (Turbopack)
-npm run test     # Vitest (166 testes, 15 suites)
+npm run test     # Vitest (181 testes, 16 suites)
 ```

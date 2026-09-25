@@ -65,6 +65,8 @@ ALTER TABLE "RecurringBill"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BillMonthlyStatus" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Budget"           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BudgetItem"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "CategoryBudgetPlan" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "IncomeMonthlyOverride" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "FinancialGoal"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BudgetGoal"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Investment"       ENABLE ROW LEVEL SECURITY;
@@ -291,10 +293,39 @@ CREATE POLICY "card_invoice_payment_isolation"
   WITH CHECK (household_id = auth.current_household_id());
 
 -- ---------------------------------------------------------------------------
+-- 18. Policies — CategoryBudgetPlan
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "category_budget_plan_isolation"
+  ON "CategoryBudgetPlan" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 19. Policies — IncomeMonthlyOverride (sem household_id direto)
+-- ---------------------------------------------------------------------------
+-- Filtra via recurring_income_id → RecurringIncome.household_id.
+
+CREATE POLICY "income_monthly_override_isolation"
+  ON "IncomeMonthlyOverride" FOR ALL TO authenticated
+  USING (
+    recurring_income_id IN (
+      SELECT id FROM "RecurringIncome"
+      WHERE household_id = auth.current_household_id()
+    )
+  )
+  WITH CHECK (
+    recurring_income_id IN (
+      SELECT id FROM "RecurringIncome"
+      WHERE household_id = auth.current_household_id()
+    )
+  );
+
+-- ---------------------------------------------------------------------------
 -- FIM
 -- ---------------------------------------------------------------------------
--- Após executar este script, todas as 13 tabelas têm RLS habilitado com
--- policies que isolam dados por household.
+-- Após executar este script, todas as tabelas com dados de household têm RLS
+-- habilitado com policies que isolam dados por household.
 --
 -- Para reverter (em caso de emergência):
 --   ALTER TABLE "Transaction" DISABLE ROW LEVEL SECURITY;
