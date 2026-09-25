@@ -259,7 +259,8 @@ export async function createTransactionFromBill(
   userId: string,
   month: number,
   year: number,
-  accountId?: string | null
+  accountId?: string | null,
+  amountOverride?: number
 ): Promise<boolean> {
   const existing = await prisma.transaction.findFirst({
     where: {
@@ -299,7 +300,7 @@ export async function createTransactionFromBill(
       user_id: userId,
       category_id: categoryId,
       type: 'EXPENSE',
-      amount: bill.amount,
+      amount: amountOverride ?? bill.amount,
       description: bill.name,
       date: new Date(year, month - 1, day),
       payment_method: 'PIX',
@@ -309,6 +310,31 @@ export async function createTransactionFromBill(
   })
 
   return true
+}
+
+export async function deleteTransactionFromBill(
+  billId: string,
+  householdId: string,
+  month: number,
+  year: number
+): Promise<number> {
+  const result = await prisma.transaction.deleteMany({
+    where: {
+      recurring_bill_id: billId,
+      household_id: householdId,
+      date: {
+        gte: new Date(year, month - 1, 1),
+        lt: new Date(year, month, 1),
+      },
+    },
+  })
+  return result.count
+}
+
+export async function clearBillStatus(billId: string, month: number, year: number) {
+  return prisma.billMonthlyStatus.deleteMany({
+    where: { recurring_bill_id: billId, month, year },
+  })
 }
 
 export async function getTotalBillsForMonth(householdId: string, month?: number, year?: number) {

@@ -66,6 +66,7 @@ export function TransactionsClient({ transactions, categories, creditCards, acco
     <>
       <TransactionList
         transactions={transactions}
+        categories={categories}
         month={month}
         year={year}
         onSelectTransaction={setSelectedTransaction}

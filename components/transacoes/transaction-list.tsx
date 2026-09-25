@@ -34,6 +34,7 @@ interface TransactionItem {
 
 interface TransactionListProps {
   transactions: TransactionItem[]
+  categories: { id: string; name: string; icon: string; color: string; type: string }[]
   month: number
   year: number
   onSelectTransaction: (t: TransactionItem) => void
@@ -51,11 +52,31 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
-export function TransactionList({ transactions, month, year, onSelectTransaction, onEdit }: TransactionListProps) {
+export function TransactionList({ transactions, categories, month, year, onSelectTransaction, onEdit }: TransactionListProps) {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
   const [showFilters, setShowFilters] = useState(false)
+  const [search, setSearch] = useState('')
+  const [filterCategory, setFilterCategory] = useState('ALL')
+  const [filterUser, setFilterUser] = useState('ALL')
   const [pendingDelete, setPendingDelete] = useState<TransactionItem | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  const users = Array.from(
+    new Set(transactions.map((t) => t.user?.name).filter((n): n is string => !!n))
+  )
+
+  const activeFilterCount =
+    (filter !== 'ALL' ? 1 : 0) +
+    (filterCategory !== 'ALL' ? 1 : 0) +
+    (filterUser !== 'ALL' ? 1 : 0) +
+    (search.trim() ? 1 : 0)
+
+  function clearFilters() {
+    setFilter('ALL')
+    setFilterCategory('ALL')
+    setFilterUser('ALL')
+    setSearch('')
+  }
 
   function confirmDelete() {
     if (!pendingDelete) return
@@ -91,9 +112,14 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
     })
   }
 
+  const searchTerm = search.trim().toLowerCase()
+
   const filtered = transactions.filter((t) => {
-    if (filter === 'ALL') return true
-    return t.type === filter
+    if (filter !== 'ALL' && t.type !== filter) return false
+    if (filterCategory !== 'ALL' && t.category_id !== filterCategory) return false
+    if (filterUser !== 'ALL' && t.user?.name !== filterUser) return false
+    if (searchTerm && !t.description.toLowerCase().includes(searchTerm)) return false
+    return true
   })
 
   const groupedByDate = filtered.reduce(
@@ -111,10 +137,20 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-card border border-border hover:bg-accent transition-colors"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+            showFilters || activeFilterCount > 0
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-muted-foreground bg-card border-border hover:bg-accent'
+          )}
         >
           <Filter className="w-3.5 h-3.5" />
           Filtrar
+          {activeFilterCount > 0 && (
+            <span className="ml-0.5 px-1.5 rounded-full bg-white/20 text-[10px] font-semibold">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
 
         <button
@@ -144,9 +180,72 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
         </div>
       </div>
 
+      {showFilters && (
+        <div className="bg-card rounded-xl border border-border p-3 mb-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por descrição..."
+              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground focus:outline-none"
+            />
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none"
+            >
+              <option value="ALL">Todas as categorias</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterUser}
+              onChange={(e) => setFilterUser(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-none"
+            >
+              <option value="ALL">Todas as pessoas</option>
+              {users.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} de {transactions.length} transações
+            </span>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-xs text-primary underline underline-offset-2"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {Object.keys(groupedByDate).length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground text-sm">Nenhuma transação encontrada</p>
+          <p className="text-muted-foreground text-sm">
+            {activeFilterCount > 0
+              ? 'Nenhuma transação encontrada com os filtros aplicados'
+              : 'Nenhuma transação encontrada'}
+          </p>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearFilters}
+              className="mt-3 text-xs text-primary underline underline-offset-2"
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">

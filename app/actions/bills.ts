@@ -1,7 +1,15 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { updateBillStatus, createRecurringBill, createTransactionFromBill, deleteRecurringBill, updateRecurringBill } from '@/lib/db/queries/bills'
+import {
+  updateBillStatus,
+  createRecurringBill,
+  createTransactionFromBill,
+  deleteTransactionFromBill,
+  clearBillStatus,
+  deleteRecurringBill,
+  updateRecurringBill,
+} from '@/lib/db/queries/bills'
 import { updateRecurringBillSchema } from '@/lib/validations/bill'
 import { BillStatus, Recurrence } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
@@ -38,7 +46,8 @@ export async function markBillAsPaidAction(
     current.userId,
     month,
     year,
-    accountId
+    accountId,
+    paidAmount
   )
 
   revalidatePath('/contas')
@@ -47,6 +56,62 @@ export async function markBillAsPaidAction(
   revalidatePath('/contas-bancarias')
   revalidatePath('/')
   return { success: true, transactionCreated }
+}
+
+export async function unmarkBillAsPaidAction(
+  billId: string,
+  month: number,
+  year: number
+) {
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { success: false, error: 'Usuário não autenticado.' }
+  }
+
+  const bill = await prisma.recurringBill.findFirst({
+    where: { id: billId, household_id: current.householdId },
+    select: { id: true },
+  })
+  if (!bill) {
+    return { success: false, error: 'Conta não encontrada.' }
+  }
+
+  await clearBillStatus(billId, month, year)
+  await deleteTransactionFromBill(billId, current.householdId, month, year)
+
+  revalidatePath('/contas')
+  revalidatePath('/transacoes')
+  revalidatePath('/relatorios')
+  revalidatePath('/contas-bancarias')
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function skipBillForMonthAction(
+  billId: string,
+  month: number,
+  year: number
+) {
+  const current = await getCurrentUserHousehold()
+  if (!current) {
+    return { success: false, error: 'Usuário não autenticado.' }
+  }
+
+  const bill = await prisma.recurringBill.findFirst({
+    where: { id: billId, household_id: current.householdId },
+    select: { id: true },
+  })
+  if (!bill) {
+    return { success: false, error: 'Conta não encontrada.' }
+  }
+
+  await deleteTransactionFromBill(billId, current.householdId, month, year)
+  await updateBillStatus(billId, month, year, BillStatus.SKIPPED)
+
+  revalidatePath('/contas')
+  revalidatePath('/transacoes')
+  revalidatePath('/')
+  return { success: true }
 }
 
 export async function createRecurringBillAction(data: {

@@ -51,6 +51,7 @@ export default async function ContasPage({
     monthlyStatus: b.monthlyStatus.map((ms) => ({
       status: ms.status,
       paid_at: ms.paid_at?.toISOString() ?? null,
+      paid_amount: ms.paid_amount != null ? Number(ms.paid_amount) : null,
     })),
   }))
 
