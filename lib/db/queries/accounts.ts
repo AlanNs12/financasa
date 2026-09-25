@@ -7,6 +7,8 @@ import type {
   AccountType,
 } from '@/types'
 import { computeAccountBalance } from '@/lib/calculations/accounts'
+import { computeAvailable } from '@/lib/calculations/savings'
+import { getReservedByAccount } from '@/lib/db/queries/savings'
 
 interface RawAccount {
   id: string
@@ -61,7 +63,7 @@ export async function getAccountsWithBalances(
 
   const ids = accounts.map((a) => a.id)
 
-  const [transactions, transfers, cardPayments] = await Promise.all([
+  const [transactions, transfers, cardPayments, reservedMap] = await Promise.all([
     prisma.transaction.findMany({
       where: { household_id: householdId, account_id: { in: ids } },
       select: { account_id: true, type: true, amount: true },
@@ -77,6 +79,7 @@ export async function getAccountsWithBalances(
       where: { household_id: householdId, account_id: { in: ids } },
       select: { account_id: true, amount: true },
     }),
+    getReservedByAccount(householdId, ids),
   ])
 
   return accounts.map((account) => {
@@ -107,7 +110,10 @@ export async function getAccountsWithBalances(
       payments
     )
 
-    return { ...account, ...parts }
+    const reserved = reservedMap.get(account.id) ?? 0
+    const available = computeAvailable(parts.balance, reserved)
+
+    return { ...account, ...parts, reserved, available }
   })
 }
 

@@ -9,31 +9,44 @@ import {
   Loader2,
   Landmark,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { sumAccountBalances } from '@/lib/calculations/accounts'
 import { deleteAccountAction, deleteTransferAction } from '@/app/actions/accounts'
-import type { Account, AccountWithBalance, Transfer } from '@/types'
+import type { Account, AccountWithBalance, Transfer, SavingsJarWithBalance } from '@/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { AccountModal } from './account-modal'
 import { TransferModal } from './transfer-modal'
+import { SavingsJars } from './savings-jars'
 import { getAccountTypeLabel } from './account-meta'
 
 interface AccountsClientProps {
   accounts: AccountWithBalance[]
   transfers: Transfer[]
+  jars: SavingsJarWithBalance[]
 }
 
-export function AccountsClient({ accounts, transfers }: AccountsClientProps) {
+export function AccountsClient({ accounts, transfers, jars }: AccountsClientProps) {
   const [showAccountModal, setShowAccountModal] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const [showTransferModal, setShowTransferModal] = useState(false)
+  const [expandedAccount, setExpandedAccount] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const activeAccounts = accounts.filter((a) => a.is_active)
   const inactiveAccounts = accounts.filter((a) => !a.is_active)
   const totalBalance = sumAccountBalances(activeAccounts)
+  const totalReserved = activeAccounts.reduce((sum, a) => sum + a.reserved, 0)
+  const totalAvailable = activeAccounts.reduce((sum, a) => sum + a.available, 0)
+
+  const jarsByAccount = jars.reduce<Record<string, SavingsJarWithBalance[]>>((acc, jar) => {
+    if (!acc[jar.account_id]) acc[jar.account_id] = []
+    acc[jar.account_id].push(jar)
+    return acc
+  }, {})
 
   function openNewAccount() {
     setEditingAccount(null)
@@ -74,7 +87,17 @@ export function AccountsClient({ accounts, transfers }: AccountsClientProps) {
         <div className="relative z-10">
           <p className="text-white/70 text-sm font-medium mb-1">Saldo total em contas</p>
           <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance)}</p>
-          <p className="text-white/60 text-xs mt-1">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs">
+            <span className="text-white/70">
+              Disponível:{' '}
+              <span className="font-semibold text-white">{formatCurrency(totalAvailable)}</span>
+            </span>
+            <span className="text-white/70">
+              Guardado:{' '}
+              <span className="font-semibold text-white">{formatCurrency(totalReserved)}</span>
+            </span>
+          </div>
+          <p className="text-white/50 text-xs mt-2">
             {activeAccounts.length} {activeAccounts.length === 1 ? 'conta ativa' : 'contas ativas'}
           </p>
         </div>
@@ -109,54 +132,78 @@ export function AccountsClient({ accounts, transfers }: AccountsClientProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          {activeAccounts.map((account) => (
-            <div
-              key={account.id}
-              className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-card"
-            >
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
-                style={{ backgroundColor: `${account.color ?? '#0F1115'}20` }}
-              >
-                {account.icon ?? <Landmark className="w-5 h-5 text-muted-foreground" />}
+          {activeAccounts.map((account) => {
+            const isExpanded = expandedAccount === account.id
+            const accountJars = jarsByAccount[account.id] ?? []
+            return (
+              <div key={account.id} className="rounded-2xl border border-border bg-card">
+                <div className="flex items-center gap-3 p-4">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
+                    style={{ backgroundColor: `${account.color ?? '#0F1115'}20` }}
+                  >
+                    {account.icon ?? <Landmark className="w-5 h-5 text-muted-foreground" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{account.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {getAccountTypeLabel(account.type)}
+                      {account.institution ? ` · ${account.institution}` : ''}
+                    </p>
+                    {(account.reserved > 0 || account.available < 0) && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Disponível{' '}
+                        <span className={cn(account.available < 0 && 'text-error-500 font-medium')}>
+                          {formatCurrency(account.available)}
+                        </span>
+                        {' · '}Guardado {formatCurrency(account.reserved)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p
+                      className={cn(
+                        'text-sm font-bold tabular-nums',
+                        account.balance < 0 ? 'text-error-500' : 'text-foreground'
+                      )}
+                    >
+                      {formatCurrency(account.balance)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      inicial {formatCurrency(account.initial_balance)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => openEditAccount(account)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                    aria-label="Editar conta"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAccount(account)}
+                    disabled={isPending}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-error-500 hover:bg-error-50 transition-colors shrink-0 disabled:opacity-50"
+                    aria-label="Desativar conta"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setExpandedAccount(isExpanded ? null : account.id)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                    aria-label={isExpanded ? 'Ocultar cofrinhos' : 'Ver cofrinhos'}
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div className="px-4 pb-4">
+                    <SavingsJars account={account} jars={accountJars} />
+                  </div>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{account.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {getAccountTypeLabel(account.type)}
-                  {account.institution ? ` · ${account.institution}` : ''}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p
-                  className={cn(
-                    'text-sm font-bold tabular-nums',
-                    account.balance < 0 ? 'text-error-500' : 'text-foreground'
-                  )}
-                >
-                  {formatCurrency(account.balance)}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  inicial {formatCurrency(account.initial_balance)}
-                </p>
-              </div>
-              <button
-                onClick={() => openEditAccount(account)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
-                aria-label="Editar conta"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDeleteAccount(account)}
-                disabled={isPending}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-error-500 hover:bg-error-50 transition-colors shrink-0 disabled:opacity-50"
-                aria-label="Desativar conta"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

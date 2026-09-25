@@ -55,9 +55,11 @@ Projeto Next.js 16 + React 19 + Tailwind v4. App de controle financeiro familiar
 
 ## Contas bancárias
 
-- Saldo acumulado: `lib/calculations/accounts.ts` (`saldo = inicial + receitas − despesas + transferências recebidas − enviadas`)
+- Saldo acumulado: `lib/calculations/accounts.ts` (`saldo = inicial + receitas − despesas + transferências recebidas − enviadas − pagamentos de fatura`)
 - Página `/contas-bancarias` (a rota `/contas` são contas a pagar)
 - Transferências entre contas: model `Transfer` (não afeta receita/despesa)
+- Pagamento de fatura: model `CardInvoicePayment` (debita a conta sem criar despesa)
+- Cofrinhos: models `SavingsJar`/`JarMovement`; valor guardado fica fora do "disponível" (saldo total não muda); guardar/resgatar em `/contas-bancarias`
 - Backfill de transações antigas: `npm run backfill:accounts`
 
 ## Lint
@@ -79,5 +81,5 @@ A antiga convenção `middleware.ts` foi migrada para `proxy.ts` (`export functi
 ```bash
 npm run lint     # ESLint
 npm run build    # Next.js build (Turbopack)
-npm run test     # Vitest (181 testes, 16 suites)
+npm run test     # Vitest (197 testes, 18 suites)
 ```

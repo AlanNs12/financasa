@@ -75,6 +75,8 @@ ALTER TABLE "CreditCard"       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Account"          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Transfer"         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "CardInvoicePayment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "SavingsJar"       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "JarMovement"      ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- 2. Policies — Household
@@ -291,6 +293,35 @@ CREATE POLICY "card_invoice_payment_isolation"
   ON "CardInvoicePayment" FOR ALL TO authenticated
   USING (household_id = auth.current_household_id())
   WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 20. Policies — SavingsJar
+-- ---------------------------------------------------------------------------
+
+CREATE POLICY "savings_jar_isolation"
+  ON "SavingsJar" FOR ALL TO authenticated
+  USING (household_id = auth.current_household_id())
+  WITH CHECK (household_id = auth.current_household_id());
+
+-- ---------------------------------------------------------------------------
+-- 21. Policies — JarMovement (sem household_id direto)
+-- ---------------------------------------------------------------------------
+-- Filtra via jar_id → SavingsJar.household_id.
+
+CREATE POLICY "jar_movement_isolation"
+  ON "JarMovement" FOR ALL TO authenticated
+  USING (
+    jar_id IN (
+      SELECT id FROM "SavingsJar"
+      WHERE household_id = auth.current_household_id()
+    )
+  )
+  WITH CHECK (
+    jar_id IN (
+      SELECT id FROM "SavingsJar"
+      WHERE household_id = auth.current_household_id()
+    )
+  );
 
 -- ---------------------------------------------------------------------------
 -- 18. Policies — CategoryBudgetPlan

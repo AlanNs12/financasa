@@ -24,6 +24,8 @@ model User {
   transactions     Transaction[]
   transfers        Transfer[]
   cardInvoicePayments CardInvoicePayment[]
+  savingsJars       SavingsJar[]
+  jarMovements      JarMovement[]
   household        Household       @relation(fields: [household_id], references: [id])
 }
 
@@ -47,6 +49,7 @@ model Household {
   accounts       Account[]
   transfers      Transfer[]
   cardInvoicePayments CardInvoicePayment[]
+  savingsJars    SavingsJar[]
 }
 
 model Category {
@@ -323,6 +326,7 @@ model Account {
   transfers_out   Transfer[]    @relation("TransferFromAccount")
   transfers_in    Transfer[]    @relation("TransferToAccount")
   invoicePayments CardInvoicePayment[]
+  savingsJars     SavingsJar[]
 
   @@index([household_id])
 }
@@ -346,6 +350,42 @@ model CardInvoicePayment {
   @@unique([credit_card_id, billing_month, billing_year])
   @@index([household_id, billing_month, billing_year])
   @@index([account_id])
+}
+
+model SavingsJar {
+  id            String        @id @default(uuid())
+  household_id  String
+  account_id    String
+  user_id       String
+  name          String
+  target_amount Decimal?      @db.Decimal(10, 2)
+  color         String?
+  icon          String?
+  is_active     Boolean       @default(true)
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  household     Household     @relation(fields: [household_id], references: [id])
+  account       Account       @relation(fields: [account_id], references: [id])
+  user          User          @relation(fields: [user_id], references: [id])
+  movements     JarMovement[]
+
+  @@index([household_id])
+  @@index([account_id])
+}
+
+model JarMovement {
+  id         String        @id @default(uuid())
+  jar_id     String
+  user_id    String
+  type       JarMovementType
+  amount     Decimal       @db.Decimal(10, 2)
+  date       DateTime      @default(now()) @db.Date
+  note       String?
+  created_at DateTime      @default(now())
+  jar        SavingsJar    @relation(fields: [jar_id], references: [id])
+  user       User          @relation(fields: [user_id], references: [id])
+
+  @@index([jar_id])
 }
 
 model Transfer {
@@ -396,6 +436,11 @@ enum AccountType {
   WALLET
   INVESTMENT
   OTHER
+}
+
+enum JarMovementType {
+  DEPOSIT
+  WITHDRAW
 }
 
 enum Recurrence {

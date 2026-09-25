@@ -14,6 +14,7 @@ export function AccountsBalanceCard({ accounts }: AccountsBalanceCardProps) {
   if (activeAccounts.length === 0) return null
 
   const total = sumAccountBalances(activeAccounts)
+  const totalReserved = activeAccounts.reduce((sum, a) => sum + a.reserved, 0)
 
   return (
     <div className="bg-card rounded-2xl border border-border p-5">
@@ -23,6 +24,15 @@ export function AccountsBalanceCard({ accounts }: AccountsBalanceCardProps) {
           <p className="text-2xl font-bold text-foreground mt-0.5 tabular-nums">
             {formatCurrency(total)}
           </p>
+          {totalReserved > 0 && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Disponível{' '}
+              <span className="font-medium text-foreground">
+                {formatCurrency(total - totalReserved)}
+              </span>
+              {' · '}Guardado {formatCurrency(totalReserved)}
+            </p>
+          )}
         </div>
         <Link
           href="/contas-bancarias"

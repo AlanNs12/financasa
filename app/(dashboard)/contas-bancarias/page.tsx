@@ -1,5 +1,6 @@
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { getAccountsWithBalances, getTransfers } from '@/lib/db/queries/accounts'
+import { getJarsWithBalances } from '@/lib/db/queries/savings'
 import { AccountsClient } from '@/components/contas-bancarias/accounts-client'
 import { PageHeader } from '@/components/shared/page-header'
 
@@ -19,18 +20,19 @@ export default async function ContasBancariasPage() {
     )
   }
 
-  const [accounts, transfers] = await Promise.all([
+  const [accounts, transfers, jars] = await Promise.all([
     getAccountsWithBalances(current.householdId, true),
     getTransfers(current.householdId, 20),
+    getJarsWithBalances(current.householdId),
   ])
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Contas bancárias"
-        description="Acompanhe saldos, contas e transferências"
+        description="Acompanhe saldos, contas, cofrinhos e transferências"
       />
-      <AccountsClient accounts={accounts} transfers={transfers} />
+      <AccountsClient accounts={accounts} transfers={transfers} jars={jars} />
     </div>
   )
 }

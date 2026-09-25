@@ -225,6 +225,41 @@ export interface AccountWithBalance extends Account {
   transfersIn: number
   transfersOut: number
   cardPayments: number
+  reserved: number
+  available: number
+}
+
+export type JarMovementType = 'DEPOSIT' | 'WITHDRAW'
+
+export interface SavingsJar {
+  id: string
+  household_id: string
+  account_id: string
+  user_id: string
+  name: string
+  target_amount?: number | null
+  color?: string | null
+  icon?: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface SavingsJarWithBalance extends SavingsJar {
+  balance: number
+  progress: number | null
+  account?: AccountRef
+}
+
+export interface JarMovement {
+  id: string
+  jar_id: string
+  user_id: string
+  type: JarMovementType
+  amount: number
+  date: string
+  note?: string | null
+  created_at: string
 }
 
 export interface CardInvoicePayment {

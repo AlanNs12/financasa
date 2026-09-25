@@ -20,6 +20,10 @@ function householdDataDeletions(householdId: string) {
     prisma.recurringBill.deleteMany({ where: { household_id: householdId } }),
     prisma.recurringIncome.deleteMany({ where: { household_id: householdId } }),
     prisma.transfer.deleteMany({ where: { household_id: householdId } }),
+    prisma.jarMovement.deleteMany({
+      where: { jar: { household_id: householdId } },
+    }),
+    prisma.savingsJar.deleteMany({ where: { household_id: householdId } }),
     prisma.account.deleteMany({ where: { household_id: householdId } }),
     prisma.budgetItem.deleteMany({
       where: { budget: { household_id: householdId } },
@@ -105,6 +109,14 @@ export async function deleteAccountAction() {
         }),
         prisma.cardInvoicePayment.updateMany({
           where: { user_id: userId, household_id: householdId },
+          data: { user_id: newOwnerId },
+        }),
+        prisma.savingsJar.updateMany({
+          where: { user_id: userId, household_id: householdId },
+          data: { user_id: newOwnerId },
+        }),
+        prisma.jarMovement.updateMany({
+          where: { user_id: userId },
           data: { user_id: newOwnerId },
         }),
         prisma.budgetGoal.deleteMany({ where: { user_id: userId } }),
