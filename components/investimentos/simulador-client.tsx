@@ -184,25 +184,25 @@ export function SimuladorClient() {
         </div>
       </div>
 
-      <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
+      <div className="hero-card">
+        <p className="text-xs text-white/60 uppercase tracking-wider mb-3">
           Resultado em {years} anos
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Valor total acumulado</p>
+            <p className="text-xs text-white/60 mb-1">Valor total acumulado</p>
             <p className="text-2xl font-bold tabular-nums">
               {formatCurrency(simulation.grossValue)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Total aportado</p>
+            <p className="text-xs text-white/60 mb-1">Total aportado</p>
             <p className="text-lg font-bold tabular-nums text-blue-400">
               {formatCurrency(simulation.totalContributed)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Rendimentos</p>
+            <p className="text-xs text-white/60 mb-1">Rendimentos</p>
             <p className="text-lg font-bold tabular-nums text-green-400">
               {formatCurrency(simulation.totalEarnings)}
             </p>

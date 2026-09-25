@@ -9,13 +9,13 @@ import {
   Loader2,
   Check,
   Trash2,
-  AlertTriangle,
   TrendingDown,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { EmptyState } from '@/components/shared/empty-state'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   createDebtAction,
   payInstallmentAction,
@@ -140,10 +140,10 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
 
       {hasDebts ? (
         <>
-          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
+          <div className="hero-card">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                   Dívida total
                 </p>
                 <p className="text-xl font-bold tabular-nums">
@@ -151,7 +151,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                   Total pago
                 </p>
                 <p className="text-xl font-bold tabular-nums text-green-400">
@@ -161,7 +161,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
             </div>
             <div className="border-t border-white/10 pt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                <span className="text-xs text-white/60 uppercase tracking-wider">
                   Saldo devedor
                 </span>
                 <span className="text-lg font-bold tabular-nums text-red-400">
@@ -174,7 +174,7 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
                   style={{ width: `${Math.min(summaryProgressPct, 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
+              <p className="text-xs text-white/60 mt-1.5">
                 {Math.round(summaryProgressPct)}% quitado
               </p>
             </div>
@@ -429,49 +429,21 @@ export function DividasClient({ debts, summary }: DividasClientProps) {
         </div>
       )}
 
-      {pendingDelete && (
-        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => !isPending && setPendingDelete(null)}
-          />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
-            <div className="flex flex-col items-center text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground mb-1">
-                Excluir esta dívida?
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {pendingDelete.institution} · {pendingDelete.product}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        onClose={() => { if (!isPending) setPendingDelete(null) }}
+        onConfirm={confirmDelete}
+        title="Excluir esta dívida?"
+        description={
+          <>
+            <span className="text-foreground font-medium">{pendingDelete?.institution}</span>
+            {pendingDelete ? ` · ${pendingDelete.product}` : ''}
+            <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+          </>
+        }
+        confirmLabel="Excluir"
+        pending={isPending}
+      />
     </div>
   )
 }

@@ -12,7 +12,6 @@ import {
   TrendingDown,
   PieChart as PieChartIcon,
   Trash2,
-  AlertTriangle,
   Calculator,
 } from 'lucide-react'
 import {
@@ -24,6 +23,7 @@ import {
 } from 'recharts'
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/format'
 import { EmptyState } from '@/components/shared/empty-state'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { createInvestmentAction, deleteInvestmentAction } from '@/app/actions/investments'
 import { investmentSchema, type InvestmentInput } from '@/lib/validations/investment'
 import { useMonth } from '@/lib/month-context'
@@ -157,10 +157,10 @@ export function InvestimentosClient({
 
       {hasInvestments ? (
         <>
-          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
+          <div className="hero-card">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                   Total investido
                 </p>
                 <p className="text-xl font-bold tabular-nums">
@@ -168,7 +168,7 @@ export function InvestimentosClient({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-xs text-white/60 uppercase tracking-wider mb-1">
                   Valor atual líquido
                 </p>
                 <p className="text-xl font-bold tabular-nums">
@@ -184,7 +184,7 @@ export function InvestimentosClient({
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span className="text-xs text-muted-foreground">Rentabilidade</span>
+                  <span className="text-xs text-white/60">Rentabilidade</span>
                 </div>
                 <div className="text-right">
                   <p
@@ -569,49 +569,21 @@ export function InvestimentosClient({
         </div>
       )}
 
-      {pendingDelete && (
-        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => !isPending && setPendingDelete(null)}
-          />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
-            <div className="flex flex-col items-center text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground mb-1">
-                Excluir este investimento?
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {pendingDelete.name} · {formatCurrency(pendingDelete.net_current)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        onClose={() => { if (!isPending) setPendingDelete(null) }}
+        onConfirm={confirmDelete}
+        title="Excluir este investimento?"
+        description={
+          <>
+            <span className="text-foreground font-medium">{pendingDelete?.name}</span>
+            {pendingDelete ? ` · ${formatCurrency(pendingDelete.net_current)}` : ''}
+            <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+          </>
+        }
+        confirmLabel="Excluir"
+        pending={isPending}
+      />
     </div>
   )
 }

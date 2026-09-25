@@ -6,6 +6,7 @@ import { formatCurrency, getMonthName } from '@/lib/format'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ProgressBar } from '@/components/shared/progress-bar'
 import { NewBillModal } from '@/components/contas/new-bill-modal'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { BillsHistory } from '@/components/contas/bills-history'
 import { RecurringIncomeSection } from '@/components/contas/recurring-income-section'
 import { Fab } from '@/components/transacoes/fab'
@@ -239,7 +240,7 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
 
       {activeTab === 'current' ? (
         <>
-          <div className="bg-[#1a1a2e] dark:bg-gradient-to-br dark:from-[#161b22] dark:to-[#0d1117] dark:border dark:border-[#30363d] rounded-2xl p-6 text-white">
+          <div className="hero-card">
             <p className="text-sm text-white/70 mb-1">{monthName}</p>
             <p className="text-3xl font-bold mb-1">{formatCurrency(totalAmount)}</p>
             <p className="text-sm text-white/50 mb-4">total de contas</p>
@@ -402,35 +403,23 @@ export function ContasClient({ bills, history, month, year, categories, recurrin
             currentYear={year}
           />
 
-          {deletingBill && (
-            <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-              <div className="absolute inset-0 bg-black/40" onClick={() => setDeletingBill(null)} />
-              <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm shadow-xl p-6 safe-area-bottom">
-                <h2 className="text-lg font-bold text-foreground mb-2">Excluir conta?</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  A conta <span className="text-foreground font-medium">{extractName(deletingBill.name)}</span> será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setDeletingBill(null)}
-                    className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isPending}
-                    className="flex-1 py-3 rounded-xl bg-expense text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Excluir
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <ConfirmDialog
+            isOpen={!!deletingBill}
+            onClose={() => { if (!isPending) setDeletingBill(null) }}
+            onConfirm={handleDelete}
+            title="Excluir conta?"
+            description={
+              <>
+                A conta{' '}
+                <span className="text-foreground font-medium">
+                  {deletingBill ? extractName(deletingBill.name) : ''}
+                </span>{' '}
+                será desativada. O histórico de pagamentos anteriores será mantido. Esta ação não pode ser desfeita.
+              </>
+            }
+            confirmLabel="Excluir"
+            pending={isPending}
+          />
         </>
       ) : activeTab === 'history' ? (
         <BillsHistory history={history} />

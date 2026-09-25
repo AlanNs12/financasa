@@ -55,11 +55,7 @@ export function FaturasClient({
         </p>
       </div>
 
-      <div
-        className="rounded-2xl p-6 text-white shadow-theme-lg
-                    bg-gradient-to-br from-[#0F1115] to-[#2D2F36]
-                    border border-white/5 relative overflow-hidden"
-      >
+      <div className="hero-card">
         <div
           className="absolute top-0 right-0 w-40 h-40 rounded-full
                       bg-white/[0.04] -translate-y-1/2 translate-x-1/2"

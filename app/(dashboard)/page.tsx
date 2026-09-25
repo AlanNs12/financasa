@@ -126,23 +126,7 @@ export default async function DashboardPage({
     )
   }
 
-  let data: Awaited<ReturnType<typeof loadDashboard>> | null = null
-
-  try {
-    data = await loadDashboard(current.householdId, currentMonth, currentYear)
-  } catch {
-    data = null
-  }
-
-  if (!data) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-card rounded-2xl border border-border p-8 text-center">
-          <p className="text-muted-foreground">Nenhum dado disponível. Comece adicionando transações.</p>
-        </div>
-      </div>
-    )
-  }
+  const data = await loadDashboard(current.householdId, currentMonth, currentYear)
 
   return (
     <div className="space-y-6">

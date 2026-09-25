@@ -69,7 +69,7 @@ export function AccountsClient({ accounts, transfers }: AccountsClientProps) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl p-6 text-white shadow-theme-lg relative overflow-hidden bg-gradient-to-br from-[#0F1115] to-[#2D2F36] dark:from-[#2D2F36] dark:to-[#0F1115] border border-white/5">
+      <div className="hero-card">
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/[0.04] -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
           <p className="text-white/70 text-sm font-medium mb-1">Saldo total em contas</p>

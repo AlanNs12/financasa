@@ -5,8 +5,9 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import { CategoryIcon } from '@/components/shared/category-icon'
 import { MoneyDisplay } from '@/components/shared/money-display'
 import { PersonAvatar } from '@/components/shared/person-avatar'
-import { Filter, Trash2, Pencil, AlertTriangle, Loader2, Download } from 'lucide-react'
+import { Filter, Trash2, Pencil, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { deleteTransactionAction } from '@/app/actions/transactions'
 import { exportTransactionsCsvAction } from '@/app/actions/export'
 import { toast } from 'sonner'
@@ -292,49 +293,21 @@ export function TransactionList({ transactions, month, year, onSelectTransaction
         </div>
       )}
 
-      {pendingDelete && (
-        <div className="fixed inset-0 z-[999] flex items-end lg:items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => !isPending && setPendingDelete(null)}
-          />
-          <div className="relative bg-card rounded-t-3xl lg:rounded-3xl w-full mx-4 lg:max-w-sm p-6 shadow-xl safe-area-bottom">
-            <div className="flex flex-col items-center text-center mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-3">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground mb-1">
-                Excluir esta transação?
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {pendingDelete.description} · {formatCurrency(pendingDelete.amount)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl border border-border text-muted-foreground font-medium hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={isPending}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!pendingDelete}
+        onClose={() => { if (!isPending) setPendingDelete(null) }}
+        onConfirm={confirmDelete}
+        title="Excluir esta transação?"
+        description={
+          <>
+            <span className="text-foreground font-medium">{pendingDelete?.description}</span>
+            {pendingDelete ? ` · ${formatCurrency(pendingDelete.amount)}` : ''}
+            <span className="block text-xs mt-1">Esta ação não pode ser desfeita.</span>
+          </>
+        }
+        confirmLabel="Excluir"
+        pending={isPending}
+      />
     </div>
   )
 }
