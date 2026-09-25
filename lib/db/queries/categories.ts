@@ -56,7 +56,7 @@ export async function updateCategory(
 
 export async function deleteCategory(id: string, householdId: string) {
   const hasTransactions = await prisma.transaction.count({
-    where: { category_id: id }
+    where: { category_id: id, household_id: householdId }
   })
   if (hasTransactions > 0) {
     throw new Error('Categoria em uso — não pode ser apagada')

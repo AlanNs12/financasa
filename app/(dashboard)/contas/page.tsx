@@ -46,6 +46,7 @@ export default async function ContasPage({
     installment_current: b.installment_current,
     start_month: b.start_month,
     start_year: b.start_year,
+    category_id: b.category_id ?? null,
     created_at: b.created_at,
     monthlyStatus: b.monthlyStatus.map((ms) => ({
       status: ms.status,

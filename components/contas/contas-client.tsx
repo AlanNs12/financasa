@@ -25,6 +25,7 @@ interface Bill {
   installment_current: number | null
   start_month: number
   start_year: number
+  category_id?: string | null
   created_at: string
   monthlyStatus: { status: string; paid_at: string | null }[]
 }
@@ -126,7 +127,7 @@ function mapBillToEditing(bill: Bill): EditingBill {
     recurrence: bill.recurrence,
     is_fixed: !bill.installment_total,
     installment_total: bill.installment_total,
-    category_id: null,
+    category_id: bill.category_id ?? null,
   }
 }
 

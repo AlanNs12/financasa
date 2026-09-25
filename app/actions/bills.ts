@@ -5,6 +5,7 @@ import { updateBillStatus, createRecurringBill, createTransactionFromBill, delet
 import { updateRecurringBillSchema } from '@/lib/validations/bill'
 import { BillStatus, Recurrence } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
+import { categoryBelongsToHousehold } from '@/lib/db/queries/ownership'
 import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
 
@@ -68,6 +69,13 @@ export async function createRecurringBillAction(data: {
     return { success: false, error: 'Dados inválidos.' }
   }
 
+  if (
+    data.category_id &&
+    !(await categoryBelongsToHousehold(data.category_id, current.householdId))
+  ) {
+    return { success: false, error: 'Categoria inválida.' }
+  }
+
   const isParcelada = data.bill_type === 'parcelada'
   const installmentTotal = isParcelada && data.installment_total ? data.installment_total : null
   const startMonth = data.current_month ?? new Date().getMonth() + 1
@@ -129,6 +137,13 @@ export async function updateRecurringBillAction(
   const parsed = updateRecurringBillSchema.safeParse(data)
   if (!parsed.success) {
     return { success: false, error: parsed.error.flatten().fieldErrors }
+  }
+
+  if (
+    parsed.data.category_id &&
+    !(await categoryBelongsToHousehold(parsed.data.category_id, current.householdId))
+  ) {
+    return { success: false, error: 'Categoria inválida.' }
   }
 
   await updateRecurringBill(billId, current.householdId, {

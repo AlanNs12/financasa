@@ -60,23 +60,36 @@ export async function getRecurringBills(householdId: string, month?: number, yea
     orderBy: { due_day: 'asc' },
   })
 
-  return bills.map((b) => ({
-    id: b.id,
-    household_id: b.household_id,
-    user_id: b.user_id,
-    name: b.name,
-    amount: Number(b.amount),
-    due_day: b.due_day,
-    recurrence: b.recurrence,
-    is_active: b.is_active,
-    installment_total: b.installment_total,
-    installment_current: b.installment_current,
-    start_month: b.start_month,
-    start_year: b.start_year,
-    created_at: b.created_at.toISOString(),
-    user: b.user,
-    monthlyStatus: b.monthlyStatus,
-  }))
+  return bills
+    .filter(
+      (b) =>
+        b.monthlyStatus.length > 0 ||
+        billAppliesInMonth(
+          b.start_month,
+          b.start_year,
+          b.recurrence,
+          targetMonth,
+          targetYear
+        )
+    )
+    .map((b) => ({
+      id: b.id,
+      household_id: b.household_id,
+      user_id: b.user_id,
+      name: b.name,
+      amount: Number(b.amount),
+      due_day: b.due_day,
+      recurrence: b.recurrence,
+      is_active: b.is_active,
+      installment_total: b.installment_total,
+      installment_current: b.installment_current,
+      start_month: b.start_month,
+      start_year: b.start_year,
+      category_id: b.category_id,
+      created_at: b.created_at.toISOString(),
+      user: b.user,
+      monthlyStatus: b.monthlyStatus,
+    }))
 }
 
 export async function getBillsHistory(householdId: string, monthsBack = 6) {
@@ -120,8 +133,11 @@ export async function getBillsHistory(householdId: string, monthsBack = 6) {
 
     const monthBills = bills
       .filter((b) => {
-        const created = new Date(b.created_at)
-        return created <= new Date(year, month, 0)
+        const ms = b.monthlyStatus.find((s) => s.month === month && s.year === year)
+        return (
+          !!ms ||
+          billAppliesInMonth(b.start_month, b.start_year, b.recurrence, month, year)
+        )
       })
       .map((b) => {
         const ms = b.monthlyStatus.find((s) => s.month === month && s.year === year)

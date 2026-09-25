@@ -6,6 +6,11 @@ import { transactionSchema } from '@/lib/validations/transaction'
 import type { TransactionType, PaymentMethod } from '@prisma/client'
 import { getCurrentUserHousehold } from '@/lib/db/queries/user'
 import { calculateBillingPeriod, calculateInstallmentPlan } from '@/lib/calculations/billing'
+import {
+  accountBelongsToHousehold,
+  categoryBelongsToHousehold,
+  creditCardBelongsToHousehold,
+} from '@/lib/db/queries/ownership'
 import { prisma } from '@/lib/db/prisma'
 import { randomUUID } from 'crypto'
 
@@ -40,13 +45,27 @@ async function validateAccount(
     return { account_id: ['Selecione a conta de origem/destino.'] }
   }
 
-  const account = await prisma.account.findFirst({
-    where: { id: accountId, household_id: householdId },
-    select: { id: true },
-  })
-
-  if (!account) {
+  if (!(await accountBelongsToHousehold(accountId, householdId))) {
     return { account_id: ['Conta inválida.'] }
+  }
+
+  return null
+}
+
+async function validateReferences(
+  data: { category_id: string; payment_method: string; credit_card_id?: string | null },
+  householdId: string
+): Promise<Record<string, string[]> | null> {
+  if (!(await categoryBelongsToHousehold(data.category_id, householdId))) {
+    return { category_id: ['Categoria inválida.'] }
+  }
+
+  if (
+    data.payment_method === 'CREDIT_CARD' &&
+    data.credit_card_id &&
+    !(await creditCardBelongsToHousehold(data.credit_card_id, householdId))
+  ) {
+    return { credit_card_id: ['Cartão inválido.'] }
   }
 
   return null
@@ -88,6 +107,11 @@ export async function createTransactionAction(data: {
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const referenceError = await validateReferences(parsed.data, current.householdId)
+  if (referenceError) {
+    return { error: referenceError }
   }
 
   const accountError = await validateAccount(
@@ -248,6 +272,11 @@ export async function updateTransactionAction(
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const referenceError = await validateReferences(parsed.data, current.householdId)
+  if (referenceError) {
+    return { error: referenceError }
   }
 
   const accountError = await validateAccount(
